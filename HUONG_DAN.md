@@ -347,14 +347,17 @@ if ($error === '' && !isset($_SESSION['completed'])) {
 }
 require __DIR__.'/../templates/header.php';
 ?>
-<h2>Kết quả lưu trữ</h2>
-<p>
-<?= e($error !== '' ? $error : $_SESSION['completed']) ?>
+<div class="page-heading">
+<h1>Kết quả lưu trữ</h1>
+</div>
+<section class="completion" role="status">
+<p class="status-message">
+    <?= e($error !== '' ? $error : $_SESSION['completed']) ?>
 </p>
 <p>Mẫu Lab 05 kiểm tra lưu bền vững và đăng ký trùng; chưa có giới hạn chỗ đồng thời.</p>
 <a href="/confirm.php">Quay lại xác nhận</a>
-<?php require __DIR__.'/../templates/footer.php'; ?>
-```
+</section>
+<?php require __DIR__ . '/../templates/footer.php'; ?>```
 
 Phần lưu dữ liệu nằm trong khối try: lấy nháp từ Session → tạo đối tượng lưu trữ → gọi save → chỉ sau khi có kết quả mới xóa nháp. Khi gặp lỗi database, giữ nháp để người dùng có thể thử lại và trả thông báo chung.
 

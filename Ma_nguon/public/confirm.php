@@ -10,10 +10,22 @@ if (draftExpired($_SESSION, time(), 1800)) {
 $data = $_SESSION['draft']['data'];
 require __DIR__ . '/../templates/header.php';
 ?>
-<h2>Bước 2. Xác nhận</h2>
-<p>
-    <?= e($data['name']) ?> — <?= e($data['email']) ?>
-</p>
+<div class="page-heading">
+<h1>Bước 2. Xác nhận</h1>
+<p>Đối chiếu thông tin trước khi xác nhận.</p>
+</div>
+<section class="confirmation" aria-label="Thông tin đăng ký">
+<dl class="summary-list">
+<div>
+<dt>Họ tên</dt>
+<dd><?= e($data['name']) ?></dd>
+</div>
+<div>
+<dt>Email</dt>
+<dd><?= e($data['email']) ?></dd>
+</div>
+</dl>
+<div class="confirmation-actions">
 <a href="/register.php">Sửa lại</a>
 <form method="post" action="/complete.php">
     <input type="hidden" name="csrf" value="<?= e($_SESSION['csrf']) ?>">
@@ -21,6 +33,8 @@ require __DIR__ . '/../templates/header.php';
 </form>
 <form method="post" action="/cancel.php">
     <input type="hidden" name="csrf" value="<?= e($_SESSION['csrf']) ?>">
-    <button>Hủy bản nháp</button>
+    <button class="button-secondary button-cancel">Hủy bản nháp</button>
 </form>
+</div>
+</section>
 <?php require __DIR__ . '/../templates/footer.php'; ?>

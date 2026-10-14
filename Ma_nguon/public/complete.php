@@ -30,10 +30,14 @@ if ($error === '' && !isset($_SESSION['completed'])) {
 }
 require __DIR__ . '/../templates/header.php';
 ?>
-<h2>Kết quả lưu trữ</h2>
-<p>
+<div class="page-heading">
+<h1>Kết quả lưu trữ</h1>
+</div>
+<section class="completion" role="status">
+<p class="status-message">
     <?= e($error !== '' ? $error : $_SESSION['completed']) ?>
 </p>
 <p>Mẫu Lab 05 kiểm tra lưu bền vững và đăng ký trùng; chưa có giới hạn chỗ đồng thời.</p>
 <a href="/confirm.php">Quay lại xác nhận</a>
+</section>
 <?php require __DIR__ . '/../templates/footer.php'; ?>
