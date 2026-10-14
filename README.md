@@ -115,3 +115,5 @@ Sau `bash lab.sh run`, mở [sự kiện mẫu](http://127.0.0.1:8105/ui-demo.ph
 Chi tiết sự kiện lab tại `/event.php?id=1` chỉ đọc; nút mở biểu mẫu vẫn dùng chức năng gốc. Lựa chọn demo chỉ ở bộ nhớ trang, tải lại sẽ xóa; chưa giữ ghế, tạo vé hoặc thanh toán. ID demo không đi vào Form/CSDL. TODO và các ca `extend` sinh viên vẫn giữ nguyên.
 
 Xem [hướng dẫn phần trình bày](Ma_nguon/README.md#giao-diện-material-3).
+
+Kiểm tra dữ liệu UI riêng (không thay test gốc, không cần CSDL): tại `Ma_nguon`, chạy `php tests/ui-demo.php`.
