@@ -13,7 +13,7 @@ bash lab.sh run
 
 Mở http://127.0.0.1:8105. Giữ terminal máy chủ hoạt động; dùng terminal thứ hai để kiểm thử. Nhấn Ctrl+C để dừng.
 
-Lab05 cần PostgreSQL và pgsql. Thực hiện mục Chuẩn bị riêng cho Lab 05, chạy `bash lab.sh db-config`, kiểm tra kết nối và tạo schema trước khi chạy Web hoặc test.
+Lab05 cần PostgreSQL và pgsql. Thực hiện mục [Chuẩn bị riêng cho Lab 05](../HUONG_DAN.md), chạy `bash lab.sh db-config`, kiểm tra kết nối và tạo schema trước khi chạy Web hoặc test.
 
 ## Kiểm tra bài
 
