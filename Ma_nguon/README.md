@@ -1,6 +1,16 @@
 # Lab 01 — Vận hành dự án trên Linux và viết Shell Script
 
+**Nhóm 06 — Lớp CNTT 1810**  
 **Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên**
+
+### Thành viên nhóm:
+| STT | Họ và tên | Mã sinh viên | Vai trò |
+| :---: | :--- | :---: | :--- |
+| 1 | **Lê Trọng Chiến** | 1871020089 | Nhóm trưởng |
+| 2 | **Nguyễn Hữu Dũng** | 1871020173 | Thành viên |
+| 3 | **Đặng Việt Anh** | 1871020683 | Thành viên |
+
+---
 
 Dự án thực hành môn Phát triển phần mềm mã nguồn mở. Bài lab hoàn thiện các Shell Script phục vụ tự động kiểm tra môi trường chạy (`scripts/check-env.sh`) và quét kiểm tra cú pháp mã nguồn dự án (`scripts/scan-source.sh`).
 
