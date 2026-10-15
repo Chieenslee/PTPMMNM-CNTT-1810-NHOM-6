@@ -1,45 +1,53 @@
-# 🚀 Hướng Dẫn Sử Dụng Công Cụ Hỗ Trợ HOT Drop Rush (CHIEENSLEE)
+# Phát triển phần mềm mã nguồn mở (Open Source Software Development)
 
-Có **2 phương pháp** để sử dụng công cụ Hỗ Trợ. Bạn có thể chọn cách phù hợp với nhu cầu của mình.
+**Nhóm 6 — Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên (Volunteer Management System)**
 
----
-
-## 🌟 CÁCH 1: PHƯƠNG PHÁP MỚI - GỌI TỪ CLOUD (Khuyên Dùng)
-
-Đây là phiên bản **v999** xịn xò nhất, tích hợp giao diện Menu Tím, có tính năng Godmode tự động chơi, bypass thời gian và **bảo mật tuyệt đối** chống soi code.
-
-### Các tính năng nổi bật:
-- **UI Bảng Điều Khiển:** Giao diện "Menu Tím" tinh tế ngay trong góc màn hình game.
-- **Godmode (CHIEENSLEE Mode):** Tự động gom vật phẩm, tự bay né bom, tùy chỉnh nhân hệ số điểm (x10 - x20).
-- **Bypass Timer:** Tự động đếm ngược 3 phút an toàn để đánh lừa máy chủ, giải quyết triệt để lỗi mạng `400 Bad Request`.
-- **Bảo Mật Máy Chủ:** Code nguồn được mã hóa siêu bảo mật nhiều lớp và lưu trữ trên hệ thống máy chủ độc lập chống soi code.
-
-### Cách sử dụng:
-1. Mở game **HOT Drop Rush** trên trình duyệt (PC).
-2. Nhấn `F12` để mở **Developer Tools** và chuyển sang tab **Console**.
-3. Mở file [**`chieenslee_vip_support.js`**](chieenslee_vip_support.js), copy toàn bộ đoạn code trong đó và dán vào Console, sau đó ấn **Enter**:
-   *(Đoạn code cực ngắn, chỉ làm nhiệm vụ gọi file Công Cụ từ máy chủ bảo mật của hệ thống).*
-4. Đóng cửa sổ game đang mở sẵn và bấm nút **Chơi lại**.
-5. Bảng điều khiển màu tím `[CHIEENSLEE]` sẽ tự động xuất hiện. Click **START** để treo máy đi ngủ!
+- **Học phần:** Phát triển phần mềm mã nguồn mở — Trường Đại học Đồng Nai (DNU)
+- **Nhóm thực hiện:** Nhóm 6
+- **Môi trường yêu cầu:** Linux (Ubuntu / WSL), PHP >= 8.1, Git
 
 ---
 
-## 🕹️ CÁCH 2: PHƯƠNG PHÁP CŨ - THỦ CÔNG (Dành cho Dân Try Hard)
+## 📌 Cấu trúc nhánh (Branch) tương tự FIT-DNU
 
-Đây là file gốc cũ (`support.js`) để bạn tự chơi bằng tay. Không có Menu Tím, bạn sẽ bay lơ lửng trên mây và dùng nút điều hướng để lao xuống nhặt quà.
+Mỗi bài Lab được quản lý trên một nhánh riêng biệt độc lập (Standalone branch). Bạn có thể chuyển nhánh trên GitHub hoặc clone trực tiếp từng bài:
 
-### Các tính năng:
-- **Lơ Lửng Vô Cực:** Trọng lực game được chỉnh về `0`, nhân vật bay không rớt.
-- **Giảm Tốc Quái Vật:** Chỉnh hệ số xuất hiện quái (`100`) cho dễ thở.
-- **Lao Xuống Bằng Phím:** Nhấn và giữ nút **Mũi Tên XUỐNG** (hoặc phím **S**) để tăng tốc rơi tự do và lao vào ăn điểm.
-
-### Cách sử dụng:
-1. Mở game **HOT Drop Rush** trên trình duyệt.
-2. Nhấn `F12` để mở **Developer Tools** và chọn tab **Console**.
-3. Mở file [**`support.js`**](support.js) trên trang Github này, **copy toàn bộ đoạn code** trong đó và dán vào tab Console, sau đó nhấn `Enter`.
-4. Thoát giao diện game hiện tại rồi click **Chơi lại**.
-5. Tận hưởng cảm giác tự bay tự lượn trên mây!
+| Bài thực hành | Tên nhánh | Nội dung chính | Trạng thái |
+|---|---|---|---|
+| **Lab 01** | [`lab1`](https://github.com/Chieenslee/hotsummerdrop/tree/lab1) | Vận hành dự án trên Linux và viết Shell Script (`check-env.sh`, `scan-source.sh`) | ✅ 100% PASS (`SHELL_CASES=4 FAILED=0`) |
+| **Lab 02** | [`lab2`](https://github.com/Chieenslee/hotsummerdrop/tree/lab2) | Xây dựng module PHP kiểm tra điều kiện đăng ký (`CapacityPolicy`, `RegistrationPolicy`) | ✅ 100% PASS (`TESTS=8 FAILED=0`) |
+| **Lab 03** | [`lab3`](https://github.com/Chieenslee/hotsummerdrop/tree/lab3) | Hiển thị sự kiện, bộ lọc đa tiêu chí (AND) & xử lý Form POST an toàn | ✅ 100% PASS (`TESTS=8 FAILED=0`) |
 
 ---
 
-**Bản quyền phát triển và thiết kế thuộc về [CHIEENSLEE]. Nghiêm cấm phân phối mã nguồn trái phép.**
+## 🚀 Hướng dẫn Clone và Chạy từng bài Lab
+
+### 1. Lab 01
+```bash
+git clone --single-branch --branch lab1 https://github.com/Chieenslee/hotsummerdrop.git lab1
+cd lab1/Ma_nguon
+bash lab.sh check    # Kiểm tra môi trường
+bash lab.sh test     # Kiểm tra phần mẫu (CHECK_ENV=PASS)
+bash lab.sh extend   # Kiểm tra phần mở rộng (SHELL_CASES=4 FAILED=0)
+bash lab.sh run      # Chạy ứng dụng tại http://127.0.0.1:8101
+```
+
+### 2. Lab 02
+```bash
+git clone --single-branch --branch lab2 https://github.com/Chieenslee/hotsummerdrop.git lab2
+cd lab2/Ma_nguon
+bash lab.sh check    # Kiểm tra môi trường
+bash lab.sh run      # Chạy thử demo trong terminal
+bash lab.sh test     # Kiểm tra phần mẫu (TESTS=5 FAILED=0)
+bash lab.sh extend   # Kiểm tra phần mở rộng (TESTS=8 FAILED=0)
+```
+
+### 3. Lab 03
+```bash
+git clone --single-branch --branch lab3 https://github.com/Chieenslee/hotsummerdrop.git lab3
+cd lab3/Ma_nguon
+bash lab.sh check    # Kiểm tra môi trường
+bash lab.sh test     # Kiểm tra phần mẫu (TESTS=7 FAILED=0)
+bash lab.sh extend   # Kiểm tra phần mở rộng (TESTS=8 FAILED=0)
+bash lab.sh run      # Chạy ứng dụng tại http://127.0.0.1:8103
+```
