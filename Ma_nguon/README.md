@@ -1,8 +1,18 @@
 # Lab 03 — Hiển thị sự kiện, tìm kiếm và xử lý form
 
-**Nhóm 6 — Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên**
+**Nhóm 06 — Lớp CNTT 1810**  
+**Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên**
 
-Module hiển thị danh sách hoạt động, bộ lọc kết hợp đa điều kiện (từ khóa, danh mục, tình trạng chỗ) và xử lý biểu mẫu đăng ký tình nguyện viên.
+### Thành viên nhóm:
+| STT | Họ và tên | Mã sinh viên | Vai trò |
+| :---: | :--- | :---: | :--- |
+| 1 | **Lê Trọng Chiến** | 1871020089 | Nhóm trưởng |
+| 2 | **Nguyễn Hữu Dũng** | 1871020173 | Thành viên |
+| 3 | **Đặng Việt Anh** | 1871020683 | Thành viên |
+
+---
+
+Module hiển thị danh sách hoạt động tình nguyện, bộ lọc kết hợp đa điều kiện (từ khóa, danh mục hoạt động, tình trạng còn suất đăng ký) và biểu mẫu đăng ký tình nguyện viên tham gia hoạt động.
 
 ## Mở bài
 

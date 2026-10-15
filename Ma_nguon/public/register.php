@@ -8,8 +8,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require __DIR__ . '/../templates/header.php';
 ?>
 <div class="page-heading">
-<h1>Đăng ký tham dự</h1>
-<p>Điền thông tin để kiểm tra và xem trước. Chưa lưu đăng ký.</p>
+<h1>Đăng ký tham gia hoạt động tình nguyện</h1>
+<p>Hệ thống tổ chức hoạt động và phân công tình nguyện viên — Nhóm 06 (Đề tài 6)</p>
 </div>
 <form class="registration-form" method="post">
     <label class="form-field" for="event_id">Sự kiện
