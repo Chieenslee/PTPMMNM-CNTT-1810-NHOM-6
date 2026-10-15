@@ -24,9 +24,9 @@
 
 | Bài Lab | Nội dung | Trạng thái | Nhánh Git |
 | :---: | :--- | :---: | :--- |
-| **Lab01** | Linux và Shell Script (`check-env.sh`, `scan-source.sh`) | ✅ Hoàn thành | [lab1](https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development/tree/lab1) |
-| **Lab02** | Xây dựng Module PHP kiểm tra điều kiện đăng ký | ✅ Hoàn thành | [lab2](https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development/tree/lab2) |
-| **Lab03** | Hiển thị sự kiện, lọc đa tiêu chí và xử lý Form POST | ✅ Hoàn thành | [lab3](https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development/tree/lab3) |
+| **Lab01** | Linux và Shell Script (`check-env.sh`, `scan-source.sh`) | ✅ Hoàn thành | [lab1](https://github.com/Chieenslee/PTPMMNM-CNTT-1810-NHOM-6/tree/lab1) |
+| **Lab02** | Xây dựng Module PHP kiểm tra điều kiện đăng ký | ✅ Hoàn thành | [lab2](https://github.com/Chieenslee/PTPMMNM-CNTT-1810-NHOM-6/tree/lab2) |
+| **Lab03** | Hiển thị sự kiện, lọc đa tiêu chí và xử lý Form POST | ✅ Hoàn thành | [lab3](https://github.com/Chieenslee/PTPMMNM-CNTT-1810-NHOM-6/tree/lab3) |
 | **Lab04** | Quản lý Session và Cookie | 🔄 Đang chuẩn bị | lab4 |
 | **Lab05** | Cơ sở dữ liệu PostgreSQL | 🔄 Đang chuẩn bị | lab5 |
 
@@ -58,17 +58,17 @@ Mỗi bài Lab được lưu trữ trên một nhánh Git độc lập theo chu�
 
 ```bash
 # Clone Lab 01
-git clone --single-branch --branch lab1 https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development.git lab1
+git clone --single-branch --branch lab1 https://github.com/Chieenslee/PTPMMNM-CNTT-1810-NHOM-6.git lab1
 cd lab1/Ma_nguon
 bash lab.sh check && bash lab.sh test && bash lab.sh extend
 
 # Clone Lab 02
-git clone --single-branch --branch lab2 https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development.git lab2
+git clone --single-branch --branch lab2 https://github.com/Chieenslee/PTPMMNM-CNTT-1810-NHOM-6.git lab2
 cd lab2/Ma_nguon
 bash lab.sh check && bash lab.sh test && bash lab.sh extend
 
 # Clone Lab 03
-git clone --single-branch --branch lab3 https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development.git lab3
+git clone --single-branch --branch lab3 https://github.com/Chieenslee/PTPMMNM-CNTT-1810-NHOM-6.git lab3
 cd lab3/Ma_nguon
 bash lab.sh check && bash lab.sh test && bash lab.sh extend
 ```
