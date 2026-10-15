@@ -14,9 +14,9 @@ Mỗi bài Lab được quản lý trên một nhánh riêng biệt độc lập
 
 | Bài thực hành | Tên nhánh | Nội dung chính | Trạng thái |
 |---|---|---|---|
-| **Lab 01** | [`lab1`](https://github.com/Chieenslee/hotsummerdrop/tree/lab1) | Vận hành dự án trên Linux và viết Shell Script (`check-env.sh`, `scan-source.sh`) | ✅ 100% PASS (`SHELL_CASES=4 FAILED=0`) |
-| **Lab 02** | [`lab2`](https://github.com/Chieenslee/hotsummerdrop/tree/lab2) | Xây dựng module PHP kiểm tra điều kiện đăng ký (`CapacityPolicy`, `RegistrationPolicy`) | ✅ 100% PASS (`TESTS=8 FAILED=0`) |
-| **Lab 03** | [`lab3`](https://github.com/Chieenslee/hotsummerdrop/tree/lab3) | Hiển thị sự kiện, bộ lọc đa tiêu chí (AND) & xử lý Form POST an toàn | ✅ 100% PASS (`TESTS=8 FAILED=0`) |
+| **Lab 01** | [`lab1`](https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development/tree/lab1) | Vận hành dự án trên Linux và viết Shell Script (`check-env.sh`, `scan-source.sh`) | ✅ 100% PASS (`SHELL_CASES=4 FAILED=0`) |
+| **Lab 02** | [`lab2`](https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development/tree/lab2) | Xây dựng module PHP kiểm tra điều kiện đăng ký (`CapacityPolicy`, `RegistrationPolicy`) | ✅ 100% PASS (`TESTS=8 FAILED=0`) |
+| **Lab 03** | [`lab3`](https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development/tree/lab3) | Hiển thị sự kiện, bộ lọc đa tiêu chí (AND) & xử lý Form POST an toàn | ✅ 100% PASS (`TESTS=8 FAILED=0`) |
 
 ---
 
@@ -24,7 +24,7 @@ Mỗi bài Lab được quản lý trên một nhánh riêng biệt độc lập
 
 ### 1. Lab 01
 ```bash
-git clone --single-branch --branch lab1 https://github.com/Chieenslee/hotsummerdrop.git lab1
+git clone --single-branch --branch lab1 https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development.git lab1
 cd lab1/Ma_nguon
 bash lab.sh check    # Kiểm tra môi trường
 bash lab.sh test     # Kiểm tra phần mẫu (CHECK_ENV=PASS)
@@ -34,7 +34,7 @@ bash lab.sh run      # Chạy ứng dụng tại http://127.0.0.1:8101
 
 ### 2. Lab 02
 ```bash
-git clone --single-branch --branch lab2 https://github.com/Chieenslee/hotsummerdrop.git lab2
+git clone --single-branch --branch lab2 https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development.git lab2
 cd lab2/Ma_nguon
 bash lab.sh check    # Kiểm tra môi trường
 bash lab.sh run      # Chạy thử demo trong terminal
@@ -44,7 +44,7 @@ bash lab.sh extend   # Kiểm tra phần mở rộng (TESTS=8 FAILED=0)
 
 ### 3. Lab 03
 ```bash
-git clone --single-branch --branch lab3 https://github.com/Chieenslee/hotsummerdrop.git lab3
+git clone --single-branch --branch lab3 https://github.com/Chieenslee/Nhom-6-Open-Source-Software-Development.git lab3
 cd lab3/Ma_nguon
 bash lab.sh check    # Kiểm tra môi trường
 bash lab.sh test     # Kiểm tra phần mẫu (TESTS=7 FAILED=0)
