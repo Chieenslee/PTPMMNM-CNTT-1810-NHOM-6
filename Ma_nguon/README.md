@@ -1,8 +1,18 @@
 # Lab 02 — Xây dựng module PHP kiểm tra điều kiện đăng ký
 
+**Nhóm 06 — Lớp CNTT 1810**  
 **Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên**
 
-Module nghiệp vụ kiểm tra điều kiện tiếp nhận đăng ký tình nguyện viên tham gia sự kiện (`CapacityPolicy` và `RegistrationPolicy`).
+### Thành viên nhóm:
+| STT | Họ và tên | Mã sinh viên | Vai trò |
+| :---: | :--- | :---: | :--- |
+| 1 | **Lê Trọng Chiến** | 1871020089 | Nhóm trưởng |
+| 2 | **Nguyễn Hữu Dũng** | 1871020173 | Thành viên |
+| 3 | **Đặng Việt Anh** | 1871020683 | Thành viên |
+
+---
+
+Module nghiệp vụ kiểm tra điều kiện tiếp nhận đăng ký tình nguyện viên tham gia hoạt động (`CapacityPolicy` và `RegistrationPolicy`). Xử lý số lượng đăng ký so với sức chứa/chỉ tiêu, danh sách chờ (waiting list) và trạng thái đóng/mở của hoạt động.
 
 ## Mở bài
 
