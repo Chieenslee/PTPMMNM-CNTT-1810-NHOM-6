@@ -1,5 +1,7 @@
 # LAB 05 — LƯU, TRUY VẤN VÀ THỐNG KÊ ĐĂNG KÝ VỚI POSTGRESQL
 
+> **Lựa chọn hệ quản trị:** Sinh viên chọn PostgreSQL hoặc MySQL; chỉ cần hoàn thành một lựa chọn, cùng mục tiêu, TODO thống kê và rubric 10 điểm. Phần PostgreSQL bên dưới dùng `Ma_nguon`. Nếu chọn MySQL, dùng [hướng dẫn MySQL](HUONG_DAN_MYSQL.md) và `Ma_nguon_MySQL`. [Xem bảng lựa chọn](README.md).
+
 Học phần: Phát triển phần mềm mã nguồn mở. Đối tượng: sinh viên năm 3, chuyên ngành Phát triển phần mềm. Bài thực hành sử dụng mã nguồn CommunityPass được cấp trong thư mục Ma\_nguon.
 
 ## I. MỤC TIÊU VÀ CHUẨN BỊ

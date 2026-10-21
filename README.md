@@ -1,6 +1,22 @@
-# Lab05 — Bài thực hành dành cho sinh viên
+# Lab05 — PostgreSQL hoặc MySQL
 
 Nhánh này chỉ chứa một bài lab. Dùng Ubuntu/WSL, PHP từ 8.1 và Git.
+
+## Chọn hệ quản trị
+
+Sinh viên chọn **một** trong hai lựa chọn. Cùng mục tiêu lưu/đọc đăng ký, chống trùng, bài tự làm thống kê và rubric 10 điểm; không cần hoàn thành cả hai.
+
+| Lựa chọn | Thư mục chạy lệnh | Hướng dẫn |
+| --- | --- | --- |
+| PostgreSQL | `Ma_nguon` | [Hướng dẫn PostgreSQL](HUONG_DAN.md), [bản Word PostgreSQL](Huong_dan.docx) |
+| MySQL >= 8.0.16 | `Ma_nguon_MySQL` | [Hướng dẫn MySQL](HUONG_DAN_MYSQL.md), [README mã MySQL](Ma_nguon_MySQL/README.md) |
+
+Nếu chọn MySQL, clone nhánh `lab5` rồi vào `lab5/Ma_nguon_MySQL`. Cài `mysql-server mysql-client php-mysql`, tạo tài khoản/CSDL riêng theo hướng dẫn MySQL, sau đó chạy `bash lab.sh db-config`, `bash lab.sh check`, `bash lab.sh sql`. Trong MySQL client dùng `source database/schema.sql;` và `exit`; trở về Bash để chạy `bash lab.sh run`.
+
+Hai bản chạy độc lập, có `.local/db.json` riêng và dùng cùng cổng 8105. Dừng PHP trước khi đổi bản; không sao chép cấu hình/schema giữa hai hệ quản trị. Mã MySQL dùng MySQLi/mysqlnd; không cần cài PostgreSQL khi chọn MySQL. Bản MySQL có thêm bộ ràng buộc: `bash lab.sh test` cần lần lượt 6/6, 7/7 và 9/9. TODO thống kê vẫn để sinh viên hoàn thiện.
+
+**Các mục cài đặt/chạy bên dưới dành cho lựa chọn PostgreSQL.** Với MySQL, theo [hướng dẫn riêng](HUONG_DAN_MYSQL.md), nộp thư mục `Ma_nguon_MySQL` và ghi rõ hệ quản trị đã chọn.
+
 
 **Trước khi chạy:** làm mục Chuẩn bị riêng cho Lab 05 trong [HUONG_DAN.md](HUONG_DAN.md): cài PostgreSQL và PHP pgsql, tạo CSDL riêng, chạy bash lab.sh db-config rồi tạo schema.
 
