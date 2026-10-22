@@ -1,41 +1,41 @@
 # Lab 05 — Lưu, truy vấn và thống kê đăng ký với MySQL
 
-Đây là lựa chọn MySQL của Lab 05. Dùng PHP >= 8.1, MySQL >= 8.0.16, MySQLi và mysqlnd trên Ubuntu/WSL. Không cần cài PostgreSQL để làm bản này.
+**Nhóm 06 — Lớp CNTT 1810**  
+**Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên**
 
-Đọc [hướng dẫn MySQL đầy đủ](../HUONG_DAN_MYSQL.md) để cài công cụ, tạo tài khoản/CSDL riêng và học từng bước. Bản PostgreSQL vẫn nằm trong `../Ma_nguon`.
+### Thành viên nhóm:
+| STT | Họ và tên | Mã sinh viên | Vai trò |
+| :---: | :--- | :---: | :--- |
+| 1 | **Lê Trọng Chiến** | 1871020089 | Nhóm trưởng |
+| 2 | **Nguyễn Hữu Dũng** | 1871020173 | Thành viên |
+| 3 | **Đặng Việt Anh** | 1871020683 | Thành viên |
 
-Mở terminal Ubuntu/WSL tại thư mục chứa `lab.sh`, sau khi tạo CSDL và tài khoản theo hướng dẫn:
+---
+
+Module lưu trữ, truy vấn và thống kê dữ liệu đăng ký tham gia hoạt động tình nguyện sử dụng cơ sở dữ liệu MySQL (MySQLi prepared statements). Chống trùng đăng ký theo sự kiện – email (Unique constraint), lưu dữ liệu an toàn bằng truy vấn có tham số (`queryParams`), và thống kê tổng số tình nguyện viên đã đăng ký cho từng hoạt động bằng truy vấn `LEFT JOIN` (`registrationStats`).
+
+## Mở bài
+
+Mở terminal Ubuntu/WSL tại thư mục chứa `lab.sh`. Dùng PHP từ 8.1 và Git. Hướng dẫn chi tiết, sơ đồ, đoạn mã cần sửa, dữ liệu đối chiếu và rubric nằm trong tài liệu của bài lab.
 
 ```bash
-bash lab.sh db-config
 bash lab.sh check
-bash lab.sh sql
-```
-
-Client SQL hỏi lại mật khẩu. Trong client:
-
-```sql
-source database/schema.sql;
-SELECT id, title FROM events ORDER BY id;
-exit
-```
-
-Trở về Bash:
-
-```bash
-php demo-db.php
 bash lab.sh run
 ```
 
-Mở http://127.0.0.1:8105/register.php. Giữ terminal máy chủ mở, Ctrl+C để dừng. Chỉ chạy một phiên bản lab trên cổng 8105 tại một thời điểm. Dùng terminal thứ hai ở cùng thư mục để kiểm thử:
+Mở http://127.0.0.1:8105. Giữ terminal máy chủ hoạt động; dùng terminal thứ hai để kiểm thử. Nhấn Ctrl+C để dừng.
+
+Lab05 bản MySQL cần MySQL 8.0.16+ và extension `mysqli`. Chạy `bash lab.sh db-config`, kiểm tra kết nối và tạo schema trước khi chạy Web hoặc test.
+
+## Kiểm tra bài
 
 ```bash
 bash lab.sh test
 bash lab.sh extend
 ```
 
-`test` cần `TESTS=6 FAILED=0`, `TESTS=7 FAILED=0` và `TESTS=9 FAILED=0`; `extend` cần `TESTS=4 FAILED=0` sau khi sinh viên tự hoàn thiện TODO trong `src/RegistrationStats.php`. `NOT_RUN` là chưa kiểm thử được. Không sửa test để bỏ qua lỗi.
+`test` cần `TESTS=6 FAILED=0`, `TESTS=7 FAILED=0` và `TESTS=9 FAILED=0`; `extend` cần `TESTS=4 FAILED=0` sau khi hoàn thiện `src/RegistrationStats.php`.
 
-Ghi rõ lựa chọn MySQL và phiên bản PHP/MySQL trong bài nộp. Giữ mã nguồn, schema, dữ liệu mẫu và test; không đưa `.local`, mật khẩu hoặc dữ liệu cá nhân thật vào Git/ZIP. Không dùng cấu hình hoặc schema PostgreSQL cho bản này.
+## Tệp nộp
 
-Giao diện, form, CSRF, Session/Cookie và khu UI demo giống bản PostgreSQL. Các trang `ui-demo.php`/`ticket-preview.php` dùng dữ liệu hư cấu, không ghi CSDL và không chứng minh đăng ký thật. Mẫu chưa kiểm soát giới hạn chỗ khi nhiều request đăng ký đồng thời.
+Giữ mã nguồn, dữ liệu mẫu và kiểm thử. Ghi lại lệnh chạy trong README. Không đưa `.local`, mật khẩu hoặc dữ liệu cá nhân thật vào kho mã và gói nộp.

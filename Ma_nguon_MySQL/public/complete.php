@@ -31,7 +31,8 @@ if ($error === '' && !isset($_SESSION['completed'])) {
 require __DIR__ . '/../templates/header.php';
 ?>
 <div class="page-heading">
-<h1>Kết quả lưu trữ</h1>
+<h1>Kết quả lưu trữ đăng ký</h1>
+<p>Đề tài 6: Hệ thống tổ chức hoạt động và phân công tình nguyện viên (Nhóm 6)</p>
 </div>
 <section class="completion" role="status">
 <p class="status-message">

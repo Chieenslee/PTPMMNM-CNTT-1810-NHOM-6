@@ -1,6 +1,18 @@
-# Lab 05 — Lưu, truy vấn và thống kê đăng ký với postgresql
+# Lab 05 — Lưu, truy vấn và thống kê đăng ký với PostgreSQL
 
-Mã mẫu cho phần hướng dẫn và mã khởi đầu cho bài tự làm.
+**Nhóm 06 — Lớp CNTT 1810**  
+**Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên**
+
+### Thành viên nhóm:
+| STT | Họ và tên | Mã sinh viên | Vai trò |
+| :---: | :--- | :---: | :--- |
+| 1 | **Lê Trọng Chiến** | 1871020089 | Nhóm trưởng |
+| 2 | **Nguyễn Hữu Dũng** | 1871020173 | Thành viên |
+| 3 | **Đặng Việt Anh** | 1871020683 | Thành viên |
+
+---
+
+Module lưu trữ, truy vấn và thống kê dữ liệu đăng ký tham gia hoạt động tình nguyện sử dụng cơ sở dữ liệu PostgreSQL. Chống trùng đăng ký theo sự kiện – email (`ON CONFLICT DO NOTHING`), lưu dữ liệu an toàn bằng truy vấn có tham số (`queryParams`), và thống kê tổng số tình nguyện viên đã đăng ký cho từng hoạt động bằng truy vấn `LEFT JOIN` (`registrationStats`).
 
 ## Mở bài
 

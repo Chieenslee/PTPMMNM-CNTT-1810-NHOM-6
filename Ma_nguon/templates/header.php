@@ -11,8 +11,8 @@
 <a class="skip-link" href="#main">Đến nội dung chính</a>
 <header class="site-header">
 <div class="header-inner">
-<strong class="brand">CommunityPass</strong>
-<p>Dự án mẫu học phần Phát triển phần mềm mã nguồn mở</p>
+<strong class="brand">VolunteerHub — Nhóm 6</strong>
+<p>Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên</p>
 </div>
 </header>
 <main id="main" tabindex="-1">
