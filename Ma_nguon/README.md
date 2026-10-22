@@ -1,6 +1,18 @@
-# Lab 04 — Quản lý bản nháp bằng session và cookie
+# Lab 04 — Quản lý bản nháp bằng Session và Cookie
 
-Mã mẫu cho phần hướng dẫn và mã khởi đầu cho bài tự làm.
+**Nhóm 06 — Lớp CNTT 1810**  
+**Đề tài 6: Xây dựng hệ thống tổ chức hoạt động và phân công tình nguyện viên**
+
+### Thành viên nhóm:
+| STT | Họ và tên | Mã sinh viên | Vai trò |
+| :---: | :--- | :---: | :--- |
+| 1 | **Lê Trọng Chiến** | 1871020089 | Nhóm trưởng |
+| 2 | **Nguyễn Hữu Dũng** | 1871020173 | Thành viên |
+| 3 | **Đặng Việt Anh** | 1871020683 | Thành viên |
+
+---
+
+Module quản lý luồng đăng ký tham gia hoạt động tình nguyện bằng Session (bản nháp, CSRF token, hoàn tất mô phỏng) và Cookie (tùy chọn giao diện xem compact/full). Tích hợp kiểm tra tính hợp lệ và thời hạn bản nháp (`DraftGuard::canComplete`).
 
 ## Mở bài
 

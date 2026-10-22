@@ -17,8 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require __DIR__.'/../templates/header.php';
 ?>
 <div class="page-heading">
-<h1>Bước 1. Nhập thông tin</h1>
-<p>Điền thông tin để chuyển đến bước xem lại bản nháp.</p>
+<h1>Bước 1. Nhập thông tin đăng ký</h1>
+<p>Đăng ký tham gia hoạt động tình nguyện — Nhóm 06 (Đề tài 6)</p>
 </div>
 <div class="error-summary" role="alert">
 <p class="error-messages"><?= e(implode(', ', $errors)) ?></p>
