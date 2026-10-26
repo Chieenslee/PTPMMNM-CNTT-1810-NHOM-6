@@ -5353,8 +5353,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                                     class="inspector-tab-btn px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent flex items-center gap-1.5 whitespace-nowrap transition-all"
                                                     data-inspector-tab="eligible"
                                                     data-tab-target="#inspector-tab-eligible">
-                                                <span class="material-symbols-outlined text-[15px]">person_search</span>
-                                                <span>Duyệt Đăng ký &amp; Ứng viên Gợi ý</span>
+                                                <span class="material-symbols-outlined text-[15px]">person_add</span>
+                                                <span>Phân công Thủ công &amp; DS Ứng viên (CN4)</span>
                                                 <span id="badge-eligible-count" class="badge badge-info mono text-[10px] ml-0.5">0 ứng viên</span>
                                             </button>
                                             <button type="button"
@@ -5377,13 +5377,60 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <input type="hidden" name="apply_immediately" value="1">
                                             <button type="submit" class="btn btn-sm btn-success flex items-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs" title="Chạy thuật toán tự động xét duyệt đăng ký và phân công toàn chiến dịch">
                                                 <span class="material-symbols-outlined text-[15px]">bolt</span>
-                                                <span>Tự động Đề xuất &amp; Duyệt Phân công</span>
+                                                <span>Tự động Đề xuất &amp; Duyệt Phân công (CN3)</span>
                                             </button>
                                         </form>
                                     </div>
 
-                                    <!-- TAB 1: NHÂN SỰ ĐÃ PHÂN CÔNG (#inspector-tab-assigned) -->
+                                    <!-- TAB 1: NHÂN SỰ ĐÃ PHÂN CÔNG & PHÂN CÔNG THỦ CÔNG TRỰC TIẾP (#inspector-tab-assigned) -->
                                     <div id="inspector-tab-assigned" class="inspector-tab-pane w-full block">
+                                        <!-- Khung Phân công Thủ công Trực tiếp vào Ca đang chọn (CN4: Kiểm tra Trùng lịch, Thiếu kỹ năng, Vượt số người) -->
+                                        <div class="mb-3.5 p-3.5 rounded-xl bg-blue-50/60 dark:bg-sky-950/25 border border-blue-200 dark:border-sky-800/80">
+                                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                                <div class="text-xs font-extrabold text-[#0057B8] dark:text-sky-400 flex items-center gap-1.5">
+                                                    <span class="material-symbols-outlined text-[17px]">person_add</span>
+                                                    <span>Phân công Thủ công / Thêm Người vào Ca trực này (CN4)</span>
+                                                </div>
+                                                <span class="text-[11px] text-slate-500">Tự động kiểm tra: Trùng lịch (H1) &middot; Kỹ năng (H2) &middot; Lịch rảnh (H3) &middot; Sĩ số tối đa (H4)</span>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+                                                <div class="sm:col-span-6">
+                                                    <select id="manual-assign-volunteer-select" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold">
+                                                        <?php foreach ($ds->volunteers as $vOpt):
+                                                            $vSkNames = [];
+                                                            foreach ($vOpt->skills as $skIdV => $skEntryV) {
+                                                                $cV = $skillCodeById[(int) $skIdV] ?? ('SKILL_' . $skIdV);
+                                                                $vSkNames[] = ($skillNameVi[$cV] ?? $cV) . ' C' . (int) $skEntryV['level'];
+                                                            }
+                                                            $vSkSummary = !empty($vSkNames) ? implode(', ', $vSkNames) : 'Chưa có kỹ năng';
+                                                        ?>
+                                                            <option value="<?= (int) $vOpt->id ?>">
+                                                                [<?= h($vOpt->studentCode) ?>] <?= h($vOpt->fullName) ?> — (<?= h($vSkSummary) ?>)
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <div class="sm:col-span-3">
+                                                    <input
+                                                        type="text"
+                                                        id="manual-assign-override-reason"
+                                                        placeholder="Lý do ngoại lệ (nếu thiếu kỹ năng/lịch rảnh)..."
+                                                        class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs"
+                                                    />
+                                                </div>
+                                                <div class="sm:col-span-3">
+                                                    <button
+                                                        type="button"
+                                                        id="btn-direct-manual-assign"
+                                                        class="btn btn-primary w-full py-2 px-3 text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap shadow-xs cursor-pointer"
+                                                    >
+                                                        <span class="material-symbols-outlined text-[16px]">person_add</span>
+                                                        <span>+ Gán vào Ca này</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div id="zone-assigned-roster" class="p-4 rounded-xl bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-700/80 flex flex-col w-full">
                                             <div class="relative mb-3">
                                                 <span class="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-[16px]">search</span>

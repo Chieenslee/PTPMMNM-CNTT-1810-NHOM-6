@@ -2180,18 +2180,10 @@
             const assignedVolIds = (shift.assignments || []).map(a => a.volunteer_id);
             const regsMap = shift.registrations || {};
 
-            // Filter eligible candidates (including anyone who registered for this shift)
+            // Filter candidates (show all unassigned volunteers; sort registered & skill-matched to top so Coordinator can manually assign anyone)
             let eligible = (coordinatorData.volunteers || []).filter(v => {
                 // Must not be already assigned in this shift
                 if (assignedVolIds.includes(v.id)) return false;
-
-                const isRegistered = (regsMap[v.id] !== undefined || regsMap[String(v.id)] !== undefined);
-
-                // Match required skill if specified (unless they explicitly registered for this shift)
-                if (shift.req_skill_code && !isRegistered) {
-                    const hasSkill = (v.skills || []).some(s => s.code === shift.req_skill_code && s.level >= shift.req_min_level);
-                    if (!hasSkill) return false;
-                }
 
                 // Check text search
                 if (searchVal) {
@@ -2210,11 +2202,14 @@
                 return true;
             });
 
-            // Sort: registered volunteers first (Nguyện vọng 1 -> 2 -> 3), then lower current load, then reputation
+            // Sort: registered volunteers first (Nguyện vọng 1 -> 2 -> 3), then skill-matched, then lower current load, then reputation
             eligible.sort((a, b) => {
                 const regA = regsMap[a.id] ?? regsMap[String(a.id)] ?? 99;
                 const regB = regsMap[b.id] ?? regsMap[String(b.id)] ?? 99;
                 if (regA !== regB) return regA - regB;
+                const skillA = shift.req_skill_code && (a.skills || []).some(s => s.code === shift.req_skill_code && s.level >= shift.req_min_level) ? 1 : 0;
+                const skillB = shift.req_skill_code && (b.skills || []).some(s => s.code === shift.req_skill_code && s.level >= shift.req_min_level) ? 1 : 0;
+                if (skillA !== skillB) return skillB - skillA;
                 return a.assigned_count - b.assigned_count || (b.reputation || 0) - (a.reputation || 0);
             });
 
@@ -2485,6 +2480,22 @@
                 const actId = coordinatorData.activity_id || '3';
                 const targetCard = document.querySelector(`.compact-shift-card[data-shift-id="${activeShiftId}"]`);
                 submitManualAssignment(actId, activeShiftId, volId, shift?.req_id || '', '', targetCard);
+            });
+        }
+
+        // Direct Manual Assignment Toolbar inside Tab 1 (CN4)
+        const btnDirectManualAssign = document.getElementById('btn-direct-manual-assign');
+        if (btnDirectManualAssign) {
+            btnDirectManualAssign.addEventListener('click', () => {
+                const volSelect = document.getElementById('manual-assign-volunteer-select');
+                const overrideInp = document.getElementById('manual-assign-override-reason');
+                const volId = volSelect ? volSelect.value : '';
+                const overrideReason = overrideInp ? overrideInp.value.trim() : '';
+                if (!volId || !activeShiftId) return;
+                const shift = shiftsMap[activeShiftId];
+                const actId = coordinatorData.activity_id || '3';
+                const targetCard = document.querySelector(`.compact-shift-card[data-shift-id="${activeShiftId}"]`);
+                submitManualAssignment(actId, activeShiftId, volId, shift?.req_id || '', overrideReason, targetCard);
             });
         }
 
