@@ -95,9 +95,17 @@ final class ConstraintGuard
             } else {
                 $currentSlotCount = $slotCounts[$matchedReq->id] ?? 0;
                 if ($currentSlotCount >= $matchedReq->requiredCount) {
-                    $hardViolations[] = ReasonCode::CAPACITY_FULL;
+                    // Nếu vị trí kỹ năng cụ thể này đã đủ định biên tối thiểu, nhưng ca trực vẫn còn chỗ trống
+                    // (count($shiftAssignments) < $shift->maxPeople): Chuyển sang suất nhân sự bổ sung của ca
+                    // thay vì chặn nhầm CAPACITY_FULL của toàn ca.
+                    if (count($shiftAssignments) < $shift->maxPeople) {
+                        $resolvedReqId = null;
+                        $matchedReq = null;
+                    } else {
+                        $hardViolations[] = ReasonCode::CAPACITY_FULL;
+                    }
                 }
-                if (!$volunteer->satisfiesRequirement($matchedReq)) {
+                if ($matchedReq !== null && !$volunteer->satisfiesRequirement($matchedReq)) {
                     $hardViolations[] = ReasonCode::NO_SKILL;
                 }
             }
