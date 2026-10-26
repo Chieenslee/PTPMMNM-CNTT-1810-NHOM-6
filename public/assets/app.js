@@ -82,7 +82,33 @@
         }
     });
 
-    // Chuyển Tab vùng làm việc mượt mà (Volunteer & Coordinator Sidebars)
+    // Quản lý Menu Mini Nổi 1 Lớp (Floating Workspace Drawer — Volunteer & Coordinator)
+    const workspaceFloatingDrawer = document.getElementById('workspace-floating-drawer');
+    const workspaceDrawerBackdrop = document.getElementById('workspace-drawer-backdrop');
+    const closeWorkspaceDrawer = () => {
+        if (workspaceFloatingDrawer) workspaceFloatingDrawer.classList.remove('open');
+        if (workspaceDrawerBackdrop) workspaceDrawerBackdrop.classList.remove('open');
+    };
+    const toggleWorkspaceDrawer = () => {
+        if (!workspaceFloatingDrawer) return;
+        const isOpen = workspaceFloatingDrawer.classList.toggle('open');
+        if (workspaceDrawerBackdrop) workspaceDrawerBackdrop.classList.toggle('open', isOpen);
+    };
+    document.querySelectorAll('.btn-toggle-workspace-drawer').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleWorkspaceDrawer();
+        });
+    });
+    const btnCloseWorkspaceDrawer = document.getElementById('btn-close-workspace-drawer');
+    if (btnCloseWorkspaceDrawer) {
+        btnCloseWorkspaceDrawer.addEventListener('click', closeWorkspaceDrawer);
+    }
+    if (workspaceDrawerBackdrop) {
+        workspaceDrawerBackdrop.addEventListener('click', closeWorkspaceDrawer);
+    }
+
+    // Chuyển Tab vùng làm việc mượt mà (Volunteer & Coordinator Sidebars + Top Quick Bar)
     const tabButtons = document.querySelectorAll('[data-workspace-tab]');
     if (tabButtons.length > 0) {
         const viewKey = new URLSearchParams(window.location.search).get('view') || 'default';
@@ -108,7 +134,10 @@
         };
 
         tabButtons.forEach(btn => {
-            btn.addEventListener('click', () => activateTab(btn.dataset.workspaceTab));
+            btn.addEventListener('click', () => {
+                activateTab(btn.dataset.workspaceTab);
+                closeWorkspaceDrawer();
+            });
         });
 
         if (savedTab && document.getElementById(savedTab)) {
@@ -118,6 +147,7 @@
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            closeWorkspaceDrawer();
             document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
             const searchDrop = document.getElementById('search-live-dropdown');
             if (searchDrop) searchDrop.classList.add('hidden');

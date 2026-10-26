@@ -55,10 +55,83 @@ html[data-theme="dark"] {
     padding: 0;
 }
 
-html {
+html, body {
     font-size: 16px;
     scroll-behavior: smooth;
+    max-width: 100vw;
     overflow-x: hidden;
+}
+
+main, .flex-1, .grid > * {
+    min-width: 0;
+}
+
+/* ==========================================================================
+   FLOATING COLLAPSIBLE MINI-MENU OVERLAY (KHÔNG ĐẨY GIAO DIỆN CHÍNH)
+   ========================================================================== */
+.workspace-floating-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 70;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+}
+.workspace-floating-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+.workspace-floating-drawer {
+    position: fixed;
+    top: 5.5rem;
+    left: 1rem;
+    bottom: 1.25rem;
+    width: 288px;
+    max-width: calc(100vw - 2rem);
+    z-index: 75;
+    border-radius: 1.25rem;
+    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(148, 163, 184, 0.22);
+    transform: translateX(calc(-100% - 2rem));
+    opacity: 0;
+    pointer-events: none;
+    overflow-y: auto;
+    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+.workspace-floating-drawer.open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.workspace-mini-fab {
+    position: fixed;
+    left: 1rem;
+    bottom: 1.25rem;
+    z-index: 65;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    background: #0057B8;
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 0.78rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 12px 28px -6px rgba(0, 87, 184, 0.55);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.workspace-mini-fab:hover {
+    background: #004494;
+    transform: translateY(-2px);
+}
+@media (max-width: 767px) {
+    .workspace-mini-fab {
+        bottom: 4.5rem;
+    }
 }
 
 :focus-visible {

@@ -1168,22 +1168,26 @@ if ($view === 'admin') {
 
 $skillCodeById = [
     1 => 'FIRST_AID',
-    2 => 'LOGISTICS',
-    3 => 'MEDIA',
-    4 => 'TRAFFIC',
-    5 => 'IT_SUPPORT',
+    2 => 'DRIVING',
+    3 => 'TEACHING',
+    4 => 'MEDIA',
+    5 => 'LOGISTICS',
 ];
 $skillNameVi = [
     'FIRST_AID'  => 'Sơ cứu Y tế',
-    'LOGISTICS'  => 'Hậu cần Tiếp sức',
-    'MEDIA'      => 'Truyền thông Sự kiện',
+    'DRIVING'    => 'Lái xe & Điều tiết',
+    'TEACHING'   => 'Dạy học & Sinh hoạt',
+    'MEDIA'      => 'Truyền thông & Ảnh',
+    'LOGISTICS'  => 'Hậu cần & Dựng trại',
     'TRAFFIC'    => 'Điều tiết Giao thông',
     'IT_SUPPORT' => 'Hỗ trợ Kỹ thuật số',
 ];
 $skillIconMap = [
     'FIRST_AID'  => 'medical_services',
-    'LOGISTICS'  => 'inventory_2',
+    'DRIVING'    => 'traffic',
+    'TEACHING'   => 'school',
     'MEDIA'      => 'photo_camera',
+    'LOGISTICS'  => 'inventory_2',
     'TRAFFIC'    => 'traffic',
     'IT_SUPPORT' => 'computer',
 ];
@@ -3922,12 +3926,23 @@ document.addEventListener('DOMContentLoaded', function () {
     $stmtMyAssign->execute([':aid' => $selectedActivityId, ':vid' => $vol->id]);
     $myAssignments = $stmtMyAssign->fetchAll();
     ?>
-    <div class="flex-1 flex flex-col lg:flex-row page-enter max-w-[1440px] w-full mx-auto">
-        <!-- Side Dashboard Navigation (Giống hệt TechPro Account.jsx) -->
-        <aside class="lg:w-64 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131822] flex flex-col py-6 px-4 lg:min-h-[calc(100vh-110px)] shrink-0">
-            <h2 class="font-bold text-[#0057B8] dark:text-sky-400 mb-4 px-3 flex items-center gap-2 tracking-wider text-xs uppercase">
-                <span class="material-symbols-outlined text-[18px]">account_circle</span> Cổng Tình nguyện viên
-            </h2>
+    <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0 relative">
+        <!-- Backdrop và Menu Mini Nổi 1 Lớp (Floating Overlay Drawer - Không đẩy giao diện) -->
+        <div id="workspace-drawer-backdrop" class="workspace-floating-backdrop no-print"></div>
+        <button type="button" class="workspace-mini-fab btn-toggle-workspace-drawer no-print" title="Mở/Đóng Menu Cổng Tình nguyện viên">
+            <span class="material-symbols-outlined text-[18px]">menu_open</span>
+            <span>Menu TNV</span>
+        </button>
+
+        <aside id="workspace-floating-drawer" class="workspace-floating-drawer bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 flex flex-col py-5 px-4 no-print" aria-label="Menu Cổng Tình nguyện viên">
+            <div class="flex items-center justify-between mb-4 px-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h2 class="font-bold text-[#0057B8] dark:text-sky-400 flex items-center gap-2 tracking-wider text-xs uppercase">
+                    <span class="material-symbols-outlined text-[18px]">account_circle</span> Cổng Tình nguyện viên
+                </h2>
+                <button type="button" id="btn-close-workspace-drawer" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800" title="Đóng menu">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
             <nav class="flex flex-col gap-1.5">
                 <button
                     type="button"
@@ -3978,8 +3993,37 @@ document.addEventListener('DOMContentLoaded', function () {
             </nav>
         </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 px-4 md:px-10 py-8">
+        <!-- Main Content Full-Width (Không bị đẩy lệch phải) -->
+        <main class="flex-1 min-w-0 w-full px-4 md:px-8 py-6">
+            <!-- Thanh Điều hướng Nhanh & Nút Mở Menu Mini Nổi -->
+            <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="btn-toggle-workspace-drawer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 font-bold text-xs shadow-sm hover:opacity-90 transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px]">widgets</span>
+                        <span>Menu Cổng TNV</span>
+                    </button>
+                    <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5"></div>
+                    <button type="button" data-workspace-tab="vtab-my-shifts" class="workspace-tab-btn active inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400">
+                        <span class="material-symbols-outlined text-[16px]">event_available</span>
+                        <span>Ca trực &amp; Điểm danh (<?= count($myAssignments) ?>)</span>
+                    </button>
+                    <button type="button" data-workspace-tab="vtab-register" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-[16px]">calendar_add_on</span>
+                        <span>Đăng ký Ca trực (<?= count($ds->shifts) ?>)</span>
+                    </button>
+                    <button type="button" data-workspace-tab="vtab-profile" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-[16px]">schedule</span>
+                        <span>Kỹ năng &amp; Lịch rảnh</span>
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <?php foreach ($campaignMeta as $actId => $c): ?>
+                        <a href="?view=volunteer&activity_id=<?= $actId ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
+                            <?= h($c['code']) ?>: <?= h($c['short_title']) ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
             <!-- Profile Overview Card (Giống hệt TechPro Account.jsx) -->
             <section class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
                 <div class="md:col-span-8 rounded-2xl p-6 bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -4160,15 +4204,15 @@ document.addEventListener('DOMContentLoaded', function () {
                             </button>
                         </form>
                     </div>
-                    <div class="overflow-x-auto no-scrollbar">
-                        <table class="w-full min-w-[640px] text-left border-collapse text-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
                             <thead>
                                 <tr class="border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500">
-                                    <th class="py-3 px-4 whitespace-nowrap">Mã &amp; Tên ca trực</th>
-                                    <th class="py-3 px-4 whitespace-nowrap">Khung thời gian</th>
-                                    <th class="py-3 px-4 whitespace-nowrap">Kỹ năng yêu cầu</th>
-                                    <th class="py-3 px-4 whitespace-nowrap">Đánh giá Tương thích</th>
-                                    <th class="py-3 px-4 whitespace-nowrap">Nguyện vọng</th>
+                                    <th class="py-3 px-3">Mã &amp; Tên ca trực</th>
+                                    <th class="py-3 px-3 whitespace-nowrap">Khung thời gian</th>
+                                    <th class="py-3 px-3 whitespace-nowrap">Kỹ năng yêu cầu</th>
+                                    <th class="py-3 px-3 whitespace-nowrap">Đánh giá Tương thích</th>
+                                    <th class="py-3 px-3 whitespace-nowrap">Nguyện vọng</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
@@ -4179,14 +4223,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                     $myPref = $regShiftIds[$s->id] ?? null;
                                 ?>
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                                        <td class="py-3.5 px-4 font-bold whitespace-nowrap">[<?= h($s->code) ?>] <?= h($s->title) ?></td>
-                                        <td class="py-3.5 px-4 mono text-xs whitespace-nowrap"><?= date('d/m H:i', $s->startEpoch) ?>–<?= date('H:i', $s->endEpoch) ?></td>
-                                        <td class="py-3.5 px-4 whitespace-nowrap">
+                                        <td class="py-3 px-3 font-bold max-w-[280px] leading-snug">[<?= h($s->code) ?>] <?= h($s->title) ?></td>
+                                        <td class="py-3 px-3 mono text-xs whitespace-nowrap"><?= date('d/m H:i', $s->startEpoch) ?>–<?= date('H:i', $s->endEpoch) ?></td>
+                                        <td class="py-3 px-3 whitespace-nowrap">
                                             <?php if ($req !== null): ?>
                                                 <span class="badge badge-subtle"><?= h($skillNameVi[$req->skillCode] ?? $req->skillCode) ?> &ge; Cấp <?= $req->minLevel ?></span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="py-3.5 px-4 whitespace-nowrap">
+                                        <td class="py-3 px-3 whitespace-nowrap">
                                             <?php if ($hasSkill && $isAvail): ?>
                                                 <span class="badge badge-valid">Đủ kỹ năng &amp; Rảnh</span>
                                             <?php elseif (!$hasSkill): ?>
@@ -4195,8 +4239,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 <span class="badge badge-warning">Lệch khung giờ rảnh</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="py-3.5 px-4 whitespace-nowrap">
-                                            <div class="flex items-center gap-2">
+                                        <td class="py-3 px-3 whitespace-nowrap">
+                                            <div class="flex flex-wrap items-center gap-1.5">
                                                 <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&action=volunteer_register_shift" class="flex items-center gap-2">
                                                     <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
                                                     <input type="hidden" name="shift_id" value="<?= $s->id ?>">
@@ -4579,15 +4623,26 @@ document.addEventListener('DOMContentLoaded', function () {
         ];
     }
     ?>
-    <div class="flex-1 flex flex-col lg:flex-row page-enter max-w-[1440px] w-full mx-auto overflow-x-hidden">
-        <!-- Sidebar Điều hành (Giống hệt TechPro Admin.jsx) -->
-        <aside class="lg:w-60 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131822] flex flex-col py-6 px-3.5 shrink-0">
-            <div class="px-3 mb-5 flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-[26px]">shield_person</span>
-                <div>
-                    <div class="font-extrabold text-sm tracking-wider text-slate-900 dark:text-white">BAN CHỈ HUY</div>
-                    <div class="text-[11px] text-slate-500">Điều phối Chiến dịch</div>
+    <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0 relative">
+        <!-- Backdrop và Menu Mini Nổi 1 Lớp cho Ban Chỉ Huy (Không đẩy giao diện) -->
+        <div id="workspace-drawer-backdrop" class="workspace-floating-backdrop no-print"></div>
+        <button type="button" class="workspace-mini-fab btn-toggle-workspace-drawer no-print" title="Mở/Đóng Menu Ban Chỉ Huy">
+            <span class="material-symbols-outlined text-[18px]">menu_open</span>
+            <span>Menu BCH</span>
+        </button>
+
+        <aside id="workspace-floating-drawer" class="workspace-floating-drawer bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 flex flex-col py-5 px-3.5 no-print" aria-label="Menu Ban Chỉ Huy">
+            <div class="px-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-[24px]">shield_person</span>
+                    <div>
+                        <div class="font-extrabold text-xs tracking-wider text-slate-900 dark:text-white">BAN CHỈ HUY</div>
+                        <div class="text-[11px] text-slate-500">Điều phối Chiến dịch</div>
+                    </div>
                 </div>
+                <button type="button" id="btn-close-workspace-drawer" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800" title="Đóng menu">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
             </div>
 
             <nav class="flex flex-col gap-1.5">
@@ -4609,7 +4664,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </button>
                 <button type="button" data-workspace-tab="tab-analytics" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                     <span class="material-symbols-outlined text-[20px]">analytics</span>
-                    <span>Phân tích & Thống kê BI</span>
+                    <span>Phân tích &amp; Thống kê BI</span>
                 </button>
 
                 <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
@@ -4643,7 +4698,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </a>
                 <a href="?action=export_csv&activity_id=<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800">
                     <span class="material-symbols-outlined text-[18px]">download</span>
-                    <span>Xuất Phân công & Giờ (.CSV)</span>
+                    <span>Xuất Phân công &amp; Giờ (.CSV)</span>
                 </a>
                 <a href="?action=export_analytics_csv&activity_id=<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-sky-600 hover:bg-sky-50 dark:hover:bg-slate-800">
                     <span class="material-symbols-outlined text-[18px]">table_chart</span>
@@ -4652,8 +4707,45 @@ document.addEventListener('DOMContentLoaded', function () {
             </nav>
         </aside>
 
-        <!-- Main Workspace -->
-        <main class="flex-1 min-w-0 px-4 md:px-6 py-6">
+        <!-- Main Workspace Full-Width (Không bị đẩy lệch phải) -->
+        <main class="flex-1 min-w-0 w-full px-4 md:px-6 py-6">
+            <!-- Thanh Điều hướng Nhanh Ban Chỉ Huy & Nút Mở Menu Mini Nổi -->
+            <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button type="button" class="btn-toggle-workspace-drawer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 font-bold text-xs shadow-sm hover:opacity-90 transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px]">widgets</span>
+                        <span>Menu BCH</span>
+                    </button>
+                    <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5"></div>
+                    <button type="button" data-workspace-tab="tab-board" class="workspace-tab-btn active inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400">
+                        <span class="material-symbols-outlined text-[16px]">dashboard</span>
+                        <span>Bàn Điều phối</span>
+                    </button>
+                    <button type="button" data-workspace-tab="tab-volunteers" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-[16px]">group</span>
+                        <span>Lực lượng TNV</span>
+                    </button>
+                    <button type="button" data-workspace-tab="tab-lab" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-[16px]">auto_awesome_motion</span>
+                        <span>Tự động Xếp ca</span>
+                    </button>
+                    <button type="button" data-workspace-tab="tab-understaffed" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-[16px]">warning</span>
+                        <span>Ca thiếu (<?= count($unassignedSlots) ?>/<?= count($unassignedVolunteers) ?>)</span>
+                    </button>
+                    <button type="button" data-workspace-tab="tab-analytics" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <span class="material-symbols-outlined text-[16px]">analytics</span>
+                        <span>Thống kê BI</span>
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <?php foreach ($campaignMeta as $actId => $c): ?>
+                        <a href="?view=coordinator&activity_id=<?= $actId ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
+                            <?= h($c['code']) ?>: <?= h($c['short_title']) ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
             <!-- 4 Thẻ Stats Grid có Watermark Icon (Giống hệt TechPro Admin.jsx) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden hover-lift shadow-sm">
