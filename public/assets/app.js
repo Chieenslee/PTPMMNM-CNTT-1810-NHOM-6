@@ -121,8 +121,9 @@
         const storageKey = 'xanhhub_active_tab_' + viewKey;
         const savedTab = urlVTab || serverTabId || sessionStorage.getItem(storageKey);
 
-        const activateTab = (tabId) => {
-            if (!document.getElementById(tabId)) return;
+        const activateTab = (tabId, isUserClick = false) => {
+            const targetPane = document.getElementById(tabId);
+            if (!targetPane) return;
             tabButtons.forEach(btn => {
                 const isActive = btn.dataset.workspaceTab === tabId;
                 btn.classList.toggle('active', isActive);
@@ -137,11 +138,18 @@
                 pane.classList.toggle('active', pane.id === tabId);
             });
             sessionStorage.setItem(storageKey, tabId);
+            if (isUserClick) {
+                try {
+                    const nextUrl = new URL(window.location.href);
+                    nextUrl.searchParams.set('vtab', tabId);
+                    history.replaceState(null, '', nextUrl.toString());
+                } catch (e) {}
+            }
         };
 
         tabButtons.forEach(btn => {
             btn.addEventListener('click', () => {
-                activateTab(btn.dataset.workspaceTab);
+                activateTab(btn.dataset.workspaceTab, true);
                 closeWorkspaceDrawer();
             });
         });

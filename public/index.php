@@ -4221,23 +4221,67 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0">
         <!-- Main Content Full-Width (Không bị đẩy lệch phải) -->
         <main class="flex-1 min-w-0 w-full px-4 md:px-8 py-6">
-            <!-- Thanh Điều hướng Nhanh & Nút Mở Menu Mini Nổi -->
-            <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-3">
+            <!-- Profile Overview Card (Giống hệt TechPro Account.jsx) -->
+            <section class="grid grid-cols-1 md:grid-cols-12 gap-5 mb-5">
+                <div class="md:col-span-8 rounded-2xl p-5 bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                    <img src="<?= h(avatarUrlFor($vol->id, $vol->fullName)) ?>" alt="<?= h($vol->fullName) ?>" class="w-20 h-20 rounded-full object-cover border-4 border-[#0057B8] shadow-md shrink-0" />
+                    <div class="flex-1 text-center sm:text-left">
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+                            <h1 class="text-xl font-extrabold text-slate-900 dark:text-white"><?= h($vol->fullName) ?></h1>
+                            <span class="badge badge-info mono"><?= h($vol->studentCode) ?></span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400"><?= h($vol->chapterName) ?> &middot; Chiến dịch: <strong><?= h($activeCampaign['short_title']) ?></strong></p>
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                                <span class="material-symbols-outlined text-[15px] filled">stars</span> Tình nguyện viên Nòng cốt
+                            </span>
+                            <span class="text-xs text-slate-600 dark:text-slate-300">
+                                Số ca đã giao: <strong class="text-[#0057B8] dark:text-sky-400 font-mono text-sm"><?= count($myAssignments) ?> ca</strong>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-4 rounded-2xl p-5 bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[#0057B8] text-[17px]">verified</span>
+                                <span>Kỹ năng Đã xác thực</span>
+                            </h3>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <?php foreach ($vol->skills as $skId => $skEntry):
+                                $skCode = $skillCodeById[(int) $skId] ?? ('SKILL_' . $skId);
+                            ?>
+                                <span class="badge badge-info"><?= h($skillNameVi[$skCode] ?? $skCode) ?> (Cấp <?= (int) $skEntry['level'] ?>)</span>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <a href="?view=verify" class="mt-3 text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">workspace_premium</span>
+                        <span>Xem Giấy chứng nhận tình nguyện &rarr;</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Thanh Điều hướng Nhanh & Nút Mở Menu Mini Nổi (Đặt sát ngay trên vùng Nội dung Tab để thấy chuyển đổi tức thì) -->
+            <div id="volunteer-workspace-tabs-bar" class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 mb-5 shadow-sm flex flex-wrap items-center justify-between gap-3 sticky top-[68px] z-30">
                 <div class="flex flex-wrap items-center gap-2">
                     <button type="button" class="btn-toggle-workspace-drawer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 font-bold text-xs shadow-sm hover:opacity-90 transition-all cursor-pointer">
                         <span class="material-symbols-outlined text-[18px]">widgets</span>
                         <span>Menu Cổng TNV</span>
                     </button>
                     <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5"></div>
-                    <button type="button" data-workspace-tab="vtab-my-shifts" class="workspace-tab-btn <?= $activeVTab === 'vtab-my-shifts' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all">
+                    <button type="button" data-workspace-tab="vtab-my-shifts" class="workspace-tab-btn <?= $activeVTab === 'vtab-my-shifts' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">event_available</span>
                         <span>Ca trực &amp; Điểm danh (<?= count($myAssignments) ?>)</span>
                     </button>
-                    <button type="button" data-workspace-tab="vtab-register" class="workspace-tab-btn <?= $activeVTab === 'vtab-register' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all">
+                    <button type="button" data-workspace-tab="vtab-register" class="workspace-tab-btn <?= $activeVTab === 'vtab-register' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">calendar_add_on</span>
                         <span>Đăng ký Ca trực (<?= count($ds->shifts) ?>)</span>
                     </button>
-                    <button type="button" data-workspace-tab="vtab-profile" class="workspace-tab-btn <?= $activeVTab === 'vtab-profile' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all">
+                    <button type="button" data-workspace-tab="vtab-profile" class="workspace-tab-btn <?= $activeVTab === 'vtab-profile' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">schedule</span>
                         <span>Kỹ năng &amp; Lịch rảnh</span>
                     </button>
@@ -4250,125 +4294,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     <?php endforeach; ?>
                 </div>
             </div>
-            <!-- Profile Overview Card (Giống hệt TechPro Account.jsx) -->
-            <section class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
-                <div class="md:col-span-8 rounded-2xl p-6 bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                    <img src="<?= h(avatarUrlFor($vol->id, $vol->fullName)) ?>" alt="<?= h($vol->fullName) ?>" class="w-24 h-24 rounded-full object-cover border-4 border-[#0057B8] shadow-md shrink-0" />
-                    <div class="flex-1 text-center sm:text-left">
-                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-                            <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= h($vol->fullName) ?></h1>
-                            <span class="badge badge-info mono"><?= h($vol->studentCode) ?></span>
-                        </div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400"><?= h($vol->chapterName) ?> &middot; Chiến dịch: <strong><?= h($activeCampaign['short_title']) ?></strong></p>
-                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                                <span class="material-symbols-outlined text-[16px] filled">stars</span> Tình nguyện viên Nòng cốt
-                            </span>
-                            <span class="text-xs text-slate-600 dark:text-slate-300">
-                                Số ca đã giao: <strong class="text-[#0057B8] dark:text-sky-400 font-mono text-sm"><?= count($myAssignments) ?> ca</strong>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="md:col-span-4 rounded-2xl p-6 bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-[#0057B8] text-[18px]">verified</span>
-                                <span>Kỹ năng Đã xác thực</span>
-                            </h3>
-                        </div>
-                        <div class="flex flex-wrap gap-1.5">
-                            <?php foreach ($vol->skills as $skId => $skEntry):
-                                $skCode = $skillCodeById[(int) $skId] ?? ('SKILL_' . $skId);
-                            ?>
-                                <span class="badge badge-info"><?= h($skillNameVi[$skCode] ?? $skCode) ?> (Cấp <?= (int) $skEntry['level'] ?>)</span>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <a href="?view=verify" class="mt-4 text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:underline flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[16px]">workspace_premium</span>
-                        <span>Xem Giấy chứng nhận tình nguyện &rarr;</span>
-                    </a>
-                </div>
-            </section>
-
-            <!-- BỘ SƯU TẬP HUY HIỆU SỐ ĐOÀN THANH NIÊN & ĐIỂM CỐNG HIẾN (R2 Requirement) -->
-            <section class="rounded-2xl p-6 bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 shadow-sm mb-8" id="volunteer-gamification-section">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400">
-                            <span class="material-symbols-outlined text-[22px]">military_tech</span>
-                        </div>
-                        <div>
-                            <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                                <span>Bộ Sưu Tập Huy Hiệu Số Đoàn Thanh Niên &amp; Điểm Cống Hiến</span>
-                            </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Ghi nhận cống hiến thực tế, điểm uy tín và xếp loại thi đua</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div class="px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center gap-2">
-                            <span class="text-xs text-slate-500">Điểm Cống Hiến:</span>
-                            <span class="font-extrabold text-sm text-amber-600 dark:text-amber-400 mono"><?= number_format($volMerit['xp'], 1) ?> XP</span>
-                        </div>
-                        <div class="px-3.5 py-1.5 rounded-xl bg-blue-50 dark:bg-sky-950/50 border border-blue-200 dark:border-sky-800 flex items-center gap-2">
-                            <span class="text-xs text-slate-500">Điểm Uy Tín:</span>
-                            <span class="font-extrabold text-sm text-[#0057B8] dark:text-sky-400 mono"><?= number_format($volMerit['reputation_score'], 2) ?> / 5.0★</span>
-                        </div>
-                        <a href="?view=leaderboard" class="btn btn-sm btn-outline text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[15px]">trophy</span>
-                            <span>Xem Bảng Vàng</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                    <?php foreach ($volMerit['badges'] as $b): ?>
-                        <div class="rounded-xl p-3.5 border transition-all flex items-start gap-3 <?= !empty($b['is_unlocked']) ? 'bg-gradient-to-br from-amber-50/60 to-white dark:from-amber-950/20 dark:to-slate-900/60 border-amber-300 dark:border-amber-800 shadow-xs' : 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800 opacity-60' ?>">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 <?= !empty($b['is_unlocked']) ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30' : 'bg-slate-200 dark:bg-slate-700 text-slate-400' ?>">
-                                <span class="material-symbols-outlined text-[20px]"><?= h($b['icon']) ?></span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between gap-1 mb-1">
-                                    <h3 class="text-xs font-bold text-slate-900 dark:text-white truncate"><?= h($b['name']) ?></h3>
-                                    <?php if (!empty($b['is_unlocked'])): ?>
-                                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                                            <span class="material-symbols-outlined text-[11px]">check_circle</span> Đã đạt
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
-                                            <span class="material-symbols-outlined text-[11px]">lock</span> Chưa mở
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mb-1.5"><?= h($b['description']) ?></p>
-                                <?php if (!empty($b['is_unlocked']) && !empty($b['unlocked_at'])): ?>
-                                    <div class="text-[10px] mono text-amber-600 dark:text-amber-400 font-semibold">
-                                        Nhận ngày: <?= date('d/m/Y', strtotime((string)$b['unlocked_at'])) ?>
-                                    </div>
-                                <?php else: ?>
-                                    <div class="text-[10px] text-slate-400 italic">
-                                        Tiêu chí: Cống hiến &amp; hoàn thành nhiệm vụ
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </section>
 
             <!-- TAB 1: CA TRỰC CỦA TÔI & QUÉT QR -->
             <div id="vtab-my-shifts" class="workspace-tab-pane <?= $activeVTab === 'vtab-my-shifts' ? 'active' : '' ?>">
-                <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm mb-6">
                     <h2 class="text-lg font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                         <span class="material-symbols-outlined text-[#0057B8]">qr_code_scanner</span>
                         <span>Lịch trực Đã được Phân công &amp; Điểm danh QR 30 giây</span>
                     </h2>
                     <?php if (empty($myAssignments)): ?>
                         <div class="p-8 text-center text-slate-500">
-                            Hiện bạn chưa có ca trực nào được chốt trong chiến dịch này. Hãy bấm sang mục <strong>Đăng ký Ca trực</strong> ở cột trái để chọn ca!
+                            Hiện bạn chưa có ca trực nào được chốt trong chiến dịch này. Hãy bấm sang mục <strong>Đăng ký Ca trực</strong> ở trên để chọn ca!
                         </div>
                     <?php else: ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -4412,6 +4348,71 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     <?php endif; ?>
                 </div>
+
+                <!-- BỘ SƯU TẬP HUY HIỆU SỐ ĐOÀN THANH NIÊN & ĐIỂM CỐNG HIẾN -->
+                <section class="rounded-2xl p-6 bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 shadow-sm" id="volunteer-gamification-section">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                <span class="material-symbols-outlined text-[22px]">military_tech</span>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <span>Bộ Sưu Tập Huy Hiệu Số Đoàn Thanh Niên &amp; Điểm Cống Hiến</span>
+                                </h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Ghi nhận cống hiến thực tế, điểm uy tín và xếp loại thi đua</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center gap-2">
+                                <span class="text-xs text-slate-500">Điểm Cống Hiến:</span>
+                                <span class="font-extrabold text-sm text-amber-600 dark:text-amber-400 mono"><?= number_format($volMerit['xp'], 1) ?> XP</span>
+                            </div>
+                            <div class="px-3.5 py-1.5 rounded-xl bg-blue-50 dark:bg-sky-950/50 border border-blue-200 dark:border-sky-800 flex items-center gap-2">
+                                <span class="text-xs text-slate-500">Điểm Uy Tín:</span>
+                                <span class="font-extrabold text-sm text-[#0057B8] dark:text-sky-400 mono"><?= number_format($volMerit['reputation_score'], 2) ?> / 5.0★</span>
+                            </div>
+                            <a href="?view=leaderboard" class="btn btn-sm btn-outline text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[15px]">trophy</span>
+                                <span>Xem Bảng Vàng</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        <?php foreach ($volMerit['badges'] as $b): ?>
+                            <div class="rounded-xl p-3.5 border transition-all flex items-start gap-3 <?= !empty($b['is_unlocked']) ? 'bg-gradient-to-br from-amber-50/60 to-white dark:from-amber-950/20 dark:to-slate-900/60 border-amber-300 dark:border-amber-800 shadow-xs' : 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800 opacity-60' ?>">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 <?= !empty($b['is_unlocked']) ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30' : 'bg-slate-200 dark:bg-slate-700 text-slate-400' ?>">
+                                    <span class="material-symbols-outlined text-[20px]"><?= h($b['icon']) ?></span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-1 mb-1">
+                                        <h3 class="text-xs font-bold text-slate-900 dark:text-white truncate"><?= h($b['name']) ?></h3>
+                                        <?php if (!empty($b['is_unlocked'])): ?>
+                                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                                <span class="material-symbols-outlined text-[11px]">check_circle</span> Đã đạt
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                                                <span class="material-symbols-outlined text-[11px]">lock</span> Chưa mở
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mb-1.5"><?= h($b['description']) ?></p>
+                                    <?php if (!empty($b['is_unlocked']) && !empty($b['unlocked_at'])): ?>
+                                        <div class="text-[10px] mono text-amber-600 dark:text-amber-400 font-semibold">
+                                            Nhận ngày: <?= date('d/m/Y', strtotime((string)$b['unlocked_at'])) ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="text-[10px] text-slate-400 italic">
+                                            Tiêu chí: Cống hiến &amp; hoàn thành nhiệm vụ
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
             </div>
 
             <!-- TAB 2: ĐĂNG KÝ NGUYỆN VỌNG CA TRỰC -->
@@ -5036,45 +5037,8 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0">
         <!-- Main Workspace Full-Width (Không bị đẩy lệch phải) -->
         <main class="flex-1 min-w-0 w-full px-4 md:px-6 py-6">
-            <!-- Thanh Điều hướng Nhanh Ban Chỉ Huy & Nút Mở Menu Mini Nổi -->
-            <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-wrap items-center gap-1.5">
-                    <button type="button" class="btn-toggle-workspace-drawer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 font-bold text-xs shadow-sm hover:opacity-90 transition-all cursor-pointer">
-                        <span class="material-symbols-outlined text-[18px]">widgets</span>
-                        <span>Menu BCH</span>
-                    </button>
-                    <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5"></div>
-                    <button type="button" data-workspace-tab="tab-board" class="workspace-tab-btn active inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400">
-                        <span class="material-symbols-outlined text-[16px]">dashboard</span>
-                        <span>Bàn Điều phối</span>
-                    </button>
-                    <button type="button" data-workspace-tab="tab-volunteers" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <span class="material-symbols-outlined text-[16px]">group</span>
-                        <span>Lực lượng TNV</span>
-                    </button>
-                    <button type="button" data-workspace-tab="tab-lab" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <span class="material-symbols-outlined text-[16px]">auto_awesome_motion</span>
-                        <span>Tự động Xếp ca</span>
-                    </button>
-                    <button type="button" data-workspace-tab="tab-understaffed" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <span class="material-symbols-outlined text-[16px]">warning</span>
-                        <span>Ca thiếu (<?= count($unassignedSlots) ?>/<?= count($unassignedVolunteers) ?>)</span>
-                    </button>
-                    <button type="button" data-workspace-tab="tab-analytics" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <span class="material-symbols-outlined text-[16px]">analytics</span>
-                        <span>Thống kê BI</span>
-                    </button>
-                </div>
-                <div class="flex flex-wrap items-center gap-1.5">
-                    <?php foreach ($campaignMeta as $actId => $c): ?>
-                        <a href="?view=coordinator&activity_id=<?= $actId ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
-                            <?= h($c['code']) ?>: <?= h($c['short_title']) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
             <!-- 4 Thẻ Stats Grid có Watermark Icon (Giống hệt TechPro Admin.jsx) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
                 <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden hover-lift shadow-sm">
                     <div class="absolute -right-3 -top-3 text-emerald-500/10">
                         <span class="material-symbols-outlined text-[88px]">verified</span>
@@ -5124,6 +5088,44 @@ document.addEventListener('DOMContentLoaded', function () {
                         </button>
                     </div>
                     <span class="text-xs text-slate-500 mt-1.5 block relative z-10">Vị trí thiếu người: <?= count($unassignedSlots) ?></span>
+                </div>
+            </div>
+
+            <!-- Thanh Điều hướng Nhanh Ban Chỉ Huy & Nút Mở Menu Mini Nổi (Đặt sát ngay trên vùng Nội dung Tab) -->
+            <div id="coordinator-workspace-tabs-bar" class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-3 mb-5 shadow-sm flex flex-wrap items-center justify-between gap-3 sticky top-[68px] z-30">
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button type="button" class="btn-toggle-workspace-drawer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 font-bold text-xs shadow-sm hover:opacity-90 transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px]">widgets</span>
+                        <span>Menu BCH</span>
+                    </button>
+                    <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5"></div>
+                    <button type="button" data-workspace-tab="tab-board" class="workspace-tab-btn active inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">dashboard</span>
+                        <span>Bàn Điều phối</span>
+                    </button>
+                    <button type="button" data-workspace-tab="tab-volunteers" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">group</span>
+                        <span>Lực lượng TNV</span>
+                    </button>
+                    <button type="button" data-workspace-tab="tab-lab" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">auto_awesome_motion</span>
+                        <span>Tự động Xếp ca</span>
+                    </button>
+                    <button type="button" data-workspace-tab="tab-understaffed" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">warning</span>
+                        <span>Ca thiếu (<?= count($unassignedSlots) ?>/<?= count($unassignedVolunteers) ?>)</span>
+                    </button>
+                    <button type="button" data-workspace-tab="tab-analytics" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">analytics</span>
+                        <span>Thống kê BI</span>
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <?php foreach ($campaignMeta as $actId => $c): ?>
+                        <a href="?view=coordinator&activity_id=<?= $actId ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
+                            <?= h($c['code']) ?>: <?= h($c['short_title']) ?>
+                        </a>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
