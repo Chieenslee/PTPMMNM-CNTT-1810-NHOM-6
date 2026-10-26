@@ -1,0 +1,1025 @@
+/* ==========================================================================
+   XANH HUB v2.0 — HỆ THỐNG TỔ CHỨC HOẠT ĐỘNG & PHÂN CÔNG TÌNH NGUYỆN VIÊN
+   Thiết kế theo chuẩn kiến trúc TechPro E-Commerce (Modern Portal UI/UX)
+   ========================================================================== */
+
+:root {
+    --youth-cobalt: #0057B8;
+    --youth-cobalt-hover: #004494;
+    --youth-cobalt-soft: #EBF3FE;
+    --youth-sky: #0EA5E9;
+    --youth-emerald: #059669;
+    --youth-emerald-soft: #ECFDF5;
+    --youth-amber: #D97706;
+    --youth-amber-soft: #FFFBEB;
+    --youth-crimson: #E11D48;
+    --youth-crimson-soft: #FFF1F2;
+
+    --bg-page: #F8FAFC;
+    --bg-surface: #FFFFFF;
+    --bg-surface-alt: #F1F5F9;
+    --bg-tinted: #F1F6FD;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #64748B;
+    --border-color: #E2E8F0;
+    --border-strong: #CBD5E1;
+
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 10px -4px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 20px 40px -12px rgba(0, 87, 184, 0.14);
+}
+
+html.dark,
+html[data-theme="dark"] {
+    --bg-page: #0C0F14;
+    --bg-surface: #131822;
+    --bg-surface-alt: #1C2331;
+    --bg-tinted: #101622;
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    --text-muted: #94A3B8;
+    --border-color: #263042;
+    --border-strong: #334155;
+    --youth-cobalt: #38BDF8;
+    --youth-cobalt-hover: #0EA5E9;
+    --youth-cobalt-soft: rgba(56, 189, 248, 0.14);
+    --youth-emerald-soft: rgba(16, 185, 129, 0.15);
+    --youth-amber-soft: rgba(245, 158, 11, 0.15);
+    --youth-crimson-soft: rgba(244, 63, 94, 0.15);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+}
+
+:focus-visible {
+    outline: 2px solid #0057B8;
+    outline-offset: 2px;
+}
+html.dark :focus-visible {
+    outline-color: #38BDF8;
+}
+
+body {
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+    line-height: 1;
+    user-select: none;
+}
+
+.material-symbols-outlined.filled {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   HIỆU ỨNG CHUYỂN ĐỘNG CHUẨN TECHPRO (ANIMATIONS & UTILITIES)
+   ========================================================================== */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(32px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ticker {
+    0% { transform: translateX(-120%) skewX(-12deg); }
+    100% { transform: translateX(220%) skewX(-12deg); }
+}
+
+@keyframes shakeHard {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-7px); }
+    40% { transform: translateX(7px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+}
+
+.page-enter {
+    animation: fadeInUp 0.42s ease forwards;
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.55s ease forwards;
+}
+
+.fade-in {
+    animation: fadeIn 0.35s ease forwards;
+}
+
+.fade-in-right {
+    animation: fadeInRight 0.55s ease forwards;
+}
+
+.hover-lift {
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+}
+
+html.dark .glass-card,
+html[data-theme="dark"] .glass-card {
+    background: rgba(19, 24, 34, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.glass-dark {
+    background: rgba(15, 23, 42, 0.78);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* ==========================================================================
+   TIỆN ÍCH TRÀN CHỮ, CẮT DÒNG & CUỘN MƯỢT KHÔNG THANH CUỘN (POLISH UTILITIES)
+   ========================================================================== */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.shift-board-scroll,
+.matrix-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.nav-mega-dropdown {
+    animation: fadeIn 0.15s ease-out;
+}
+
+/* ==========================================================================
+   HIỆU ỨNG NGHỆ THUẬT & ĐIỆN ẢNH NÂNG CAO (3D TILT, SPOTLIGHT, SCROLL REVEAL)
+   ========================================================================== */
+@keyframes pulseRing {
+    0%   { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.45); }
+    70%  { box-shadow: 0 0 0 12px rgba(14, 165, 233, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+}
+
+@keyframes floatSlow {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-7px); }
+}
+
+@keyframes kenBurnsSlow {
+    0%   { transform: scale(1) translate(0, 0); }
+    50%  { transform: scale(1.09) translate(-1.2%, -0.8%); }
+    100% { transform: scale(1.03) translate(0.8%, 0.5%); }
+}
+
+.ken-burns-bg {
+    animation: kenBurnsSlow 18s ease-in-out infinite alternate;
+}
+
+.float-slow {
+    animation: floatSlow 4.2s ease-in-out infinite;
+}
+
+.pulse-ring {
+    animation: pulseRing 2.2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+.glow-primary {
+    box-shadow: 0 0 24px rgba(0, 87, 184, 0.35);
+}
+
+.text-glow {
+    text-shadow: 0 4px 24px rgba(14, 165, 233, 0.45);
+}
+
+/* Staggered reveal on scroll */
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-on-scroll.is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.stagger-children > * {
+    opacity: 0;
+    animation: fadeInUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.10s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.16s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.22s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.28s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.34s; }
+
+/* 3D Tilt & Spotlight Card */
+[data-tilt-card] {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+    overflow: hidden;
+}
+
+[data-tilt-card]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        480px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(14, 165, 233, 0.11),
+        transparent 45%
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+[data-tilt-card]:hover::before {
+    opacity: 1;
+}
+
+/* OAuth Social Buttons */
+.oauth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    padding: 0.68rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.oauth-btn:hover {
+    border-color: var(--youth-cobalt);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-surface-alt);
+}
+::-webkit-scrollbar-thumb {
+    background: #94A3B8;
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #64748B;
+}
+
+/* ==========================================================================
+   CINEMATIC FULL EXPERIENCE: AUDIO PILL, CUSTOM CURSOR, SMOOTH TRANSITIONS
+   ========================================================================== */
+/* Custom Cursor (Chỉ kích hoạt trên thiết bị có chuột) */
+@media (hover: hover) and (pointer: fine) {
+    .custom-cursor-dot {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 8px;
+        height: 8px;
+        background: #0057B8;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 99999;
+        transform: translate(-50%, -50%);
+        transition: transform 0.08s ease-out, opacity 0.2s ease, width 0.2s, height 0.2s;
+    }
+    html.dark .custom-cursor-dot {
+        background: #38BDF8;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    }
+    .custom-cursor-circle {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 32px;
+        height: 32px;
+        border: 1.5px solid rgba(0, 87, 184, 0.45);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 99998;
+        transform: translate(-50%, -50%);
+        transition: transform 0.16s ease-out, width 0.22s, height 0.22s, border-color 0.22s, background 0.22s;
+    }
+    html.dark .custom-cursor-circle {
+        border-color: rgba(56, 189, 248, 0.45);
+    }
+    body.cursor-hover .custom-cursor-circle {
+        width: 48px;
+        height: 48px;
+        border-color: #0057B8;
+        background: rgba(0, 87, 184, 0.08);
+    }
+    html.dark body.cursor-hover .custom-cursor-circle {
+        border-color: #38BDF8;
+        background: rgba(56, 189, 248, 0.12);
+    }
+    body.cursor-hover .custom-cursor-dot {
+        transform: translate(-50%, -50%) scale(1.5);
+    }
+}
+
+/* Floating Audio Visualizer Pill */
+.floating-audio-pill {
+    position: fixed;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    left: auto;
+    z-index: 8000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 1rem 0.55rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #FFFFFF;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.floating-audio-pill:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.6);
+    box-shadow: 0 14px 30px -4px rgba(0, 87, 184, 0.4);
+}
+.audio-equalizer {
+    display: flex;
+    align-items: flex-end;
+    gap: 2.5px;
+    height: 14px;
+    width: 16px;
+}
+.audio-bar {
+    width: 2.5px;
+    height: 100%;
+    background: #38BDF8;
+    border-radius: 1px;
+    transition: height 0.15s ease;
+}
+.floating-audio-pill.is-playing .audio-bar:nth-child(1) {
+    animation: eqAnim1 0.8s ease-in-out infinite alternate;
+}
+.floating-audio-pill.is-playing .audio-bar:nth-child(2) {
+    animation: eqAnim2 0.7s ease-in-out infinite alternate;
+}
+.floating-audio-pill.is-playing .audio-bar:nth-child(3) {
+    animation: eqAnim3 0.9s ease-in-out infinite alternate;
+}
+.floating-audio-pill.is-playing .audio-bar:nth-child(4) {
+    animation: eqAnim4 0.65s ease-in-out infinite alternate;
+}
+@keyframes eqAnim1 { 0% { height: 20%; } 100% { height: 100%; } }
+@keyframes eqAnim2 { 0% { height: 90%; } 100% { height: 30%; } }
+@keyframes eqAnim3 { 0% { height: 40%; } 100% { height: 85%; } }
+@keyframes eqAnim4 { 0% { height: 100%; } 100% { height: 25%; } }
+.floating-audio-pill:not(.is-playing) .audio-bar {
+    height: 3px !important;
+    background: #94A3B8;
+}
+
+/* Page View Transition Curtain */
+.page-transition-curtain {
+    position: fixed;
+    inset: 0;
+    background: #0C0F14;
+    z-index: 999999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.page-transition-curtain.is-transitioning {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ==========================================================================
+   COMPONENTS CƠ BẢN (BUTTONS, BADGES, CARDS, TABLES)
+   ========================================================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.58rem 1.1rem;
+    border-radius: 0.55rem;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.86rem;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.78rem;
+    font-size: 0.78rem;
+    border-radius: 0.48rem;
+}
+
+.btn-lg {
+    padding: 0.8rem 1.5rem;
+    font-size: 0.94rem;
+    border-radius: 0.65rem;
+}
+
+.btn-primary {
+    background: #0057B8;
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(0, 87, 184, 0.25);
+}
+
+.btn-primary:hover {
+    background: #004494;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 87, 184, 0.35);
+}
+
+.btn-success {
+    background: #059669;
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.22);
+}
+
+.btn-success:hover {
+    background: #047857;
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+}
+
+.btn-outline:hover {
+    border-color: var(--youth-cobalt);
+    color: var(--youth-cobalt);
+    background: var(--youth-cobalt-soft);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.22rem 0.62rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.badge-valid {
+    background: var(--youth-emerald-soft);
+    color: #047857;
+    border: 1px solid rgba(5, 150, 105, 0.25);
+}
+
+.badge-warning {
+    background: var(--youth-amber-soft);
+    color: #B45309;
+    border: 1px solid rgba(217, 119, 6, 0.25);
+}
+
+.badge-violation {
+    background: var(--youth-crimson-soft);
+    color: #BE123C;
+    border: 1px solid rgba(225, 29, 72, 0.25);
+}
+
+.badge-info {
+    background: var(--youth-cobalt-soft);
+    color: var(--youth-cobalt);
+    border: 1px solid rgba(0, 87, 184, 0.2);
+}
+
+.badge-subtle {
+    background: var(--bg-surface-alt);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+html.dark .badge-valid { color: #6EE7B7; }
+html.dark .badge-warning { color: #FDE047; }
+html.dark .badge-violation { color: #FDA4AF; }
+
+/* ==========================================================================
+   BẢNG KÉO THẢ CA TRỰC KANBAN (TRONG ADMIN / COORDINATOR)
+   ========================================================================== */
+.shift-board {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.volunteer-pool {
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 0.85rem;
+    padding: 0.9rem;
+    position: sticky;
+    top: 5.5rem;
+}
+
+.volunteer-list-scroll {
+    max-height: 600px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-top: 0.75rem;
+    padding-right: 0.2rem;
+}
+
+.vol-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 0.65rem;
+    padding: 0.7rem;
+    cursor: grab;
+    transition: all 0.16s ease;
+}
+
+.vol-card:hover {
+    border-color: var(--youth-cobalt);
+    box-shadow: var(--shadow-sm);
+}
+
+.vol-card.dragging {
+    opacity: 0.45;
+    transform: scale(0.98);
+}
+
+.shift-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.shift-box {
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border-color);
+    border-radius: 0.85rem;
+    padding: 1rem;
+    transition: all 0.18s ease;
+}
+
+.shift-box.shift-valid {
+    border-top: 3.5px solid var(--youth-emerald);
+}
+
+.shift-box.shift-understaffed {
+    border-top: 3.5px solid var(--youth-amber);
+}
+
+.shift-box.shift-locked {
+    background: var(--bg-surface-alt);
+    border-style: dashed;
+}
+
+.shift-box.candidate-compatible {
+    border-color: var(--youth-emerald) !important;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+}
+
+.shift-box.candidate-blocked {
+    border-color: var(--youth-crimson) !important;
+    opacity: 0.6;
+}
+
+.shift-box.drop-hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.shift-box.shake-error {
+    animation: shakeHard 0.42s ease;
+    border-color: var(--youth-crimson) !important;
+}
+
+.capacity-bar {
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0.55rem 0;
+}
+
+.capacity-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.assigned-pill {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.55rem 0.7rem;
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 0.65rem;
+    font-size: 0.78rem;
+    margin-bottom: 0.35rem;
+}
+
+.avatar-img {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 2px solid var(--youth-cobalt);
+    flex-shrink: 0;
+}
+
+.avatar-img-sm {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 1.5px solid var(--border-strong);
+    flex-shrink: 0;
+}
+
+.avatar-img-lg {
+    width: 54px;
+    height: 54px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 2.5px solid var(--youth-cobalt);
+    flex-shrink: 0;
+}
+
+.fairness-bars {
+    display: grid;
+    grid-template-columns: repeat(30, 1fr);
+    gap: 3px;
+    align-items: end;
+    height: 92px;
+    padding: 0.65rem 0.45rem 0.25rem;
+    background: var(--bg-surface-alt);
+    border-radius: 0.65rem;
+    border: 1px solid var(--border-color);
+}
+
+.fairness-bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    gap: 3px;
+}
+
+.fairness-bar {
+    width: 100%;
+    background: linear-gradient(180deg, var(--youth-sky), var(--youth-cobalt));
+    border-radius: 3px 3px 0 0;
+    transition: height 0.3s ease;
+}
+
+/* ==========================================================================
+   MODAL & TOAST
+   ========================================================================== */
+#toast-container {
+    position: fixed;
+    top: 1.15rem;
+    right: 1.15rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-width: 400px;
+    width: calc(100vw - 2.3rem);
+    pointer-events: none;
+}
+
+.toast-item {
+    pointer-events: auto;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--youth-cobalt);
+    border-radius: 0.75rem;
+    padding: 0.9rem 1rem;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.toast-success { border-left-color: var(--youth-emerald); }
+.toast-warning { border-left-color: var(--youth-amber); }
+.toast-error { border-left-color: var(--youth-crimson); }
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.68);
+    backdrop-filter: blur(6px);
+    z-index: 9000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+}
+
+.modal-backdrop.open {
+    display: flex;
+}
+
+.modal-dialog {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 580px;
+    padding: 1.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.workspace-tab-pane {
+    display: none;
+}
+
+.workspace-tab-pane.active {
+    display: block;
+    animation: fadeIn 0.25s ease;
+}
+
+.certificate-paper {
+    background: #FFFFFF;
+    color: #0F172A;
+    border: 3px double #0057B8;
+    border-radius: 0.85rem;
+    padding: 1.75rem;
+    box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 1024px) {
+    .shift-board {
+        grid-template-columns: 1fr;
+    }
+    .shift-board-scroll .shift-board {
+        grid-template-columns: 290px 1fr;
+    }
+    .volunteer-pool {
+        position: static;
+    }
+    .shift-grid {
+        grid-template-columns: 1fr;
+    }
+    .shift-board-scroll .shift-grid {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 12mm 15mm 12mm 15mm;
+    }
+    *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .no-print, #toast-container, .modal-backdrop, header, footer, #mobile-bottom-nav, #main-site-header {
+        display: none !important;
+    }
+    body {
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+        font-size: 10.5pt;
+        line-height: 1.45;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .youth-report-sheet {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: #FFFFFF !important;
+    }
+    .page-break-inside-avoid {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    table {
+        page-break-inside: auto;
+    }
+    tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: auto;
+    }
+    thead {
+        display: table-header-group;
+    }
+}
+
+/* Biểu mẫu Báo cáo Tổng kết Chuẩn Đoàn - Hội (Youth Union Formal Report Sheet) */
+.youth-report-sheet {
+    background: #FFFFFF;
+    color: #0F172A;
+    font-family: "Be Vietnam Pro", "Times New Roman", serif;
+}
+
+.dark .youth-report-sheet {
+    background: #111622;
+    color: #F1F5F9;
+}
+
+@media print {
+    .dark .youth-report-sheet {
+        background: #FFFFFF !important;
+        color: #0F172A !important;
+    }
+}
+
+.youth-stamp-box {
+    border: 2px dashed #DC2626;
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: inline-block;
+    color: #DC2626;
+    text-transform: uppercase;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    background: rgba(220, 38, 38, 0.03);
+}
+
+.bi-progress-track {
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.dark .bi-progress-track {
+    background: #1E293B;
+}
+
+.bi-progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s ease;
+}
+
+/* Coordinator Redesign Styles */
+.avatar-stack {
+    display: inline-flex;
+    align-items: center;
+}
+
+.avatar-stack > * {
+    transition: transform 0.15s ease, z-index 0.15s ease;
+    position: relative;
+}
+
+.avatar-stack > *:hover {
+    transform: scale(1.18);
+    z-index: 30 !important;
+}
+
+.compact-shift-card {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.compact-shift-card:hover {
+    transform: translateY(-1px);
+}
+
+.compact-shift-card.active-shift {
+    border-color: #10B981 !important;
+    background-color: rgba(16, 185, 129, 0.05);
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.dark .compact-shift-card.active-shift {
+    background-color: rgba(16, 185, 129, 0.12);
+}
+
+.drag-over-active {
+    border-color: #10B981 !important;
+    background-color: rgba(16, 185, 129, 0.08) !important;
+    box-shadow: inset 0 0 0 2px rgba(16, 185, 129, 0.5);
+}
+
+.draggable-candidate {
+    cursor: grab;
+    user-select: none;
+}
+
+.draggable-candidate:active {
+    cursor: grabbing;
+}
+

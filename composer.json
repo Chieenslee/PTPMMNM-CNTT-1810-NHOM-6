@@ -1,0 +1,42 @@
+{
+    "name": "xanhhub/volunteer-scheduler",
+    "description": "Xanh Hub - Hệ thống tổ chức hoạt động và phân công tình nguyện viên (Đề tài 6 - Mã nguồn mở)",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vai A - Lõi Thuật toán & Kiểm thử",
+            "role": "Algorithm & Domain Lead"
+        },
+        {
+            "name": "Vai B - Hệ thống, CSDL & Bảo mật",
+            "role": "Backend & Database Lead"
+        },
+        {
+            "name": "Vai C - Giao diện, Tương tác & AI Colab T4",
+            "role": "Frontend & AI Integration Lead"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "XanhHub\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "XanhHub\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "migrate": "php bin/migrate.php",
+        "seed": "php bin/seed.php",
+        "test": "php bin/run-tests.php",
+        "serve": "php -S 127.0.0.1:8080 -t public"
+    }
+}

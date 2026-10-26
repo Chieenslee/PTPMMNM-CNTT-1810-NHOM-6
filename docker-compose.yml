@@ -1,0 +1,104 @@
+version: '3.8'
+
+# ==============================================================================
+# XANH HUB (ĐỀ TÀI 6) - PRODUCTION DOCKER COMPOSE ORCHESTRATION
+# 3 Services: web (Nginx) -> app (PHP 8.2-FPM) -> db (PostgreSQL 16)
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Database Tier: PostgreSQL 16 Alpine
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: xanhhub_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-xanhhub}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - xanhhub_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-xanhhub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - xanhhub-net
+
+  # ----------------------------------------------------------------------------
+  # 2. Application Tier: PHP 8.2-FPM Alpine (Multi-stage build)
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: xanhhub_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Ho_Chi_Minh}
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-xanhhub}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      APP_SECRET: ${APP_SECRET:-xanhhub-production-secret-key-2026}
+    volumes:
+      - .:/var/www/html
+    expose:
+      - "9000"
+    healthcheck:
+      test: ["CMD-SHELL", "SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - xanhhub-net
+
+  # ----------------------------------------------------------------------------
+  # 3. Web Gateway Tier: Nginx Alpine Reverse Proxy
+  # ----------------------------------------------------------------------------
+  web:
+    image: nginx:alpine
+    container_name: xanhhub_web
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./public:/var/www/html/public:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - xanhhub-net
+
+networks:
+  xanhhub-net:
+    driver: bridge
+    name: xanhhub-net
+
+volumes:
+  xanhhub_pgdata:
+    driver: local
+    name: xanhhub_pgdata

@@ -1,0 +1,3133 @@
+{
+    "activity_id": 3,
+    "dataset_code": "D3",
+    "shifts": [
+        {
+            "id": 201,
+            "code": "CA-01",
+            "title": "Trực Sơ cứu Điểm thi Bách Khoa",
+            "start_epoch": 1795136400,
+            "end_epoch": 1795147200,
+            "start_time": "2026-11-20 08:00:00+07",
+            "end_time": "2026-11-20 11:00:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 5,
+            "is_locked": false,
+            "location_name": "ĐH Bách Khoa TP.HCM (CS2), ĐHQG TP.HCM, TP. Thủ Đức",
+            "lat": 10.8805,
+            "lng": 106.8062,
+            "requirements": [
+                {
+                    "id": 2001,
+                    "shift_id": 201,
+                    "skill_id": 1,
+                    "skill_code": "FIRST_AID",
+                    "skill_name": "Sơ cứu y tế",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": true
+                }
+            ]
+        },
+        {
+            "id": 202,
+            "code": "CA-02",
+            "title": "Hậu cần & Tiếp nước Điểm thi A",
+            "start_epoch": 1795140000,
+            "end_epoch": 1795150800,
+            "start_time": "2026-11-20 09:00:00+07",
+            "end_time": "2026-11-20 12:00:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 3,
+            "is_locked": false,
+            "location_name": "Nhà Văn hóa Sinh viên ĐHQG, TP. Thủ Đức",
+            "lat": 10.8752,
+            "lng": 106.8007,
+            "requirements": [
+                {
+                    "id": 2002,
+                    "shift_id": 202,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 203,
+            "code": "CA-03",
+            "title": "Đội Xe tình nguyện đưa đón thí sinh",
+            "start_epoch": 1795156200,
+            "end_epoch": 1795167000,
+            "start_time": "2026-11-20 13:30:00+07",
+            "end_time": "2026-11-20 16:30:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 5,
+            "is_locked": false,
+            "location_name": "Bến xe Miền Tây, Kinh Dương Vương, Q. Bình Tân",
+            "lat": 10.7435,
+            "lng": 106.6178,
+            "requirements": [
+                {
+                    "id": 2003,
+                    "shift_id": 203,
+                    "skill_id": 2,
+                    "skill_code": "DRIVING",
+                    "skill_name": "Lái xe & Điều tiết",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": true
+                }
+            ]
+        },
+        {
+            "id": 204,
+            "code": "CA-04",
+            "title": "Dựng nhà bạt & Hậu cần chiều Thứ Sáu",
+            "start_epoch": 1795158000,
+            "end_epoch": 1795168800,
+            "start_time": "2026-11-20 14:00:00+07",
+            "end_time": "2026-11-20 17:00:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 2,
+            "is_locked": false,
+            "location_name": "Nhà Văn hóa Thanh niên TP.HCM, 4 Phạm Ngọc Thạch, Q. 1",
+            "lat": 10.7801,
+            "lng": 106.6975,
+            "requirements": [
+                {
+                    "id": 2004,
+                    "shift_id": 204,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 205,
+            "code": "CA-05",
+            "title": "Lớp học tình nguyện cho thiếu nhi",
+            "start_epoch": 1795222800,
+            "end_epoch": 1795233600,
+            "start_time": "2026-11-21 08:00:00+07",
+            "end_time": "2026-11-21 11:00:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 4,
+            "is_locked": false,
+            "location_name": "Điểm trường Xã Tam Thôn Hiệp, Huyện Cần Giờ",
+            "lat": 10.551,
+            "lng": 106.8812,
+            "requirements": [
+                {
+                    "id": 2005,
+                    "shift_id": 205,
+                    "skill_id": 3,
+                    "skill_code": "TEACHING",
+                    "skill_name": "Dạy học & Sinh hoạt",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 206,
+            "code": "CA-06",
+            "title": "Phát suất ăn & Nước uống sáng Thứ Bảy",
+            "start_epoch": 1795224600,
+            "end_epoch": 1795235400,
+            "start_time": "2026-11-21 08:30:00+07",
+            "end_time": "2026-11-21 11:30:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 3,
+            "is_locked": false,
+            "location_name": "ĐH Nông Lâm TP.HCM, QL1A, TP. Thủ Đức",
+            "lat": 10.87,
+            "lng": 106.7917,
+            "requirements": [
+                {
+                    "id": 2006,
+                    "shift_id": 206,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 207,
+            "code": "CA-07",
+            "title": "Phóng viên ảnh & Truyền thông chiến dịch",
+            "start_epoch": 1795242600,
+            "end_epoch": 1795253400,
+            "start_time": "2026-11-21 13:30:00+07",
+            "end_time": "2026-11-21 16:30:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 4,
+            "is_locked": false,
+            "location_name": "Thành Đoàn TP.HCM, 145 Pasteur, Q. 3",
+            "lat": 10.782,
+            "lng": 106.694,
+            "requirements": [
+                {
+                    "id": 2007,
+                    "shift_id": 207,
+                    "skill_id": 4,
+                    "skill_code": "MEDIA",
+                    "skill_name": "Truyền thông & Ảnh",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 208,
+            "code": "CA-08",
+            "title": "Vận chuyển vật tư & Dọn vệ sinh chiều T7",
+            "start_epoch": 1795244400,
+            "end_epoch": 1795255200,
+            "start_time": "2026-11-21 14:00:00+07",
+            "end_time": "2026-11-21 17:00:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 2,
+            "is_locked": false,
+            "location_name": "Điểm xây cầu giao thông Xã Bà Điểm, Hóc Môn",
+            "lat": 10.8385,
+            "lng": 106.6025,
+            "requirements": [
+                {
+                    "id": 2008,
+                    "shift_id": 208,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 209,
+            "code": "CA-09",
+            "title": "Trực Y tế Ngày hội Chủ Nhật Xanh",
+            "start_epoch": 1795309200,
+            "end_epoch": 1795320000,
+            "start_time": "2026-11-22 08:00:00+07",
+            "end_time": "2026-11-22 11:00:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 5,
+            "is_locked": false,
+            "location_name": "Trạm Y tế Xã Lý Nhơn, Huyện Cần Giờ",
+            "lat": 10.455,
+            "lng": 106.852,
+            "requirements": [
+                {
+                    "id": 2009,
+                    "shift_id": 209,
+                    "skill_id": 1,
+                    "skill_code": "FIRST_AID",
+                    "skill_name": "Sơ cứu y tế",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": true
+                }
+            ]
+        },
+        {
+            "id": 210,
+            "code": "CA-10",
+            "title": "Trồng cây & Thu gom rác sáng Chủ Nhật",
+            "start_epoch": 1795311000,
+            "end_epoch": 1795321800,
+            "start_time": "2026-11-22 08:30:00+07",
+            "end_time": "2026-11-22 11:30:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 3,
+            "is_locked": false,
+            "location_name": "Khu Di tích Rừng Sác – Chiến khu Rừng Sác, Cần Giờ",
+            "lat": 10.512,
+            "lng": 106.885,
+            "requirements": [
+                {
+                    "id": 2010,
+                    "shift_id": 210,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 211,
+            "code": "CA-11",
+            "title": "Điều tiết giao thông & Xe chở vật tư",
+            "start_epoch": 1795329000,
+            "end_epoch": 1795339800,
+            "start_time": "2026-11-22 13:30:00+07",
+            "end_time": "2026-11-22 16:30:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 4,
+            "is_locked": false,
+            "location_name": "ĐH Sư phạm Kỹ thuật TP.HCM, Võ Văn Ngân, TP. Thủ Đức",
+            "lat": 10.8512,
+            "lng": 106.772,
+            "requirements": [
+                {
+                    "id": 2011,
+                    "shift_id": 211,
+                    "skill_id": 2,
+                    "skill_code": "DRIVING",
+                    "skill_name": "Lái xe & Điều tiết",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": true
+                }
+            ]
+        },
+        {
+            "id": 212,
+            "code": "CA-12",
+            "title": "Tổng kết & Thu dọn trại tập kết",
+            "start_epoch": 1795330800,
+            "end_epoch": 1795341600,
+            "start_time": "2026-11-22 14:00:00+07",
+            "end_time": "2026-11-22 17:00:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 3,
+            "is_locked": false,
+            "location_name": "Công viên Lịch sử Văn hóa Dân tộc, TP. Thủ Đức",
+            "lat": 10.8805,
+            "lng": 106.8375,
+            "requirements": [
+                {
+                    "id": 2012,
+                    "shift_id": 212,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        }
+    ],
+    "volunteers": [
+        {
+            "id": 1,
+            "student_code": "SV001",
+            "full_name": "Nguyễn Thùy Linh",
+            "chapter_name": "Chi đoàn KTPM-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "1": {
+                    "level": 4,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 2,
+            "student_code": "SV002",
+            "full_name": "Trần Hoàng Phúc",
+            "chapter_name": "Chi đoàn KTPM-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "1": {
+                    "level": 4,
+                    "is_verified": true
+                },
+                "2": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 3,
+            "student_code": "SV003",
+            "full_name": "Lê Minh Châu",
+            "chapter_name": "Chi đoàn KTPM-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "1": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 4,
+            "student_code": "SV004",
+            "full_name": "Phạm Quốc Bảo",
+            "chapter_name": "Chi đoàn KTPM-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "1": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 5,
+            "student_code": "SV005",
+            "full_name": "Hoàng Ngọc Ánh",
+            "chapter_name": "Chi đoàn HTTT-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "1": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 6,
+            "student_code": "SV006",
+            "full_name": "Vũ Đức Thịnh",
+            "chapter_name": "Chi đoàn HTTT-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "1": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 7,
+            "student_code": "SV007",
+            "full_name": "Đặng Phương Thảo",
+            "chapter_name": "Chi đoàn KHMT-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "2": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 8,
+            "student_code": "SV008",
+            "full_name": "Bùi Tuấn Kiệt",
+            "chapter_name": "Chi đoàn KHMT-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "2": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 9,
+            "student_code": "SV009",
+            "full_name": "Đỗ Khánh Huyền",
+            "chapter_name": "Chi đoàn MMT-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "2": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 10,
+            "student_code": "SV010",
+            "full_name": "Ngô Gia Huy",
+            "chapter_name": "Chi đoàn MMT-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "2": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 11,
+            "student_code": "SV011",
+            "full_name": "Dương Thanh Tùng",
+            "chapter_name": "Chi đoàn KTPM-03",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "2": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 12,
+            "student_code": "SV012",
+            "full_name": "Lý Mỹ Duyên",
+            "chapter_name": "Chi đoàn KTPM-03",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "2": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 13,
+            "student_code": "SV013",
+            "full_name": "Trương Đình Nam",
+            "chapter_name": "Chi đoàn ATTT-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 14,
+            "student_code": "SV014",
+            "full_name": "Phan Bảo Ngọc",
+            "chapter_name": "Chi đoàn ATTT-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 15,
+            "student_code": "SV015",
+            "full_name": "Võ Minh Khôi",
+            "chapter_name": "Chi đoàn KHDL-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 16,
+            "student_code": "SV016",
+            "full_name": "Mai Thanh Trúc",
+            "chapter_name": "Chi đoàn KHDL-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 17,
+            "student_code": "SV017",
+            "full_name": "Đinh Quốc Khánh",
+            "chapter_name": "Chi đoàn KTPM-01",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 18,
+            "student_code": "SV018",
+            "full_name": "Hồ Thảo Nguyên",
+            "chapter_name": "Chi đoàn KTPM-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 19,
+            "student_code": "SV019",
+            "full_name": "Lương Gia Bảo",
+            "chapter_name": "Chi đoàn HTTT-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 20,
+            "student_code": "SV020",
+            "full_name": "Châu Ngọc Hân",
+            "chapter_name": "Chi đoàn HTTT-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 21,
+            "student_code": "SV021",
+            "full_name": "Tạ Minh Đức",
+            "chapter_name": "Chi đoàn KHMT-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 22,
+            "student_code": "SV022",
+            "full_name": "Phùng Yến Nhi",
+            "chapter_name": "Chi đoàn KHMT-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 23,
+            "student_code": "SV023",
+            "full_name": "Tô Hải Đăng",
+            "chapter_name": "Chi đoàn MMT-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 4,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 24,
+            "student_code": "SV024",
+            "full_name": "Đoàn Thu Hà",
+            "chapter_name": "Chi đoàn MMT-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 25,
+            "student_code": "SV025",
+            "full_name": "Quách Tuấn Anh",
+            "chapter_name": "Chi đoàn ATTT-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 26,
+            "student_code": "SV026",
+            "full_name": "Lâm Bảo Trân",
+            "chapter_name": "Chi đoàn ATTT-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 27,
+            "student_code": "SV027",
+            "full_name": "Huỳnh Nhật Minh",
+            "chapter_name": "Chi đoàn KHDL-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 28,
+            "student_code": "SV028",
+            "full_name": "Trịnh Khánh Linh",
+            "chapter_name": "Chi đoàn KHDL-02",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 29,
+            "student_code": "SV029",
+            "full_name": "Hà Trọng Nghĩa",
+            "chapter_name": "Chi đoàn KTPM-03",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 780,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        },
+        {
+            "id": 30,
+            "student_code": "SV030",
+            "full_name": "Kiều Phương Trang",
+            "chapter_name": "Chi đoàn KTPM-03",
+            "max_shifts_per_week": 4,
+            "skills": {
+                "5": {
+                    "level": 2,
+                    "is_verified": true
+                },
+                "3": {
+                    "level": 3,
+                    "is_verified": true
+                },
+                "4": {
+                    "level": 3,
+                    "is_verified": true
+                }
+            },
+            "availability": [
+                {
+                    "day_of_week": 1,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 2,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 3,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 4,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 5,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 6,
+                    "start_minute": 420,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                },
+                {
+                    "day_of_week": 7,
+                    "start_minute": 780,
+                    "end_minute": 1260,
+                    "override_date": null,
+                    "is_available": true
+                }
+            ],
+            "absent_risk_probability": 0,
+            "lat": 10.7769,
+            "lng": 106.7009,
+            "reputation_score": 4
+        }
+    ],
+    "registrations": [
+        {
+            "id": 345,
+            "shift_id": 202,
+            "volunteer_id": 1,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793494810,
+            "registered_at": "2026-11-01 08:00:10+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 346,
+            "shift_id": 202,
+            "volunteer_id": 2,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793494815,
+            "registered_at": "2026-11-01 08:00:15+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 347,
+            "shift_id": 201,
+            "volunteer_id": 1,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494820,
+            "registered_at": "2026-11-01 08:00:20+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 348,
+            "shift_id": 201,
+            "volunteer_id": 2,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494825,
+            "registered_at": "2026-11-01 08:00:25+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 349,
+            "shift_id": 201,
+            "volunteer_id": 7,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494830,
+            "registered_at": "2026-11-01 08:00:30+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 350,
+            "shift_id": 202,
+            "volunteer_id": 7,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494835,
+            "registered_at": "2026-11-01 08:00:35+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 351,
+            "shift_id": 202,
+            "volunteer_id": 8,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494840,
+            "registered_at": "2026-11-01 08:00:40+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 352,
+            "shift_id": 202,
+            "volunteer_id": 9,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494845,
+            "registered_at": "2026-11-01 08:00:45+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 353,
+            "shift_id": 202,
+            "volunteer_id": 10,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494850,
+            "registered_at": "2026-11-01 08:00:50+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 354,
+            "shift_id": 202,
+            "volunteer_id": 11,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494855,
+            "registered_at": "2026-11-01 08:00:55+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 355,
+            "shift_id": 202,
+            "volunteer_id": 12,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494860,
+            "registered_at": "2026-11-01 08:01:00+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 356,
+            "shift_id": 204,
+            "volunteer_id": 8,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793494865,
+            "registered_at": "2026-11-01 08:01:05+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 357,
+            "shift_id": 204,
+            "volunteer_id": 9,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793494870,
+            "registered_at": "2026-11-01 08:01:10+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 358,
+            "shift_id": 203,
+            "volunteer_id": 8,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494875,
+            "registered_at": "2026-11-01 08:01:15+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 359,
+            "shift_id": 203,
+            "volunteer_id": 9,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494880,
+            "registered_at": "2026-11-01 08:01:20+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 360,
+            "shift_id": 203,
+            "volunteer_id": 3,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494885,
+            "registered_at": "2026-11-01 08:01:25+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 361,
+            "shift_id": 204,
+            "volunteer_id": 4,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494890,
+            "registered_at": "2026-11-01 08:01:30+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 362,
+            "shift_id": 204,
+            "volunteer_id": 5,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494895,
+            "registered_at": "2026-11-01 08:01:35+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 363,
+            "shift_id": 204,
+            "volunteer_id": 6,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494900,
+            "registered_at": "2026-11-01 08:01:40+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 364,
+            "shift_id": 204,
+            "volunteer_id": 13,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494905,
+            "registered_at": "2026-11-01 08:01:45+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 365,
+            "shift_id": 204,
+            "volunteer_id": 14,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494910,
+            "registered_at": "2026-11-01 08:01:50+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 366,
+            "shift_id": 204,
+            "volunteer_id": 15,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494915,
+            "registered_at": "2026-11-01 08:01:55+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 367,
+            "shift_id": 206,
+            "volunteer_id": 13,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793494920,
+            "registered_at": "2026-11-01 08:02:00+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 368,
+            "shift_id": 206,
+            "volunteer_id": 14,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793494925,
+            "registered_at": "2026-11-01 08:02:05+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 369,
+            "shift_id": 205,
+            "volunteer_id": 13,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494930,
+            "registered_at": "2026-11-01 08:02:10+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 370,
+            "shift_id": 205,
+            "volunteer_id": 14,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494935,
+            "registered_at": "2026-11-01 08:02:15+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 371,
+            "shift_id": 205,
+            "volunteer_id": 3,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494940,
+            "registered_at": "2026-11-01 08:02:20+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 372,
+            "shift_id": 206,
+            "volunteer_id": 5,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494945,
+            "registered_at": "2026-11-01 08:02:25+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 373,
+            "shift_id": 206,
+            "volunteer_id": 6,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494950,
+            "registered_at": "2026-11-01 08:02:30+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 374,
+            "shift_id": 206,
+            "volunteer_id": 7,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494955,
+            "registered_at": "2026-11-01 08:02:35+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 375,
+            "shift_id": 206,
+            "volunteer_id": 8,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494960,
+            "registered_at": "2026-11-01 08:02:40+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 376,
+            "shift_id": 206,
+            "volunteer_id": 9,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494965,
+            "registered_at": "2026-11-01 08:02:45+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 377,
+            "shift_id": 206,
+            "volunteer_id": 10,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494970,
+            "registered_at": "2026-11-01 08:02:50+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 378,
+            "shift_id": 208,
+            "volunteer_id": 20,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793494975,
+            "registered_at": "2026-11-01 08:02:55+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 379,
+            "shift_id": 208,
+            "volunteer_id": 21,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793494980,
+            "registered_at": "2026-11-01 08:03:00+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 380,
+            "shift_id": 207,
+            "volunteer_id": 20,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494985,
+            "registered_at": "2026-11-01 08:03:05+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 381,
+            "shift_id": 207,
+            "volunteer_id": 21,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494990,
+            "registered_at": "2026-11-01 08:03:10+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 382,
+            "shift_id": 207,
+            "volunteer_id": 5,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793494995,
+            "registered_at": "2026-11-01 08:03:15+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 383,
+            "shift_id": 208,
+            "volunteer_id": 8,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495000,
+            "registered_at": "2026-11-01 08:03:20+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 384,
+            "shift_id": 208,
+            "volunteer_id": 9,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495005,
+            "registered_at": "2026-11-01 08:03:25+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 385,
+            "shift_id": 208,
+            "volunteer_id": 10,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495010,
+            "registered_at": "2026-11-01 08:03:30+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 386,
+            "shift_id": 208,
+            "volunteer_id": 11,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495015,
+            "registered_at": "2026-11-01 08:03:35+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 387,
+            "shift_id": 208,
+            "volunteer_id": 12,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495020,
+            "registered_at": "2026-11-01 08:03:40+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 388,
+            "shift_id": 208,
+            "volunteer_id": 13,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495025,
+            "registered_at": "2026-11-01 08:03:45+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 389,
+            "shift_id": 210,
+            "volunteer_id": 1,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793495030,
+            "registered_at": "2026-11-01 08:03:50+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 390,
+            "shift_id": 210,
+            "volunteer_id": 2,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793495035,
+            "registered_at": "2026-11-01 08:03:55+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 391,
+            "shift_id": 209,
+            "volunteer_id": 1,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495040,
+            "registered_at": "2026-11-01 08:04:00+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 392,
+            "shift_id": 209,
+            "volunteer_id": 2,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495045,
+            "registered_at": "2026-11-01 08:04:05+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 393,
+            "shift_id": 209,
+            "volunteer_id": 11,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495050,
+            "registered_at": "2026-11-01 08:04:10+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 394,
+            "shift_id": 210,
+            "volunteer_id": 15,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495055,
+            "registered_at": "2026-11-01 08:04:15+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 395,
+            "shift_id": 210,
+            "volunteer_id": 16,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495060,
+            "registered_at": "2026-11-01 08:04:20+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 396,
+            "shift_id": 210,
+            "volunteer_id": 17,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495065,
+            "registered_at": "2026-11-01 08:04:25+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 397,
+            "shift_id": 210,
+            "volunteer_id": 18,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495070,
+            "registered_at": "2026-11-01 08:04:30+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 398,
+            "shift_id": 210,
+            "volunteer_id": 19,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495075,
+            "registered_at": "2026-11-01 08:04:35+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 399,
+            "shift_id": 210,
+            "volunteer_id": 20,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495080,
+            "registered_at": "2026-11-01 08:04:40+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 400,
+            "shift_id": 212,
+            "volunteer_id": 8,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793495085,
+            "registered_at": "2026-11-01 08:04:45+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 401,
+            "shift_id": 212,
+            "volunteer_id": 9,
+            "preference_rank": 2,
+            "registered_at_epoch": 1793495090,
+            "registered_at": "2026-11-01 08:04:50+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 402,
+            "shift_id": 211,
+            "volunteer_id": 8,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495095,
+            "registered_at": "2026-11-01 08:04:55+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 403,
+            "shift_id": 211,
+            "volunteer_id": 9,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495100,
+            "registered_at": "2026-11-01 08:05:00+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 404,
+            "shift_id": 211,
+            "volunteer_id": 13,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495105,
+            "registered_at": "2026-11-01 08:05:05+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 405,
+            "shift_id": 212,
+            "volunteer_id": 18,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495110,
+            "registered_at": "2026-11-01 08:05:10+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 406,
+            "shift_id": 212,
+            "volunteer_id": 19,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495115,
+            "registered_at": "2026-11-01 08:05:15+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 407,
+            "shift_id": 212,
+            "volunteer_id": 20,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495120,
+            "registered_at": "2026-11-01 08:05:20+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 408,
+            "shift_id": 212,
+            "volunteer_id": 21,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495125,
+            "registered_at": "2026-11-01 08:05:25+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 409,
+            "shift_id": 212,
+            "volunteer_id": 22,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495130,
+            "registered_at": "2026-11-01 08:05:30+07",
+            "status": "ACTIVE"
+        },
+        {
+            "id": 410,
+            "shift_id": 212,
+            "volunteer_id": 23,
+            "preference_rank": 1,
+            "registered_at_epoch": 1793495135,
+            "registered_at": "2026-11-01 08:05:35+07",
+            "status": "ACTIVE"
+        }
+    ],
+    "fixed_assignments": []
+}

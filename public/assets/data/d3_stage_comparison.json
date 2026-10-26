@@ -1,0 +1,2192 @@
+{
+    "dataset_code": "D3",
+    "snapshot_hash": "53067f72e5f89568c81451c75c9e4c2f19542e2ab62c9cf931039de99e9949ad",
+    "shifts": [
+        {
+            "id": 201,
+            "code": "CA-01",
+            "title": "Trực Sơ cứu Điểm thi Bách Khoa",
+            "start_epoch": 1795136400,
+            "end_epoch": 1795147200,
+            "start_time": "2026-11-20 08:00:00+07",
+            "end_time": "2026-11-20 11:00:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 5,
+            "is_locked": false,
+            "location_name": "ĐH Bách Khoa TP.HCM (CS2), ĐHQG TP.HCM, TP. Thủ Đức",
+            "lat": 10.8805,
+            "lng": 106.8062,
+            "requirements": [
+                {
+                    "id": 2001,
+                    "shift_id": 201,
+                    "skill_id": 1,
+                    "skill_code": "FIRST_AID",
+                    "skill_name": "Sơ cứu y tế",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": true
+                }
+            ]
+        },
+        {
+            "id": 202,
+            "code": "CA-02",
+            "title": "Hậu cần & Tiếp nước Điểm thi A",
+            "start_epoch": 1795140000,
+            "end_epoch": 1795150800,
+            "start_time": "2026-11-20 09:00:00+07",
+            "end_time": "2026-11-20 12:00:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 3,
+            "is_locked": false,
+            "location_name": "Nhà Văn hóa Sinh viên ĐHQG, TP. Thủ Đức",
+            "lat": 10.8752,
+            "lng": 106.8007,
+            "requirements": [
+                {
+                    "id": 2002,
+                    "shift_id": 202,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 203,
+            "code": "CA-03",
+            "title": "Đội Xe tình nguyện đưa đón thí sinh",
+            "start_epoch": 1795156200,
+            "end_epoch": 1795167000,
+            "start_time": "2026-11-20 13:30:00+07",
+            "end_time": "2026-11-20 16:30:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 5,
+            "is_locked": false,
+            "location_name": "Bến xe Miền Tây, Kinh Dương Vương, Q. Bình Tân",
+            "lat": 10.7435,
+            "lng": 106.6178,
+            "requirements": [
+                {
+                    "id": 2003,
+                    "shift_id": 203,
+                    "skill_id": 2,
+                    "skill_code": "DRIVING",
+                    "skill_name": "Lái xe & Điều tiết",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": true
+                }
+            ]
+        },
+        {
+            "id": 204,
+            "code": "CA-04",
+            "title": "Dựng nhà bạt & Hậu cần chiều Thứ Sáu",
+            "start_epoch": 1795158000,
+            "end_epoch": 1795168800,
+            "start_time": "2026-11-20 14:00:00+07",
+            "end_time": "2026-11-20 17:00:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 2,
+            "is_locked": false,
+            "location_name": "Nhà Văn hóa Thanh niên TP.HCM, 4 Phạm Ngọc Thạch, Q. 1",
+            "lat": 10.7801,
+            "lng": 106.6975,
+            "requirements": [
+                {
+                    "id": 2004,
+                    "shift_id": 204,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 205,
+            "code": "CA-05",
+            "title": "Lớp học tình nguyện cho thiếu nhi",
+            "start_epoch": 1795222800,
+            "end_epoch": 1795233600,
+            "start_time": "2026-11-21 08:00:00+07",
+            "end_time": "2026-11-21 11:00:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 4,
+            "is_locked": false,
+            "location_name": "Điểm trường Xã Tam Thôn Hiệp, Huyện Cần Giờ",
+            "lat": 10.551,
+            "lng": 106.8812,
+            "requirements": [
+                {
+                    "id": 2005,
+                    "shift_id": 205,
+                    "skill_id": 3,
+                    "skill_code": "TEACHING",
+                    "skill_name": "Dạy học & Sinh hoạt",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 206,
+            "code": "CA-06",
+            "title": "Phát suất ăn & Nước uống sáng Thứ Bảy",
+            "start_epoch": 1795224600,
+            "end_epoch": 1795235400,
+            "start_time": "2026-11-21 08:30:00+07",
+            "end_time": "2026-11-21 11:30:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 3,
+            "is_locked": false,
+            "location_name": "ĐH Nông Lâm TP.HCM, QL1A, TP. Thủ Đức",
+            "lat": 10.87,
+            "lng": 106.7917,
+            "requirements": [
+                {
+                    "id": 2006,
+                    "shift_id": 206,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 207,
+            "code": "CA-07",
+            "title": "Phóng viên ảnh & Truyền thông chiến dịch",
+            "start_epoch": 1795242600,
+            "end_epoch": 1795253400,
+            "start_time": "2026-11-21 13:30:00+07",
+            "end_time": "2026-11-21 16:30:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 4,
+            "is_locked": false,
+            "location_name": "Thành Đoàn TP.HCM, 145 Pasteur, Q. 3",
+            "lat": 10.782,
+            "lng": 106.694,
+            "requirements": [
+                {
+                    "id": 2007,
+                    "shift_id": 207,
+                    "skill_id": 4,
+                    "skill_code": "MEDIA",
+                    "skill_name": "Truyền thông & Ảnh",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 208,
+            "code": "CA-08",
+            "title": "Vận chuyển vật tư & Dọn vệ sinh chiều T7",
+            "start_epoch": 1795244400,
+            "end_epoch": 1795255200,
+            "start_time": "2026-11-21 14:00:00+07",
+            "end_time": "2026-11-21 17:00:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 2,
+            "is_locked": false,
+            "location_name": "Điểm xây cầu giao thông Xã Bà Điểm, Hóc Môn",
+            "lat": 10.8385,
+            "lng": 106.6025,
+            "requirements": [
+                {
+                    "id": 2008,
+                    "shift_id": 208,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 209,
+            "code": "CA-09",
+            "title": "Trực Y tế Ngày hội Chủ Nhật Xanh",
+            "start_epoch": 1795309200,
+            "end_epoch": 1795320000,
+            "start_time": "2026-11-22 08:00:00+07",
+            "end_time": "2026-11-22 11:00:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 5,
+            "is_locked": false,
+            "location_name": "Trạm Y tế Xã Lý Nhơn, Huyện Cần Giờ",
+            "lat": 10.455,
+            "lng": 106.852,
+            "requirements": [
+                {
+                    "id": 2009,
+                    "shift_id": 209,
+                    "skill_id": 1,
+                    "skill_code": "FIRST_AID",
+                    "skill_name": "Sơ cứu y tế",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": true
+                }
+            ]
+        },
+        {
+            "id": 210,
+            "code": "CA-10",
+            "title": "Trồng cây & Thu gom rác sáng Chủ Nhật",
+            "start_epoch": 1795311000,
+            "end_epoch": 1795321800,
+            "start_time": "2026-11-22 08:30:00+07",
+            "end_time": "2026-11-22 11:30:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 3,
+            "is_locked": false,
+            "location_name": "Khu Di tích Rừng Sác – Chiến khu Rừng Sác, Cần Giờ",
+            "lat": 10.512,
+            "lng": 106.885,
+            "requirements": [
+                {
+                    "id": 2010,
+                    "shift_id": 210,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        },
+        {
+            "id": 211,
+            "code": "CA-11",
+            "title": "Điều tiết giao thông & Xe chở vật tư",
+            "start_epoch": 1795329000,
+            "end_epoch": 1795339800,
+            "start_time": "2026-11-22 13:30:00+07",
+            "end_time": "2026-11-22 16:30:00+07",
+            "min_people": 2,
+            "max_people": 3,
+            "priority": 4,
+            "is_locked": false,
+            "location_name": "ĐH Sư phạm Kỹ thuật TP.HCM, Võ Văn Ngân, TP. Thủ Đức",
+            "lat": 10.8512,
+            "lng": 106.772,
+            "requirements": [
+                {
+                    "id": 2011,
+                    "shift_id": 211,
+                    "skill_id": 2,
+                    "skill_code": "DRIVING",
+                    "skill_name": "Lái xe & Điều tiết",
+                    "min_level": 3,
+                    "required_count": 3,
+                    "require_verified": true
+                }
+            ]
+        },
+        {
+            "id": 212,
+            "code": "CA-12",
+            "title": "Tổng kết & Thu dọn trại tập kết",
+            "start_epoch": 1795330800,
+            "end_epoch": 1795341600,
+            "start_time": "2026-11-22 14:00:00+07",
+            "end_time": "2026-11-22 17:00:00+07",
+            "min_people": 3,
+            "max_people": 4,
+            "priority": 3,
+            "is_locked": false,
+            "location_name": "Công viên Lịch sử Văn hóa Dân tộc, TP. Thủ Đức",
+            "lat": 10.8805,
+            "lng": 106.8375,
+            "requirements": [
+                {
+                    "id": 2012,
+                    "shift_id": 212,
+                    "skill_id": 5,
+                    "skill_code": "LOGISTICS",
+                    "skill_name": "Hậu cần & Dựng trại",
+                    "min_level": 2,
+                    "required_count": 4,
+                    "require_verified": false
+                }
+            ]
+        }
+    ],
+    "volunteers": [
+        {
+            "id": 1,
+            "student_code": "SV001",
+            "full_name": "Nguyễn Thùy Linh",
+            "chapter_name": "Chi đoàn KTPM-01"
+        },
+        {
+            "id": 2,
+            "student_code": "SV002",
+            "full_name": "Trần Hoàng Phúc",
+            "chapter_name": "Chi đoàn KTPM-01"
+        },
+        {
+            "id": 3,
+            "student_code": "SV003",
+            "full_name": "Lê Minh Châu",
+            "chapter_name": "Chi đoàn KTPM-02"
+        },
+        {
+            "id": 4,
+            "student_code": "SV004",
+            "full_name": "Phạm Quốc Bảo",
+            "chapter_name": "Chi đoàn KTPM-02"
+        },
+        {
+            "id": 5,
+            "student_code": "SV005",
+            "full_name": "Hoàng Ngọc Ánh",
+            "chapter_name": "Chi đoàn HTTT-01"
+        },
+        {
+            "id": 6,
+            "student_code": "SV006",
+            "full_name": "Vũ Đức Thịnh",
+            "chapter_name": "Chi đoàn HTTT-01"
+        },
+        {
+            "id": 7,
+            "student_code": "SV007",
+            "full_name": "Đặng Phương Thảo",
+            "chapter_name": "Chi đoàn KHMT-01"
+        },
+        {
+            "id": 8,
+            "student_code": "SV008",
+            "full_name": "Bùi Tuấn Kiệt",
+            "chapter_name": "Chi đoàn KHMT-01"
+        },
+        {
+            "id": 9,
+            "student_code": "SV009",
+            "full_name": "Đỗ Khánh Huyền",
+            "chapter_name": "Chi đoàn MMT-01"
+        },
+        {
+            "id": 10,
+            "student_code": "SV010",
+            "full_name": "Ngô Gia Huy",
+            "chapter_name": "Chi đoàn MMT-01"
+        },
+        {
+            "id": 11,
+            "student_code": "SV011",
+            "full_name": "Dương Thanh Tùng",
+            "chapter_name": "Chi đoàn KTPM-03"
+        },
+        {
+            "id": 12,
+            "student_code": "SV012",
+            "full_name": "Lý Mỹ Duyên",
+            "chapter_name": "Chi đoàn KTPM-03"
+        },
+        {
+            "id": 13,
+            "student_code": "SV013",
+            "full_name": "Trương Đình Nam",
+            "chapter_name": "Chi đoàn ATTT-01"
+        },
+        {
+            "id": 14,
+            "student_code": "SV014",
+            "full_name": "Phan Bảo Ngọc",
+            "chapter_name": "Chi đoàn ATTT-01"
+        },
+        {
+            "id": 15,
+            "student_code": "SV015",
+            "full_name": "Võ Minh Khôi",
+            "chapter_name": "Chi đoàn KHDL-01"
+        },
+        {
+            "id": 16,
+            "student_code": "SV016",
+            "full_name": "Mai Thanh Trúc",
+            "chapter_name": "Chi đoàn KHDL-01"
+        },
+        {
+            "id": 17,
+            "student_code": "SV017",
+            "full_name": "Đinh Quốc Khánh",
+            "chapter_name": "Chi đoàn KTPM-01"
+        },
+        {
+            "id": 18,
+            "student_code": "SV018",
+            "full_name": "Hồ Thảo Nguyên",
+            "chapter_name": "Chi đoàn KTPM-02"
+        },
+        {
+            "id": 19,
+            "student_code": "SV019",
+            "full_name": "Lương Gia Bảo",
+            "chapter_name": "Chi đoàn HTTT-02"
+        },
+        {
+            "id": 20,
+            "student_code": "SV020",
+            "full_name": "Châu Ngọc Hân",
+            "chapter_name": "Chi đoàn HTTT-02"
+        },
+        {
+            "id": 21,
+            "student_code": "SV021",
+            "full_name": "Tạ Minh Đức",
+            "chapter_name": "Chi đoàn KHMT-02"
+        },
+        {
+            "id": 22,
+            "student_code": "SV022",
+            "full_name": "Phùng Yến Nhi",
+            "chapter_name": "Chi đoàn KHMT-02"
+        },
+        {
+            "id": 23,
+            "student_code": "SV023",
+            "full_name": "Tô Hải Đăng",
+            "chapter_name": "Chi đoàn MMT-02"
+        },
+        {
+            "id": 24,
+            "student_code": "SV024",
+            "full_name": "Đoàn Thu Hà",
+            "chapter_name": "Chi đoàn MMT-02"
+        },
+        {
+            "id": 25,
+            "student_code": "SV025",
+            "full_name": "Quách Tuấn Anh",
+            "chapter_name": "Chi đoàn ATTT-02"
+        },
+        {
+            "id": 26,
+            "student_code": "SV026",
+            "full_name": "Lâm Bảo Trân",
+            "chapter_name": "Chi đoàn ATTT-02"
+        },
+        {
+            "id": 27,
+            "student_code": "SV027",
+            "full_name": "Huỳnh Nhật Minh",
+            "chapter_name": "Chi đoàn KHDL-02"
+        },
+        {
+            "id": 28,
+            "student_code": "SV028",
+            "full_name": "Trịnh Khánh Linh",
+            "chapter_name": "Chi đoàn KHDL-02"
+        },
+        {
+            "id": 29,
+            "student_code": "SV029",
+            "full_name": "Hà Trọng Nghĩa",
+            "chapter_name": "Chi đoàn KTPM-03"
+        },
+        {
+            "id": 30,
+            "student_code": "SV030",
+            "full_name": "Kiều Phương Trang",
+            "chapter_name": "Chi đoàn KTPM-03"
+        }
+    ],
+    "B0": {
+        "algorithm_code": "B0",
+        "priority_mode": "FIFO_UNCHECKED",
+        "snapshot_hash": "53067f72e5f89568c81451c75c9e4c2f19542e2ab62c9cf931039de99e9949ad",
+        "config": {
+            "algorithm": "B0_FIFO_UNCHECKED",
+            "description": "Gán theo thứ tự thời gian đăng ký thuần, chỉ dừng khi ca đầy max_people, không kiểm tra kỹ năng và trùng giờ.",
+            "random_seed": 202606
+        },
+        "metrics": {
+            "total_shifts": 12,
+            "headcount_covered_shifts": 12,
+            "headcount_coverage_rate": 100,
+            "valid_covered_shifts": 0,
+            "valid_coverage_rate": 0,
+            "total_assigned": 42,
+            "total_valid_assigned": 11,
+            "total_min_required": 30,
+            "total_max_capacity": 42,
+            "min_slot_fill_rate": 36.67,
+            "total_violations": 35,
+            "violating_assignments_count": 31,
+            "violation_breakdown": {
+                "TIME_CONFLICT": 26,
+                "NO_SKILL": 6,
+                "CAPACITY_FULL": 0,
+                "NO_AVAILABLE": 0,
+                "LOAD_LIMIT": 3
+            },
+            "load_mean": 1.826,
+            "load_std_dev": 1.6326,
+            "load_max": 6,
+            "load_min": 0,
+            "load_spread": 6,
+            "volunteer_loads": {
+                "1": 4,
+                "2": 4,
+                "7": 2,
+                "8": 6,
+                "9": 5,
+                "10": 0,
+                "11": 1,
+                "12": 0,
+                "3": 2,
+                "4": 1,
+                "5": 3,
+                "6": 1,
+                "13": 3,
+                "14": 2,
+                "15": 1,
+                "20": 2,
+                "21": 2,
+                "16": 1,
+                "17": 0,
+                "18": 1,
+                "19": 1,
+                "22": 0,
+                "23": 0
+            },
+            "shift_summaries": {
+                "201": {
+                    "shift_id": 201,
+                    "shift_code": "CA-01",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 3,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 4
+                },
+                "202": {
+                    "shift_id": 202,
+                    "shift_code": "CA-02",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 1,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 3
+                },
+                "203": {
+                    "shift_id": 203,
+                    "shift_code": "CA-03",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 3,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 3
+                },
+                "204": {
+                    "shift_id": 204,
+                    "shift_code": "CA-04",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 2
+                },
+                "205": {
+                    "shift_id": 205,
+                    "shift_code": "CA-05",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 3,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 3
+                },
+                "206": {
+                    "shift_id": 206,
+                    "shift_code": "CA-06",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 2
+                },
+                "207": {
+                    "shift_id": 207,
+                    "shift_code": "CA-07",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 3,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 3
+                },
+                "208": {
+                    "shift_id": 208,
+                    "shift_code": "CA-08",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 2
+                },
+                "209": {
+                    "shift_id": 209,
+                    "shift_code": "CA-09",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 3,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 3
+                },
+                "210": {
+                    "shift_id": 210,
+                    "shift_code": "CA-10",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 2
+                },
+                "211": {
+                    "shift_id": 211,
+                    "shift_code": "CA-11",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 3,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 5
+                },
+                "212": {
+                    "shift_id": 212,
+                    "shift_code": "CA-12",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": false,
+                    "violation_count": 3
+                }
+            }
+        },
+        "decisions": [
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 1,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 2,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 201,
+                "requirement_id": 2001,
+                "volunteer_id": 1,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 201,
+                "requirement_id": 2001,
+                "volunteer_id": 2,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 201,
+                "requirement_id": 2001,
+                "volunteer_id": 7,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT",
+                    "NO_SKILL"
+                ]
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 7,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 8,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 8,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 9,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 203,
+                "requirement_id": 2003,
+                "volunteer_id": 8,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 203,
+                "requirement_id": 2003,
+                "volunteer_id": 9,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 203,
+                "requirement_id": 2003,
+                "volunteer_id": 3,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "NO_SKILL"
+                ]
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 4,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 5,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 13,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 14,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 205,
+                "requirement_id": 2005,
+                "volunteer_id": 13,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 205,
+                "requirement_id": 2005,
+                "volunteer_id": 14,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 205,
+                "requirement_id": 2005,
+                "volunteer_id": 3,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "NO_SKILL"
+                ]
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 5,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 6,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 20,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 21,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 207,
+                "requirement_id": 2007,
+                "volunteer_id": 20,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 207,
+                "requirement_id": 2007,
+                "volunteer_id": 21,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 207,
+                "requirement_id": 2007,
+                "volunteer_id": 5,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "NO_SKILL"
+                ]
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 8,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 9,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 1,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 2,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 209,
+                "requirement_id": 2009,
+                "volunteer_id": 1,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 209,
+                "requirement_id": 2009,
+                "volunteer_id": 2,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 209,
+                "requirement_id": 2009,
+                "volunteer_id": 11,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "NO_SKILL"
+                ]
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 15,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 16,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 8,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "LOAD_LIMIT",
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 9,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT"
+                ]
+            },
+            {
+                "shift_id": 211,
+                "requirement_id": 2011,
+                "volunteer_id": 8,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT",
+                    "LOAD_LIMIT"
+                ]
+            },
+            {
+                "shift_id": 211,
+                "requirement_id": 2011,
+                "volunteer_id": 9,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "TIME_CONFLICT",
+                    "LOAD_LIMIT"
+                ]
+            },
+            {
+                "shift_id": 211,
+                "requirement_id": 2011,
+                "volunteer_id": 13,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": true,
+                "violation_codes": [
+                    "NO_SKILL"
+                ]
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 18,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 19,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            }
+        ],
+        "unassigned": []
+    },
+    "B1": {
+        "algorithm_code": "B1",
+        "priority_mode": "FIFO_CHECKED",
+        "snapshot_hash": "53067f72e5f89568c81451c75c9e4c2f19542e2ab62c9cf931039de99e9949ad",
+        "config": {
+            "algorithm": "B1_FIFO_CHECKED",
+            "description": "Gán theo thứ tự đăng ký có kiểm tra đầy đủ H1–H5, bỏ qua đơn vi phạm.",
+            "random_seed": 202606
+        },
+        "metrics": {
+            "total_shifts": 12,
+            "headcount_covered_shifts": 6,
+            "headcount_coverage_rate": 50,
+            "valid_covered_shifts": 6,
+            "valid_coverage_rate": 50,
+            "total_assigned": 24,
+            "total_valid_assigned": 24,
+            "total_min_required": 30,
+            "total_max_capacity": 42,
+            "min_slot_fill_rate": 80,
+            "total_violations": 0,
+            "violating_assignments_count": 0,
+            "violation_breakdown": {
+                "TIME_CONFLICT": 0,
+                "NO_SKILL": 0,
+                "CAPACITY_FULL": 0,
+                "NO_AVAILABLE": 0,
+                "LOAD_LIMIT": 0
+            },
+            "load_mean": 1.043,
+            "load_std_dev": 0.9991,
+            "load_max": 4,
+            "load_min": 0,
+            "load_spread": 4,
+            "volunteer_loads": {
+                "1": 2,
+                "2": 2,
+                "7": 1,
+                "8": 4,
+                "9": 3,
+                "10": 0,
+                "11": 0,
+                "12": 0,
+                "3": 0,
+                "4": 1,
+                "5": 2,
+                "6": 1,
+                "13": 1,
+                "14": 1,
+                "15": 1,
+                "20": 1,
+                "21": 1,
+                "16": 1,
+                "17": 0,
+                "18": 1,
+                "19": 1,
+                "22": 0,
+                "23": 0
+            },
+            "shift_summaries": {
+                "201": {
+                    "shift_id": 201,
+                    "shift_code": "CA-01",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 0,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": false,
+                    "is_valid_covered": false,
+                    "violation_count": 0
+                },
+                "202": {
+                    "shift_id": 202,
+                    "shift_code": "CA-02",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "203": {
+                    "shift_id": 203,
+                    "shift_code": "CA-03",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 0,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": false,
+                    "is_valid_covered": false,
+                    "violation_count": 0
+                },
+                "204": {
+                    "shift_id": 204,
+                    "shift_code": "CA-04",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "205": {
+                    "shift_id": 205,
+                    "shift_code": "CA-05",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 0,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": false,
+                    "is_valid_covered": false,
+                    "violation_count": 0
+                },
+                "206": {
+                    "shift_id": 206,
+                    "shift_code": "CA-06",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "207": {
+                    "shift_id": 207,
+                    "shift_code": "CA-07",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 0,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": false,
+                    "is_valid_covered": false,
+                    "violation_count": 0
+                },
+                "208": {
+                    "shift_id": 208,
+                    "shift_code": "CA-08",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "209": {
+                    "shift_id": 209,
+                    "shift_code": "CA-09",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 0,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": false,
+                    "is_valid_covered": false,
+                    "violation_count": 0
+                },
+                "210": {
+                    "shift_id": 210,
+                    "shift_code": "CA-10",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "211": {
+                    "shift_id": 211,
+                    "shift_code": "CA-11",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 0,
+                    "valid_assigned_count": 0,
+                    "is_headcount_covered": false,
+                    "is_valid_covered": false,
+                    "violation_count": 0
+                },
+                "212": {
+                    "shift_id": 212,
+                    "shift_code": "CA-12",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                }
+            }
+        },
+        "decisions": [
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 1,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 2,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 7,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 8,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 8,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 9,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 4,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 5,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 13,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 14,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 5,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 6,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 20,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 21,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 8,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 9,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 1,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 2,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 15,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 16,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 8,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 9,
+                "score": 2,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 18,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 19,
+                "score": 3,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            }
+        ],
+        "unassigned": [
+            {
+                "item_type": "SLOT",
+                "shift_id": 201,
+                "requirement_id": 2001,
+                "volunteer_id": null,
+                "missing_count": 2,
+                "reason_code": "TIME_CONFLICT",
+                "reason_message_vi": "Trùng giờ với một ca khác đã được phân công",
+                "explanation_text": "Ca CA-01 còn thiếu 2 người do gán theo thứ tự đăng ký làm ứng viên phù hợp bị kẹt ở ca khác hoặc thiếu kỹ năng."
+            },
+            {
+                "item_type": "SLOT",
+                "shift_id": 203,
+                "requirement_id": 2003,
+                "volunteer_id": null,
+                "missing_count": 2,
+                "reason_code": "TIME_CONFLICT",
+                "reason_message_vi": "Trùng giờ với một ca khác đã được phân công",
+                "explanation_text": "Ca CA-03 còn thiếu 2 người do gán theo thứ tự đăng ký làm ứng viên phù hợp bị kẹt ở ca khác hoặc thiếu kỹ năng."
+            },
+            {
+                "item_type": "SLOT",
+                "shift_id": 205,
+                "requirement_id": 2005,
+                "volunteer_id": null,
+                "missing_count": 2,
+                "reason_code": "TIME_CONFLICT",
+                "reason_message_vi": "Trùng giờ với một ca khác đã được phân công",
+                "explanation_text": "Ca CA-05 còn thiếu 2 người do gán theo thứ tự đăng ký làm ứng viên phù hợp bị kẹt ở ca khác hoặc thiếu kỹ năng."
+            },
+            {
+                "item_type": "SLOT",
+                "shift_id": 207,
+                "requirement_id": 2007,
+                "volunteer_id": null,
+                "missing_count": 2,
+                "reason_code": "TIME_CONFLICT",
+                "reason_message_vi": "Trùng giờ với một ca khác đã được phân công",
+                "explanation_text": "Ca CA-07 còn thiếu 2 người do gán theo thứ tự đăng ký làm ứng viên phù hợp bị kẹt ở ca khác hoặc thiếu kỹ năng."
+            },
+            {
+                "item_type": "SLOT",
+                "shift_id": 209,
+                "requirement_id": 2009,
+                "volunteer_id": null,
+                "missing_count": 2,
+                "reason_code": "TIME_CONFLICT",
+                "reason_message_vi": "Trùng giờ với một ca khác đã được phân công",
+                "explanation_text": "Ca CA-09 còn thiếu 2 người do gán theo thứ tự đăng ký làm ứng viên phù hợp bị kẹt ở ca khác hoặc thiếu kỹ năng."
+            },
+            {
+                "item_type": "SLOT",
+                "shift_id": 211,
+                "requirement_id": 2011,
+                "volunteer_id": null,
+                "missing_count": 2,
+                "reason_code": "TIME_CONFLICT",
+                "reason_message_vi": "Trùng giờ với một ca khác đã được phân công",
+                "explanation_text": "Ca CA-11 còn thiếu 2 người do gán theo thứ tự đăng ký làm ứng viên phù hợp bị kẹt ở ca khác hoặc thiếu kỹ năng."
+            }
+        ]
+    },
+    "X": {
+        "algorithm_code": "X",
+        "priority_mode": "MAX_COVERAGE",
+        "snapshot_hash": "53067f72e5f89568c81451c75c9e4c2f19542e2ab62c9cf931039de99e9949ad",
+        "config": {
+            "priority_mode": "MAX_COVERAGE",
+            "weights": {
+                "w_priority": 5,
+                "w_preference": 2,
+                "w_skill_waste": 3,
+                "w_load": 1,
+                "w_absent_risk": 0,
+                "w_reputation": 0
+            },
+            "random_seed": 202606,
+            "algorithm_version": "xanhhub-v1.1-2phase-3step"
+        },
+        "metrics": {
+            "total_shifts": 12,
+            "headcount_covered_shifts": 12,
+            "headcount_coverage_rate": 100,
+            "valid_covered_shifts": 12,
+            "valid_coverage_rate": 100,
+            "total_assigned": 36,
+            "total_valid_assigned": 36,
+            "total_min_required": 30,
+            "total_max_capacity": 42,
+            "min_slot_fill_rate": 120,
+            "total_violations": 0,
+            "violating_assignments_count": 0,
+            "violation_breakdown": {
+                "TIME_CONFLICT": 0,
+                "NO_SKILL": 0,
+                "CAPACITY_FULL": 0,
+                "NO_AVAILABLE": 0,
+                "LOAD_LIMIT": 0
+            },
+            "load_mean": 1.565,
+            "load_std_dev": 0.9244,
+            "load_max": 4,
+            "load_min": 0,
+            "load_spread": 4,
+            "volunteer_loads": {
+                "1": 2,
+                "2": 2,
+                "7": 1,
+                "8": 4,
+                "9": 2,
+                "10": 3,
+                "11": 1,
+                "12": 2,
+                "3": 0,
+                "4": 1,
+                "5": 1,
+                "6": 2,
+                "13": 2,
+                "14": 2,
+                "15": 1,
+                "20": 3,
+                "21": 1,
+                "16": 1,
+                "17": 1,
+                "18": 2,
+                "19": 0,
+                "22": 1,
+                "23": 1
+            },
+            "shift_summaries": {
+                "201": {
+                    "shift_id": 201,
+                    "shift_code": "CA-01",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 2,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "202": {
+                    "shift_id": 202,
+                    "shift_code": "CA-02",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "203": {
+                    "shift_id": 203,
+                    "shift_code": "CA-03",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 2,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "204": {
+                    "shift_id": 204,
+                    "shift_code": "CA-04",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "205": {
+                    "shift_id": 205,
+                    "shift_code": "CA-05",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 2,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "206": {
+                    "shift_id": 206,
+                    "shift_code": "CA-06",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "207": {
+                    "shift_id": 207,
+                    "shift_code": "CA-07",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 2,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "208": {
+                    "shift_id": 208,
+                    "shift_code": "CA-08",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "209": {
+                    "shift_id": 209,
+                    "shift_code": "CA-09",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 2,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "210": {
+                    "shift_id": 210,
+                    "shift_code": "CA-10",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "211": {
+                    "shift_id": 211,
+                    "shift_code": "CA-11",
+                    "min_people": 2,
+                    "max_people": 3,
+                    "assigned_headcount": 2,
+                    "valid_assigned_count": 2,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                },
+                "212": {
+                    "shift_id": 212,
+                    "shift_code": "CA-12",
+                    "min_people": 3,
+                    "max_people": 4,
+                    "assigned_headcount": 4,
+                    "valid_assigned_count": 4,
+                    "is_headcount_covered": true,
+                    "is_valid_covered": true,
+                    "violation_count": 0
+                }
+            }
+        },
+        "decisions": [
+            {
+                "shift_id": 201,
+                "requirement_id": 2001,
+                "volunteer_id": 1,
+                "score": 27,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 201,
+                "requirement_id": 2001,
+                "volunteer_id": 2,
+                "score": 27,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 203,
+                "requirement_id": 2003,
+                "volunteer_id": 8,
+                "score": 25,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 203,
+                "requirement_id": 2003,
+                "volunteer_id": 9,
+                "score": 27,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 209,
+                "requirement_id": 2009,
+                "volunteer_id": 1,
+                "score": 27,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 209,
+                "requirement_id": 2009,
+                "volunteer_id": 2,
+                "score": 27,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 205,
+                "requirement_id": 2005,
+                "volunteer_id": 14,
+                "score": 25,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 205,
+                "requirement_id": 2005,
+                "volunteer_id": 13,
+                "score": 22,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 207,
+                "requirement_id": 2007,
+                "volunteer_id": 20,
+                "score": 24,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 207,
+                "requirement_id": 2007,
+                "volunteer_id": 21,
+                "score": 23,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 211,
+                "requirement_id": 2011,
+                "volunteer_id": 8,
+                "score": 20,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 211,
+                "requirement_id": 2011,
+                "volunteer_id": 9,
+                "score": 22,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 12,
+                "score": 20,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 10,
+                "score": 19,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 8,
+                "score": 18,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 6,
+                "score": 20,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 10,
+                "score": 19,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 5,
+                "score": 18,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 16,
+                "score": 21,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 18,
+                "score": 20,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 20,
+                "score": 19,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 22,
+                "score": 21,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 18,
+                "score": 20,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 20,
+                "score": 19,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 4,
+                "score": 16,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 6,
+                "score": 15,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 14,
+                "score": 15,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 12,
+                "score": 15,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 10,
+                "score": 14,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 11,
+                "score": 13,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 202,
+                "requirement_id": 2002,
+                "volunteer_id": 7,
+                "score": 18,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 206,
+                "requirement_id": 2006,
+                "volunteer_id": 8,
+                "score": 18,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 208,
+                "requirement_id": 2008,
+                "volunteer_id": 13,
+                "score": 12,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 210,
+                "requirement_id": 2010,
+                "volunteer_id": 17,
+                "score": 18,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 212,
+                "requirement_id": 2012,
+                "volunteer_id": 23,
+                "score": 18,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            },
+            {
+                "shift_id": 204,
+                "requirement_id": 2004,
+                "volunteer_id": 15,
+                "score": 13,
+                "is_locked_fixed": false,
+                "has_violation": false,
+                "violation_codes": []
+            }
+        ],
+        "unassigned": [
+            {
+                "item_type": "VOLUNTEER",
+                "shift_id": 203,
+                "requirement_id": null,
+                "volunteer_id": 3,
+                "missing_count": 1,
+                "reason_code": "NO_SKILL",
+                "reason_message_vi": "Thiếu kỹ năng bắt buộc hoặc chưa đạt cấp tối thiểu của vị trí",
+                "explanation_text": "Tình nguyện viên Lê Minh Châu (SV003) chưa đạt cấp kỹ năng yêu cầu của các ca đã đăng ký."
+            },
+            {
+                "item_type": "VOLUNTEER",
+                "shift_id": 210,
+                "requirement_id": null,
+                "volunteer_id": 19,
+                "missing_count": 1,
+                "reason_code": "CAPACITY_FULL",
+                "reason_message_vi": "Ca hoặc vị trí kỹ năng đã đủ số người tối đa",
+                "explanation_text": "Tình nguyện viên Lương Gia Bảo (SV019) chưa được bố trí do các ca đã đăng ký đã đủ ứng viên điểm ưu tiên cao hơn (đưa vào danh sách dự bị)."
+            }
+        ]
+    }
+}

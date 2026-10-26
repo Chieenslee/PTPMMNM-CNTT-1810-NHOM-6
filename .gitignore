@@ -1,0 +1,12 @@
+/vendor/
+/.agents/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+/.phpunit.result.cache
+/storage/logs/*.log
+/storage/exports/*
+!/storage/exports/.gitkeep
+test_gis_scratch.php
