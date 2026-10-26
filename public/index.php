@@ -4508,6 +4508,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     $replacementRanker = new \XanhHub\Domain\Scheduling\ReplacementRanker();
 
+    // Nạp danh sách đăng ký nguyện vọng (shift_registrations) cho từng ca trực để Điều phối viên duyệt
+    $stmtRegs = $pdo->prepare("
+        SELECT sr.shift_id, sr.volunteer_id, sr.preference_rank
+          FROM shift_registrations sr
+          JOIN shifts s ON s.id = sr.shift_id
+         WHERE s.activity_id = :actId AND sr.status = 'REGISTERED'
+         ORDER BY sr.preference_rank ASC, sr.id ASC
+    ");
+    $stmtRegs->execute([':actId' => $selectedActivityId]);
+    $regsByShift = [];
+    while ($regRow = $stmtRegs->fetch()) {
+        $regsByShift[(int)$regRow['shift_id']][(int)$regRow['volunteer_id']] = (int)$regRow['preference_rank'];
+    }
+
     $jsShifts = [];
     foreach ($ds->shifts as $s) {
         $cList = $assignedByShift[$s->id] ?? [];
@@ -4581,6 +4595,7 @@ document.addEventListener('DOMContentLoaded', function () {
             'assigned_count' => $currCount,
             'status' => $s->isLocked ? 'LOCKED' : ($isFull ? 'FULL' : ($isUnder ? 'UNDERSTAFFED' : 'VALID')),
             'assignments' => $jsAssignments,
+            'registrations' => $regsByShift[$s->id] ?? (object)[],
             'absence_reports' => $absencesByShift[$s->id] ?? [],
             'replacement_candidates' => $shiftReplacements,
         ];
@@ -5006,34 +5021,49 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <!-- CỤM 3 TAB NGANG FULL-WIDTH TRONG SHIFT INSPECTOR -->
                                 <div class="w-full min-w-0 mt-3 flex-1 flex flex-col">
                                     <!-- Header 3 Tab Buttons -->
-                                    <div class="flex flex-wrap items-center border-b border-slate-200 dark:border-slate-800 gap-1 mb-3.5">
-                                        <button type="button"
-                                                id="btn-tab-assigned"
-                                                class="inspector-tab-btn active px-3 py-2 text-xs font-bold border-b-2 border-[#0057B8] text-[#0057B8] dark:border-sky-400 dark:text-sky-400 flex items-center gap-1.5 whitespace-nowrap transition-all"
-                                                data-inspector-tab="assigned"
-                                                data-tab-target="#inspector-tab-assigned">
-                                            <span class="material-symbols-outlined text-[15px]">how_to_reg</span>
-                                            <span>Nhân sự Đã Phân công</span>
-                                            <span id="badge-assigned-roster-count" class="badge badge-valid mono text-[10px] ml-0.5">0 người</span>
-                                        </button>
-                                        <button type="button"
-                                                id="btn-tab-eligible"
-                                                class="inspector-tab-btn px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent flex items-center gap-1.5 whitespace-nowrap transition-all"
-                                                data-inspector-tab="eligible"
-                                                data-tab-target="#inspector-tab-eligible">
-                                            <span class="material-symbols-outlined text-[15px]">person_search</span>
-                                            <span>Ứng viên Phù hợp Gợi ý</span>
-                                            <span id="badge-eligible-count" class="badge badge-info mono text-[10px] ml-0.5">0 ứng viên</span>
-                                        </button>
-                                        <button type="button"
-                                                id="btn-tab-replacement"
-                                                class="inspector-tab-btn px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent flex items-center gap-1.5 whitespace-nowrap transition-all"
-                                                data-inspector-tab="replacement"
-                                                data-tab-target="#inspector-tab-replacement">
-                                            <span class="material-symbols-outlined text-[15px]">published_with_changes</span>
-                                            <span>Báo Vắng &amp; Thay Thế (CN5)</span>
-                                            <span id="badge-replacement-tab-count" class="badge badge-warning mono text-[10px] ml-0.5">0 yêu cầu</span>
-                                        </button>
+                                    <div class="flex flex-wrap items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-2 mb-3.5">
+                                        <div class="flex flex-wrap items-center gap-1">
+                                            <button type="button"
+                                                    id="btn-tab-assigned"
+                                                    class="inspector-tab-btn active px-3 py-2 text-xs font-bold border-b-2 border-[#0057B8] text-[#0057B8] dark:border-sky-400 dark:text-sky-400 flex items-center gap-1.5 whitespace-nowrap transition-all"
+                                                    data-inspector-tab="assigned"
+                                                    data-tab-target="#inspector-tab-assigned">
+                                                <span class="material-symbols-outlined text-[15px]">how_to_reg</span>
+                                                <span>Nhân sự &amp; Duyệt Đăng ký</span>
+                                                <span id="badge-assigned-roster-count" class="badge badge-valid mono text-[10px] ml-0.5">0 người</span>
+                                            </button>
+                                            <button type="button"
+                                                    id="btn-tab-eligible"
+                                                    class="inspector-tab-btn px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent flex items-center gap-1.5 whitespace-nowrap transition-all"
+                                                    data-inspector-tab="eligible"
+                                                    data-tab-target="#inspector-tab-eligible">
+                                                <span class="material-symbols-outlined text-[15px]">person_search</span>
+                                                <span>Duyệt Đăng ký &amp; Ứng viên Gợi ý</span>
+                                                <span id="badge-eligible-count" class="badge badge-info mono text-[10px] ml-0.5">0 ứng viên</span>
+                                            </button>
+                                            <button type="button"
+                                                    id="btn-tab-replacement"
+                                                    class="inspector-tab-btn px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent flex items-center gap-1.5 whitespace-nowrap transition-all"
+                                                    data-inspector-tab="replacement"
+                                                    data-tab-target="#inspector-tab-replacement">
+                                                <span class="material-symbols-outlined text-[15px]">published_with_changes</span>
+                                                <span>Báo Vắng &amp; Thay Thế (CN5)</span>
+                                                <span id="badge-replacement-tab-count" class="badge badge-warning mono text-[10px] ml-0.5">0 yêu cầu</span>
+                                            </button>
+                                        </div>
+                                        <form method="post" action="?view=coordinator&activity_id=<?= $selectedActivityId ?>&action=run_scheduler" class="pb-1.5">
+                                            <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
+                                            <input type="hidden" name="priority_mode" value="MAX_COVERAGE">
+                                            <input type="hidden" name="w_priority" value="5">
+                                            <input type="hidden" name="w_preference" value="2">
+                                            <input type="hidden" name="w_skill_waste" value="3">
+                                            <input type="hidden" name="w_load" value="1">
+                                            <input type="hidden" name="apply_immediately" value="1">
+                                            <button type="submit" class="btn btn-sm btn-success flex items-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs" title="Chạy thuật toán tự động xét duyệt đăng ký và phân công toàn chiến dịch">
+                                                <span class="material-symbols-outlined text-[15px]">bolt</span>
+                                                <span>Tự động Đề xuất &amp; Duyệt Phân công</span>
+                                            </button>
+                                        </form>
                                     </div>
 
                                     <!-- TAB 1: NHÂN SỰ ĐÃ PHÂN CÔNG (#inspector-tab-assigned) -->

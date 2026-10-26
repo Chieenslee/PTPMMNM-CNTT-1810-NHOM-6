@@ -1907,7 +1907,7 @@
             renderReplacementTab(shift);
         }
 
-        // Render Zone 1: Assigned Roster (Tab 1 - 100% Width, Full Unclipped Names)
+        // Render Zone 1: Assigned Roster + Pending Registrations (Tab 1 - 100% Width, Full Unclipped Names)
         function renderAssignedRoster(shift) {
             const listEl = document.getElementById('assigned-roster-list');
             const countBadge = document.getElementById('badge-assigned-roster-count');
@@ -1915,7 +1915,20 @@
             if (!listEl) return;
 
             let list = shift.assignments || [];
-            if (countBadge) countBadge.textContent = `${list.length} người`;
+            const assignedVolIds = list.map(a => a.volunteer_id);
+            const regsMap = shift.registrations || {};
+
+            // Tìm các tình nguyện viên đã đăng ký ca này nhưng chưa được phân công (Chờ duyệt)
+            const pendingRegisteredVols = (coordinatorData.volunteers || []).filter(v => {
+                if (assignedVolIds.includes(v.id)) return false;
+                return regsMap[v.id] !== undefined || regsMap[String(v.id)] !== undefined;
+            });
+
+            if (countBadge) {
+                countBadge.textContent = pendingRegisteredVols.length > 0
+                    ? `${list.length} người (${pendingRegisteredVols.length} chờ duyệt)`
+                    : `${list.length} người`;
+            }
 
             if (query) {
                 list = list.filter(item => {
@@ -1925,16 +1938,86 @@
                 });
             }
 
-            if (list.length === 0) {
-                listEl.innerHTML = `
-                    <div class="p-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-center text-xs text-slate-400">
-                        ${query ? 'Không tìm thấy nhân sự phù hợp bộ lọc.' : 'Chưa có nhân sự nào trong ca trực này. Chọn ứng viên từ phân vùng gợi ý để gán vào ca.'}
+            let pendingHtml = '';
+            if (pendingRegisteredVols.length > 0) {
+                const pendingItemsHtml = pendingRegisteredVols.map(v => {
+                    const prefRank = regsMap[v.id] || regsMap[String(v.id)] || 1;
+                    const reqSkill = (v.skills || []).find(s => s.code === shift.req_skill_code && s.level >= shift.req_min_level);
+                    const skillStatusBadge = reqSkill
+                        ? `<span class="badge badge-valid text-[10px] whitespace-nowrap shrink-0">Đủ kỹ năng: ${reqSkill.name} (Cấp ${reqSkill.level})</span>`
+                        : `<span class="badge badge-violation text-[10px] whitespace-nowrap shrink-0">Thiếu kỹ năng: ${shift.req_skill_name} ≥ Cấp ${shift.req_min_level}</span>`;
+
+                    return `
+                        <div class="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 flex flex-wrap items-center justify-between gap-2.5 w-full">
+                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                <img src="${v.avatar_url}" alt="" class="w-8 h-8 rounded-full object-cover ring-2 ring-amber-400/50 shrink-0">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white cursor-pointer hover:text-[#0057B8] btn-inspect-candidate" data-volunteer-id="${v.id}">${v.full_name}</span>
+                                        <span class="mono text-[11px] text-slate-400 shrink-0">(${v.student_code})</span>
+                                        <span class="badge badge-warning text-[10px] whitespace-nowrap shrink-0">Đã đăng ký Nguyện vọng ${prefRank} · Chờ duyệt</span>
+                                        ${skillStatusBadge}
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5 truncate">${v.chapter_name}</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                                <button type="button" class="btn btn-sm btn-outline btn-inspect-candidate px-2 py-1 text-[11px] text-[#0057B8] dark:text-sky-400" data-volunteer-id="${v.id}">
+                                    <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                    <span>Hồ sơ</span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success btn-approve-reg-shift px-3 py-1 text-xs font-bold flex items-center gap-1 whitespace-nowrap"
+                                        data-volunteer-id="${v.id}"
+                                        data-shift-id="${shift.id}"
+                                        data-req-id="${shift.req_id || ''}">
+                                    <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                    <span>✓ Duyệt đăng ký (Gán vào ca)</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                pendingHtml = `
+                    <div class="mb-3 p-3 rounded-xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/70 space-y-2">
+                        <div class="text-xs font-extrabold text-amber-800 dark:text-amber-300 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px]">pending_actions</span>
+                                <span>Đơn Đăng ký Nguyện vọng Chờ Duyệt vào Ca (${pendingRegisteredVols.length} TNV)</span>
+                            </span>
+                            <span class="text-[11px] font-normal text-slate-500">Bấm "Duyệt đăng ký" để kiểm tra điều kiện &amp; phân công</span>
+                        </div>
+                        ${pendingItemsHtml}
                     </div>
                 `;
+            }
+
+            if (list.length === 0) {
+                listEl.innerHTML = pendingHtml + `
+                    <div class="p-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-center text-xs text-slate-400">
+                        ${query ? 'Không tìm thấy nhân sự phù hợp bộ lọc.' : 'Chưa có nhân sự nào được chốt phân công trong ca trực này. Bạn có thể bấm "✓ Duyệt đăng ký" ở trên, chuyển sang Tab "Duyệt Đăng ký & Ứng viên Gợi ý", hoặc bấm nút "Tự động Đề xuất & Duyệt Phân công".'}
+                    </div>
+                `;
+                listEl.querySelectorAll('.btn-approve-reg-shift').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const volId = btn.dataset.volunteerId;
+                        const shiftId = btn.dataset.shiftId;
+                        const reqId = btn.dataset.reqId || '';
+                        const actId = coordinatorData.activity_id || '3';
+                        const targetCard = document.querySelector(`.compact-shift-card[data-shift-id="${shiftId}"]`);
+                        submitManualAssignment(actId, shiftId, volId, reqId, '', targetCard);
+                    });
+                });
+                listEl.querySelectorAll('.btn-inspect-candidate').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const vid = el.dataset.volunteerId;
+                        if (vid) openCandidateInspector(vid);
+                    });
+                });
                 return;
             }
 
-            listEl.innerHTML = list.map(item => `
+            listEl.innerHTML = pendingHtml + list.map(item => `
                 <div class="assigned-pill p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2.5 transition-all hover:border-[#0057B8] w-full">
                     <div class="flex items-center gap-2.5 min-w-0 flex-1">
                         <img src="${item.avatar_url}" alt="" class="w-8 h-8 rounded-full object-cover ring-2 ring-[#0057B8]/30 shrink-0">
@@ -1974,6 +2057,18 @@
                 </div>
             `).join('');
 
+            // Attach dynamic approve registration handlers in Tab 1
+            listEl.querySelectorAll('.btn-approve-reg-shift').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const volId = btn.dataset.volunteerId;
+                    const shiftId = btn.dataset.shiftId;
+                    const reqId = btn.dataset.reqId || '';
+                    const actId = coordinatorData.activity_id || '3';
+                    const targetCard = document.querySelector(`.compact-shift-card[data-shift-id="${shiftId}"]`);
+                    submitManualAssignment(actId, shiftId, volId, reqId, '', targetCard);
+                });
+            });
+
             // Attach dynamic remove assign handlers
             listEl.querySelectorAll('.btn-remove-assign').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2008,14 +2103,17 @@
             if (!listEl) return;
 
             const assignedVolIds = (shift.assignments || []).map(a => a.volunteer_id);
+            const regsMap = shift.registrations || {};
 
-            // Filter eligible candidates
+            // Filter eligible candidates (including anyone who registered for this shift)
             let eligible = (coordinatorData.volunteers || []).filter(v => {
                 // Must not be already assigned in this shift
                 if (assignedVolIds.includes(v.id)) return false;
 
-                // Match required skill if specified
-                if (shift.req_skill_code) {
+                const isRegistered = (regsMap[v.id] !== undefined || regsMap[String(v.id)] !== undefined);
+
+                // Match required skill if specified (unless they explicitly registered for this shift)
+                if (shift.req_skill_code && !isRegistered) {
                     const hasSkill = (v.skills || []).some(s => s.code === shift.req_skill_code && s.level >= shift.req_min_level);
                     if (!hasSkill) return false;
                 }
@@ -2037,8 +2135,11 @@
                 return true;
             });
 
-            // Sort: best matching first, lower current load first
+            // Sort: registered volunteers first (Nguyện vọng 1 -> 2 -> 3), then lower current load, then reputation
             eligible.sort((a, b) => {
+                const regA = regsMap[a.id] ?? regsMap[String(a.id)] ?? 99;
+                const regB = regsMap[b.id] ?? regsMap[String(b.id)] ?? 99;
+                if (regA !== regB) return regA - regB;
                 return a.assigned_count - b.assigned_count || (b.reputation || 0) - (a.reputation || 0);
             });
 
@@ -2066,13 +2167,19 @@
             }
 
             listEl.innerHTML = paged.map(v => {
-                const reqSkill = (v.skills || []).find(s => s.code === shift.req_skill_code);
+                const prefRank = regsMap[v.id] ?? regsMap[String(v.id)] ?? null;
+                const reqSkill = (v.skills || []).find(s => s.code === shift.req_skill_code && s.level >= shift.req_min_level);
                 const skillBadge = reqSkill
                     ? `<span class="badge badge-info text-[10px] whitespace-nowrap shrink-0">${reqSkill.name} (Cấp ${reqSkill.level})</span>`
-                    : `<span class="badge badge-subtle text-[10px] whitespace-nowrap shrink-0">${v.skills[0]?.name || 'TNV'}</span>`;
+                    : `<span class="badge badge-violation text-[10px] whitespace-nowrap shrink-0">Thiếu kỹ năng: ${shift.req_skill_name} ≥ Cấp ${shift.req_min_level}</span>`;
+                const regBadge = prefRank !== null
+                    ? `<span class="badge badge-warning text-[10px] whitespace-nowrap shrink-0">Đã đăng ký Nguyện vọng ${prefRank}</span>`
+                    : '';
+                const actionBtnLabel = prefRank !== null ? '✓ Duyệt đăng ký' : '+ Gán vào ca';
+                const actionBtnClass = prefRank !== null ? 'btn-success' : 'btn-primary';
 
                 return `
-                    <div class="eligible-candidate-card p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-all hover:border-[#0057B8] w-full"
+                    <div class="eligible-candidate-card p-3 rounded-xl ${prefRank !== null ? 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'} border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-all hover:border-[#0057B8] w-full"
                          draggable="true"
                          data-volunteer-id="${v.id}">
                         <div class="flex items-center gap-2.5 min-w-0 flex-1">
@@ -2085,6 +2192,7 @@
                                     <span class="text-[11px] text-slate-500 hidden sm:inline">&middot; ${v.chapter_name}</span>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-2 mt-1">
+                                    ${regBadge}
                                     ${skillBadge}
                                     <span class="badge badge-subtle text-[10px] mono whitespace-nowrap shrink-0">${v.assigned_count} ca đã nhận</span>
                                     ${v.reputation ? `<span class="badge badge-warning text-[10px] mono whitespace-nowrap shrink-0">★ ${v.reputation}</span>` : ''}
@@ -2096,13 +2204,13 @@
                                 <span class="material-symbols-outlined text-[14px]">visibility</span>
                                 <span class="hidden md:inline">Hồ sơ</span>
                             </button>
-                            <button type="button" class="btn btn-sm btn-primary btn-quick-assign-active-shift px-3 py-1 text-xs flex items-center gap-1.5 font-bold shadow-xs whitespace-nowrap"
+                            <button type="button" class="btn btn-sm ${actionBtnClass} btn-quick-assign-active-shift px-3 py-1 text-xs flex items-center gap-1.5 font-bold shadow-xs whitespace-nowrap"
                                     data-volunteer-id="${v.id}"
                                     data-shift-id="${shift.id}"
                                     data-req-id="${shift.req_id || ''}"
-                                    title="Gán 1-chạm vào ca đang mở">
-                                <span class="material-symbols-outlined text-[14px]">person_add</span>
-                                <span>+ Gán vào ca</span>
+                                    title="Duyệt đăng ký / Gán 1-chạm vào ca đang mở">
+                                <span class="material-symbols-outlined text-[14px]">${prefRank !== null ? 'check_circle' : 'person_add'}</span>
+                                <span>${actionBtnLabel}</span>
                             </button>
                         </div>
                     </div>
