@@ -405,13 +405,14 @@ final class XanhHubRepository
         }
 
         try {
-            // Xóa các phân công chưa xác nhận/chưa khóa của hoạt động này trước khi chép phương án mới
+            // Xóa các phân công tạo bởi thuật toán (plan_id IS NOT NULL) chưa xác nhận/chưa khóa của hoạt động này trước khi chép phương án mới, bảo tồn phân công thủ công của Điều phối viên
             $stmtDeleteUnconfirmed = $this->pdo->prepare('
                 DELETE FROM assignments a
                  USING shifts s
                  WHERE a.shift_id = s.id
                    AND a.activity_id = :aid
                    AND a.status = \'ASSIGNED\'
+                   AND a.plan_id IS NOT NULL
                    AND s.is_locked = FALSE
             ');
             $stmtDeleteUnconfirmed->execute([':aid' => $activityId]);

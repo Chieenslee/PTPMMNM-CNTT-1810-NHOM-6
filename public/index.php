@@ -4136,17 +4136,32 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    $stmtMyAssign = $pdo->prepare("
-        SELECT a.id, a.shift_id, a.status, a.assigned_at, a.confirmed_at,
-               s.code, s.title, s.start_time, s.end_time, s.location_name
+    // Lấy toàn bộ ca trực đã được phân công của TNV trên tất cả các chiến dịch để không bao giờ bị sót ca
+    $stmtAllMyAssign = $pdo->prepare("
+        SELECT a.id, a.activity_id, a.shift_id, a.status, a.assigned_at, a.confirmed_at,
+               s.code, s.title, s.start_time, s.end_time, s.location_name,
+               COALESCE(act.title, 'Chiến dịch') AS activity_title,
+               COALESCE(act.code, 'CD') AS activity_code
           FROM assignments a
           JOIN shifts s ON s.id = a.shift_id
-         WHERE a.activity_id = :aid AND a.volunteer_id = :vid
+          LEFT JOIN activities act ON act.id = a.activity_id
+         WHERE a.volunteer_id = :vid
            AND a.status IN ('ASSIGNED', 'CONFIRMED', 'CHECKED_IN')
-         ORDER BY s.id ASC
+         ORDER BY s.start_time ASC, s.id ASC
     ");
-    $stmtMyAssign->execute([':aid' => $selectedActivityId, ':vid' => $vol->id]);
-    $myAssignments = $stmtMyAssign->fetchAll();
+    $stmtAllMyAssign->execute([':vid' => $vol->id]);
+    $allMyAssignments = $stmtAllMyAssign->fetchAll();
+
+    // Ca trực thuộc riêng chiến dịch đang chọn hiện tại
+    $currentActivityAssignments = array_values(array_filter($allMyAssignments, static fn($m) => (int)$m['activity_id'] === (int)$selectedActivityId));
+
+    // Bộ lọc hiển thị phân công: mặc định 'all' để ứng viên luôn thấy ngay toàn bộ phân công của mình
+    $assignFilter = (string)($_GET['assign_filter'] ?? 'all');
+    if (!in_array($assignFilter, ['all', 'current'], true)) {
+        $assignFilter = 'all';
+    }
+    $myAssignments = ($assignFilter === 'current') ? $currentActivityAssignments : $allMyAssignments;
+
     $activeVTab = (string) ($_GET['vtab'] ?? 'vtab-my-shifts');
     if (!in_array($activeVTab, ['vtab-my-shifts', 'vtab-register', 'vtab-profile'], true)) {
         $activeVTab = 'vtab-my-shifts';
@@ -4175,7 +4190,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 class="workspace-tab-btn <?= $activeVTab === 'vtab-my-shifts' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left"
             >
                 <span class="material-symbols-outlined text-[20px]">event_available</span>
-                <span>Ca trực &amp; Điểm danh (<?= count($myAssignments) ?>)</span>
+                <span>Ca trực &amp; Điểm danh (<?= count($allMyAssignments) ?>)</span>
             </button>
             <button
                 type="button"
@@ -4236,7 +4251,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <span class="material-symbols-outlined text-[15px] filled">stars</span> Tình nguyện viên Nòng cốt
                             </span>
                             <span class="text-xs text-slate-600 dark:text-slate-300">
-                                Số ca đã giao: <strong class="text-[#0057B8] dark:text-sky-400 font-mono text-sm"><?= count($myAssignments) ?> ca</strong>
+                                Tổng ca đã giao: <strong class="text-[#0057B8] dark:text-sky-400 font-mono text-sm"><?= count($allMyAssignments) ?> ca</strong>
+                                <?php if (!empty($allMyAssignments) && count($currentActivityAssignments) !== count($allMyAssignments)): ?>
+                                    <span class="text-[11px] text-slate-400">(<?= count($currentActivityAssignments) ?> ca trong chiến dịch này)</span>
+                                <?php endif; ?>
                             </span>
                         </div>
                     </div>
@@ -4275,7 +4293,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5"></div>
                     <button type="button" data-workspace-tab="vtab-my-shifts" class="workspace-tab-btn <?= $activeVTab === 'vtab-my-shifts' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">event_available</span>
-                        <span>Ca trực &amp; Điểm danh (<?= count($myAssignments) ?>)</span>
+                        <span>Ca trực &amp; Điểm danh (<?= count($allMyAssignments) ?>)</span>
                     </button>
                     <button type="button" data-workspace-tab="vtab-register" class="workspace-tab-btn <?= $activeVTab === 'vtab-register' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">calendar_add_on</span>
@@ -4298,29 +4316,73 @@ document.addEventListener('DOMContentLoaded', function () {
             <!-- TAB 1: CA TRỰC CỦA TÔI & QUÉT QR -->
             <div id="vtab-my-shifts" class="workspace-tab-pane <?= $activeVTab === 'vtab-my-shifts' ? 'active' : '' ?>">
                 <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm mb-6">
-                    <h2 class="text-lg font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[#0057B8]">qr_code_scanner</span>
-                        <span>Lịch trực Đã được Phân công &amp; Điểm danh QR 30 giây</span>
-                    </h2>
-                    <?php if (empty($myAssignments)): ?>
-                        <div class="p-8 text-center text-slate-500">
-                            Hiện bạn chưa có ca trực nào được chốt trong chiến dịch này. Hãy bấm sang mục <strong>Đăng ký Ca trực</strong> ở trên để chọn ca!
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#0057B8]">qr_code_scanner</span>
+                                <span>Lịch trực Đã được Phân công &amp; Điểm danh QR 30 giây</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Danh sách toàn bộ các ca trực Ban chỉ huy đã phân công cho bạn</p>
                         </div>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <a href="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-my-shifts&assign_filter=all"
+                               class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all <?= $assignFilter === 'all' ? 'bg-[#0057B8] text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700' ?>">
+                                Tất cả chiến dịch (<?= count($allMyAssignments) ?>)
+                            </a>
+                            <a href="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-my-shifts&assign_filter=current"
+                               class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all <?= $assignFilter === 'current' ? 'bg-[#0057B8] text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700' ?>">
+                                <?= h($activeCampaign['short_title']) ?> (<?= count($currentActivityAssignments) ?>)
+                            </a>
+                        </div>
+                    </div>
+
+                    <?php if (empty($myAssignments)): ?>
+                        <?php if ($assignFilter === 'current' && !empty($allMyAssignments)): ?>
+                            <div class="p-8 text-center rounded-xl bg-blue-50/60 dark:bg-sky-950/20 border border-blue-200 dark:border-sky-800 text-slate-700 dark:text-slate-300">
+                                <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-4xl mb-2">info</span>
+                                <p class="font-bold text-sm mb-1">Hiện bạn chưa có ca trực nào trong chiến dịch &ldquo;<?= h($activeCampaign['short_title']) ?>&rdquo;.</p>
+                                <p class="text-xs text-slate-500 mb-3">Tuy nhiên bạn đang có <strong><?= count($allMyAssignments) ?> ca trực</strong> đã được phân công ở các chiến dịch khác!</p>
+                                <a href="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-my-shifts&assign_filter=all" class="btn btn-sm btn-primary inline-flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                    <span>Xem toàn bộ <?= count($allMyAssignments) ?> ca trực đã phân công</span>
+                                </a>
+                            </div>
+                        <?php else: ?>
+                            <div class="p-8 text-center text-slate-500">
+                                <span class="material-symbols-outlined text-slate-400 text-4xl mb-2">event_busy</span>
+                                <p class="font-bold text-sm mb-1">Hiện bạn chưa có ca trực nào được phân công.</p>
+                                <p class="text-xs text-slate-500">Hãy bấm sang mục <strong>Đăng ký Ca trực</strong> ở trên để chọn ca phù hợp với lịch rảnh và kỹ năng của bạn!</p>
+                            </div>
+                        <?php endif; ?>
                     <?php else: ?>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <?php foreach ($myAssignments as $ma): ?>
-                                <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-5 bg-slate-50/70 dark:bg-slate-800/40">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <strong class="text-slate-900 dark:text-white">[<?= h($ma['code']) ?>] <?= h($ma['title']) ?></strong>
-                                        <span class="badge <?= $ma['status'] === 'CHECKED_IN' ? 'badge-valid' : 'badge-info' ?> mono"><?= h($ma['status']) ?></span>
+                                <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-5 bg-slate-50/70 dark:bg-slate-800/40 hover:border-[#0057B8] transition-colors">
+                                    <div class="flex justify-between items-start mb-2 gap-2">
+                                        <div>
+                                            <div class="mb-1">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400 border border-blue-200 dark:border-sky-800">
+                                                    <span class="material-symbols-outlined text-[12px]">flag</span>
+                                                    <span>[<?= h($ma['activity_code']) ?>] <?= h($ma['activity_title']) ?></span>
+                                                </span>
+                                            </div>
+                                            <strong class="text-slate-900 dark:text-white text-sm">[<?= h($ma['code']) ?>] <?= h($ma['title']) ?></strong>
+                                        </div>
+                                        <?php if ($ma['status'] === 'CHECKED_IN'): ?>
+                                            <span class="badge badge-valid mono text-xs shrink-0">✓ Đã điểm danh</span>
+                                        <?php elseif ($ma['status'] === 'CONFIRMED'): ?>
+                                            <span class="badge badge-info mono text-xs shrink-0">✓ Đã xác nhận</span>
+                                        <?php else: ?>
+                                            <span class="badge badge-warning mono text-xs shrink-0">Chờ xác nhận</span>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="text-xs text-slate-500 dark:text-slate-400 mb-4 space-y-1">
-                                        <div><?= icon('map-pin', 13) ?> <?= h($ma['location_name']) ?></div>
-                                        <div class="mono"><?= icon('clock', 13) ?> <?= h($ma['start_time']) ?></div>
+                                        <div class="flex items-center gap-1.5"><?= icon('map-pin', 13) ?> <span><?= h($ma['location_name']) ?></span></div>
+                                        <div class="mono flex items-center gap-1.5"><?= icon('clock', 13) ?> <span><?= h($ma['start_time']) ?> &rarr; <?= h($ma['end_time']) ?></span></div>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
                                         <?php if ($ma['status'] === 'ASSIGNED'): ?>
-                                            <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&action=volunteer_confirm_assignment">
+                                            <form method="post" action="?view=volunteer&activity_id=<?= (int)$ma['activity_id'] ?>&vtab=vtab-my-shifts&assign_filter=<?= h($assignFilter) ?>&action=volunteer_confirm_assignment">
                                                 <input type="hidden" name="assignment_id" value="<?= (int) $ma['id'] ?>">
                                                 <button type="submit" class="btn btn-sm btn-primary"><?= icon('check-circle', 13) ?> Xác nhận tham gia</button>
                                             </form>
