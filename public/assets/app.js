@@ -111,9 +111,15 @@
     // Chuyển Tab vùng làm việc mượt mà (Volunteer & Coordinator Sidebars + Top Quick Bar)
     const tabButtons = document.querySelectorAll('[data-workspace-tab]');
     if (tabButtons.length > 0) {
-        const viewKey = new URLSearchParams(window.location.search).get('view') || 'default';
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewKey = urlParams.get('view') || 'default';
+        const urlVTab = urlParams.get('vtab');
+        const serverActivePane = document.querySelector('.workspace-tab-pane.active');
+        const serverTabId = (serverActivePane && serverActivePane.id && serverActivePane.id !== 'vtab-my-shifts')
+            ? serverActivePane.id
+            : null;
         const storageKey = 'xanhhub_active_tab_' + viewKey;
-        const savedTab = sessionStorage.getItem(storageKey);
+        const savedTab = urlVTab || serverTabId || sessionStorage.getItem(storageKey);
 
         const activateTab = (tabId) => {
             if (!document.getElementById(tabId)) return;
@@ -1505,24 +1511,80 @@
     }
 
     // =========================================================================
-    // 10. CẬP NHẬT LỊCH RẢNH ĐỊNH KỲ CỦA TÌNH NGUYỆN VIÊN (CN2)
+    // 10. CẬP NHẬT LỊCH RẢNH ĐỊNH KỲ & NGÀY CỤ THỂ CỦA TÌNH NGUYỆN VIÊN (CN1/CN2)
     // =========================================================================
+    const syncAvailMatrixBadge = (cb) => {
+        const label = cb.closest('.avail-matrix-cell');
+        const textSpan = label ? label.querySelector('.avail-cell-text') : null;
+        if (!label || !textSpan) return;
+        if (cb.checked) {
+            label.className = 'avail-matrix-cell inline-flex items-center justify-center w-full py-1.5 px-2 rounded-lg border cursor-pointer select-none transition-all bg-emerald-50 dark:bg-emerald-950/50 border-emerald-400 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs';
+            textSpan.textContent = '✓ Rảnh';
+        } else {
+            label.className = 'avail-matrix-cell inline-flex items-center justify-center w-full py-1.5 px-2 rounded-lg border cursor-pointer select-none transition-all bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-slate-300';
+            textSpan.textContent = '— Bận';
+        }
+    };
+
+    const availCheckboxes = document.querySelectorAll('.avail-matrix-checkbox');
+    if (availCheckboxes.length > 0) {
+        availCheckboxes.forEach(cb => {
+            cb.addEventListener('change', () => syncAvailMatrixBadge(cb));
+        });
+
+        const btnPresetWeekend = document.getElementById('btn-avail-preset-weekend');
+        if (btnPresetWeekend) {
+            btnPresetWeekend.addEventListener('click', () => {
+                availCheckboxes.forEach(cb => {
+                    const val = cb.value || '';
+                    cb.checked = val.startsWith('6_') || val.startsWith('7_');
+                    syncAvailMatrixBadge(cb);
+                });
+            });
+        }
+
+        const btnPresetAll = document.getElementById('btn-avail-preset-all');
+        if (btnPresetAll) {
+            btnPresetAll.addEventListener('click', () => {
+                availCheckboxes.forEach(cb => {
+                    cb.checked = true;
+                    syncAvailMatrixBadge(cb);
+                });
+            });
+        }
+
+        const btnPresetClear = document.getElementById('btn-avail-preset-clear');
+        if (btnPresetClear) {
+            btnPresetClear.addEventListener('click', () => {
+                availCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                    syncAvailMatrixBadge(cb);
+                });
+            });
+        }
+    }
+
     const btnAddAvail = document.getElementById('btn-save-availability');
     if (btnAddAvail) {
-        btnAddAvail.addEventListener('click', () => {
+        btnAddAvail.addEventListener('click', (e) => {
+            e.preventDefault();
             const volId = btnAddAvail.dataset.volunteerId;
+            const overrideDate = document.getElementById('avail-date-input')?.value || '';
             const day = document.getElementById('avail-day-select')?.value || '6';
             const startHm = document.getElementById('avail-start-input')?.value || '07:00';
             const endHm = document.getElementById('avail-end-input')?.value || '18:00';
+            const isAvail = document.getElementById('avail-status-select')?.value ?? '1';
 
             fetch('?action=api_update_availability', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
                     volunteer_id: volId,
+                    override_date: overrideDate,
                     day_of_week: day,
                     start_hm: startHm,
-                    end_hm: endHm
+                    end_hm: endHm,
+                    is_available: isAvail
                 }).toString()
             })
                 .then(r => r.json())
@@ -1532,7 +1594,12 @@
                         return;
                     }
                     XanhHubUI.toast('success', 'Đã cập nhật lịch rảnh', res.message_vi);
-                    setTimeout(() => window.location.reload(), 600);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('vtab', 'vtab-profile');
+                    sessionStorage.setItem('xanhhub_active_tab_volunteer', 'vtab-profile');
+                    setTimeout(() => {
+                        window.location.href = url.toString();
+                    }, 500);
                 });
         });
     }

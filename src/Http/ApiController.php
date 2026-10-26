@@ -403,9 +403,51 @@ final class ApiController
     private function updateAvailability(int $currentVolunteerId, ?int $actorUserId): void
     {
         $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+        $overrideDate = trim((string) ($_POST['override_date'] ?? ''));
         $dayOfWeek = max(1, min(7, (int) ($_POST['day_of_week'] ?? 6)));
-        $startHm = trim((string) ($_POST['start_hm'] ?? '07:00'));
-        $endHm = trim((string) ($_POST['end_hm'] ?? '18:00'));
+        $startHm = substr(trim((string) ($_POST['start_hm'] ?? '07:00')), 0, 5);
+        $endHm = substr(trim((string) ($_POST['end_hm'] ?? '18:00')), 0, 5);
+        $isAvailable = !isset($_POST['is_available']) || (string) $_POST['is_available'] !== '0';
+
+        if ($endHm <= $startHm) {
+            $this->json([
+                'ok' => false,
+                'message_vi' => 'Giờ kết thúc phải lớn hơn giờ bắt đầu.',
+            ], 400);
+            return;
+        }
+
+        if ($overrideDate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $overrideDate)) {
+            $this->pdo->prepare('DELETE FROM availability_overrides WHERE volunteer_id = :vid AND override_date = :od')
+                ->execute([':vid' => $volId, ':od' => $overrideDate]);
+
+            $this->pdo->prepare('
+                INSERT INTO availability_overrides (volunteer_id, override_date, start_time, end_time, is_available, reason)
+                VALUES (:vid, :od, :st, :et, :av, :rsn)
+            ')->execute([
+                ':vid' => $volId,
+                ':od' => $overrideDate,
+                ':st' => $startHm . ':00',
+                ':et' => $endHm . ':00',
+                ':av' => $isAvailable ? 'true' : 'false',
+                ':rsn' => $isAvailable ? 'Đăng ký ngày rảnh cụ thể' : 'Báo bận theo ngày cụ thể',
+            ]);
+
+            $fmtDate = date('d/m/Y', strtotime($overrideDate));
+            $this->repo->appendAuditLog(
+                $actorUserId ?? $volId,
+                'AVAILABILITY_DATE_UPDATED',
+                'availability_overrides',
+                "{$volId}_{$overrideDate}",
+                "Cập nhật lịch theo ngày {$fmtDate} ({$startHm}-{$endHm})"
+            );
+
+            $this->json([
+                'ok' => true,
+                'message_vi' => "Đã lưu lịch ngày {$fmtDate} ({$startHm} – {$endHm}) thành công!",
+            ]);
+            return;
+        }
 
         $this->pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow')
             ->execute([':vid' => $volId, ':dow' => $dayOfWeek]);

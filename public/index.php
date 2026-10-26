@@ -456,10 +456,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
         ")->execute([':aid' => $actId, ':sid' => $shiftId, ':vid' => $volId, ':pref' => $pref]);
         $repo->appendAuditLog($actorUserId, 'REGISTRATION_CREATED', 'registrations', "{$shiftId}_{$volId}", "Tình nguyện viên #{$volId} đăng ký ca #{$shiftId} (Nguyện vọng {$pref})");
         $flashMessage = "Đã đăng ký nguyện vọng {$pref} cho ca trực #{$shiftId}!";
+        $_GET['vtab'] = 'vtab-register';
     } elseif ($action === 'volunteer_withdraw_registration') {
         $actId = (int) ($_POST['activity_id'] ?? 3);
         $shiftId = (int) ($_POST['shift_id'] ?? 0);
         $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+        $_GET['vtab'] = 'vtab-register';
 
         $stmtCheckShift = $pdo->prepare('SELECT code, title, is_locked FROM shifts WHERE id = :sid LIMIT 1');
         $stmtCheckShift->execute([':sid' => $shiftId]);
@@ -492,16 +494,135 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
         }
     } elseif ($action === 'volunteer_delete_availability') {
         $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+        $overrideDate = trim((string) ($_POST['override_date'] ?? ''));
         $dow = (int) ($_POST['day_of_week'] ?? 0);
-        if ($volId > 0 && $dow >= 1 && $dow <= 7) {
-            $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow')
-                ->execute([':vid' => $volId, ':dow' => $dow]);
+        $startHm = trim((string) ($_POST['start_hm'] ?? ''));
+        $_GET['vtab'] = 'vtab-profile';
+
+        if ($volId > 0 && $overrideDate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $overrideDate)) {
+            $pdo->prepare('DELETE FROM availability_overrides WHERE volunteer_id = :vid AND override_date = :od')
+                ->execute([':vid' => $volId, ':od' => $overrideDate]);
+            $fmtD = date('d/m/Y', strtotime($overrideDate));
+            $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DATE_DELETED', 'availability_overrides', "{$volId}_{$overrideDate}", "Xóa lịch ngày cụ thể {$fmtD} của TNV #{$volId}");
+            $flashMessage = "Đã xóa lịch ngày cụ thể {$fmtD} thành công!";
+        } elseif ($volId > 0 && $dow >= 1 && $dow <= 7) {
+            if ($startHm !== '') {
+                $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow AND start_time = :st::time')
+                    ->execute([':vid' => $volId, ':dow' => $dow, ':st' => substr($startHm, 0, 5) . ':00']);
+            } else {
+                $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow')
+                    ->execute([':vid' => $volId, ':dow' => $dow]);
+            }
             $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DELETED', 'availability', "{$volId}_{$dow}", "Xóa khung lịch rảnh Thứ {$dow} của TNV #{$volId}");
-            $flashMessage = "Đã xóa khung lịch rảnh Thứ {$dow} thành công!";
+            $flashMessage = "Đã xóa khung lịch rảnh thành công!";
+        }
+    } elseif ($action === 'volunteer_save_availability') {
+        $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+        $_GET['vtab'] = 'vtab-profile';
+
+        if ($volId > 0) {
+            $mode = (string) ($_POST['avail_mode'] ?? '');
+            $rawMatrix = $_POST['matrix_slots'] ?? ($_POST['slots'] ?? null);
+
+            if ($mode === 'matrix' || is_array($rawMatrix)) {
+                $slotsArr = is_array($rawMatrix) ? $rawMatrix : [];
+                $byDay = [];
+                foreach ($slotsArr as $token) {
+                    if (preg_match('/^([1-7])_(MORNING|AFTERNOON|EVENING)$/', (string) $token, $m)) {
+                        $d = (int) $m[1];
+                        $byDay[$d][$m[2]] = true;
+                    }
+                }
+
+                $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid')->execute([':vid' => $volId]);
+                $stmtInsAvail = $pdo->prepare('
+                    INSERT INTO availability (volunteer_id, day_of_week, start_time, end_time, is_recurring)
+                    VALUES (:vid, :dow, :st, :et, TRUE)
+                ');
+
+                $savedSlotsCount = 0;
+                for ($d = 1; $d <= 7; $d++) {
+                    $morn = !empty($byDay[$d]['MORNING']);
+                    $aft  = !empty($byDay[$d]['AFTERNOON']);
+                    $eve  = !empty($byDay[$d]['EVENING']);
+
+                    if ($morn && $aft && $eve) {
+                        $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '22:00:00']);
+                        $savedSlotsCount++;
+                    } elseif ($morn && $aft) {
+                        $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '18:00:00']);
+                        $savedSlotsCount++;
+                    } elseif ($aft && $eve) {
+                        $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '12:30:00', ':et' => '22:00:00']);
+                        $savedSlotsCount++;
+                    } else {
+                        if ($morn) {
+                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '12:00:00']);
+                            $savedSlotsCount++;
+                        }
+                        if ($aft) {
+                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '12:30:00', ':et' => '18:00:00']);
+                            $savedSlotsCount++;
+                        }
+                        if ($eve) {
+                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '18:00:00', ':et' => '22:00:00']);
+                            $savedSlotsCount++;
+                        }
+                    }
+                }
+
+                $repo->appendAuditLog($actorUserId, 'AVAILABILITY_MATRIX_SAVED', 'availability', (string) $volId, "Tình nguyện viên #{$volId} lưu bảng ma trận lịch rảnh 7 ngày ({$savedSlotsCount} khung giờ)");
+                $flashMessage = "Đã lưu bảng Lịch rảnh 7 ngày ({$savedSlotsCount} khung giờ) thành công!";
+            } else {
+                $overrideDate = trim((string) ($_POST['override_date'] ?? ''));
+                $dayOfWeek = max(1, min(7, (int) ($_POST['day_of_week'] ?? 6)));
+                $startHm = substr(trim((string) ($_POST['start_hm'] ?? '07:00')), 0, 5);
+                $endHm = substr(trim((string) ($_POST['end_hm'] ?? '18:00')), 0, 5);
+                $isAvailable = !isset($_POST['is_available']) || (string) $_POST['is_available'] !== '0';
+
+                if ($endHm <= $startHm) {
+                    $flashType = 'error';
+                    $flashMessage = 'Giờ kết thúc phải lớn hơn giờ bắt đầu!';
+                } elseif ($overrideDate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $overrideDate)) {
+                    $pdo->prepare('DELETE FROM availability_overrides WHERE volunteer_id = :vid AND override_date = :od')
+                        ->execute([':vid' => $volId, ':od' => $overrideDate]);
+                    $pdo->prepare('
+                        INSERT INTO availability_overrides (volunteer_id, override_date, start_time, end_time, is_available, reason)
+                        VALUES (:vid, :od, :st, :et, :av, :rsn)
+                    ')->execute([
+                        ':vid' => $volId,
+                        ':od' => $overrideDate,
+                        ':st' => $startHm . ':00',
+                        ':et' => $endHm . ':00',
+                        ':av' => $isAvailable ? 'true' : 'false',
+                        ':rsn' => $isAvailable ? 'Đăng ký ngày rảnh cụ thể' : 'Báo bận ngày cụ thể',
+                    ]);
+                    $fmtDate = date('d/m/Y', strtotime($overrideDate));
+                    $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DATE_SAVED', 'availability_overrides', "{$volId}_{$overrideDate}", "Lưu lịch ngày cụ thể {$fmtDate}: {$startHm}-{$endHm}");
+                    $flashMessage = "Đã lưu lịch ngày cụ thể {$fmtDate} ({$startHm} – {$endHm}) thành công!";
+                } else {
+                    $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow')
+                        ->execute([':vid' => $volId, ':dow' => $dayOfWeek]);
+                    $pdo->prepare('
+                        INSERT INTO availability (volunteer_id, day_of_week, start_time, end_time, is_recurring)
+                        VALUES (:vid, :dow, :st, :et, TRUE)
+                    ')->execute([
+                        ':vid' => $volId,
+                        ':dow' => $dayOfWeek,
+                        ':st' => $startHm . ':00',
+                        ':et' => $endHm . ':00',
+                    ]);
+                    $repo->appendAuditLog($actorUserId, 'AVAILABILITY_UPDATED', 'availability', "{$volId}_{$dayOfWeek}", "Lưu lịch rảnh thứ {$dayOfWeek}: {$startHm}-{$endHm}");
+                    $flashMessage = "Đã lưu khung lịch rảnh định kỳ ({$startHm} – {$endHm}) thành công!";
+                }
+            }
         }
     } elseif ($action === 'volunteer_save_skills') {
         $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
-        if ($volId > 0 && isset($_POST['skills']) && is_array($_POST['skills'])) {
+        $_GET['vtab'] = 'vtab-profile';
+        $inputSkills = $_POST['skills'] ?? ($_POST['skill_level'] ?? []);
+
+        if ($volId > 0) {
             $stmtUpsertSkill = $pdo->prepare('
                 INSERT INTO volunteer_skills (volunteer_id, skill_id, level, is_verified)
                 VALUES (:vid, :sid, :lvl, TRUE)
@@ -509,23 +630,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
                 DO UPDATE SET level = EXCLUDED.level
             ');
             $stmtDeleteSkill = $pdo->prepare('DELETE FROM volunteer_skills WHERE volunteer_id = :vid AND skill_id = :sid');
-            foreach ($_POST['skills'] as $sid => $lvl) {
-                $sidInt = (int) $sid;
-                $lvlInt = (int) $lvl;
-                if ($sidInt >= 1 && $sidInt <= 5) {
-                    if ($lvlInt <= 0) {
-                        $stmtDeleteSkill->execute([':vid' => $volId, ':sid' => $sidInt]);
-                    } else {
-                        $stmtUpsertSkill->execute([
-                            ':vid' => $volId,
-                            ':sid' => $sidInt,
-                            ':lvl' => max(1, min(5, $lvlInt)),
-                        ]);
+
+            if (is_array($inputSkills)) {
+                foreach ($inputSkills as $sid => $lvl) {
+                    $sidInt = (int) $sid;
+                    $lvlInt = (int) $lvl;
+                    if ($sidInt >= 1) {
+                        if ($lvlInt <= 0) {
+                            $stmtDeleteSkill->execute([':vid' => $volId, ':sid' => $sidInt]);
+                        } else {
+                            $stmtUpsertSkill->execute([
+                                ':vid' => $volId,
+                                ':sid' => $sidInt,
+                                ':lvl' => max(1, min(5, $lvlInt)),
+                            ]);
+                        }
                     }
                 }
             }
-            $repo->appendAuditLog($actorUserId, 'VOLUNTEER_SKILLS_UPDATED', 'volunteer_skills', (string) $volId, "Tình nguyện viên #{$volId} cập nhật danh sách kỹ năng chuyên môn");
-            $flashMessage = 'Đã cập nhật kỹ năng chuyên môn trong hồ sơ thành công!';
+
+            // Hỗ trợ thêm "+ Kỹ năng khác" trực tiếp vào bảng skills & volunteer_skills
+            $customSkillName = trim((string) ($_POST['custom_skill_name'] ?? ''));
+            $customSkillLvl = max(1, min(5, (int) ($_POST['custom_skill_level'] ?? 3)));
+            $addedCustomLabel = '';
+            if ($customSkillName !== '') {
+                $stmtFindSk = $pdo->prepare('SELECT id, code, name FROM skills WHERE LOWER(name) = LOWER(:nm) LIMIT 1');
+                $stmtFindSk->execute([':nm' => $customSkillName]);
+                $existingSk = $stmtFindSk->fetch();
+
+                if (is_array($existingSk)) {
+                    $customSkillId = (int) $existingSk['id'];
+                } else {
+                    $customCode = 'OTHER_' . strtoupper(substr(md5(strtolower($customSkillName)), 0, 6));
+                    $stmtCreateSk = $pdo->prepare('
+                        INSERT INTO skills (code, name, description)
+                        VALUES (:c, :nm, :desc)
+                        ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+                        RETURNING id
+                    ');
+                    $stmtCreateSk->execute([
+                        ':c' => $customCode,
+                        ':nm' => $customSkillName,
+                        ':desc' => 'Kỹ năng bổ sung do Tình nguyện viên / Điều phối viên cập nhật',
+                    ]);
+                    $customSkillId = (int) $stmtCreateSk->fetchColumn();
+                }
+
+                if ($customSkillId > 0) {
+                    $stmtUpsertSkill->execute([
+                        ':vid' => $volId,
+                        ':sid' => $customSkillId,
+                        ':lvl' => $customSkillLvl,
+                    ]);
+                    $addedCustomLabel = " (đã bổ sung kỹ năng mới: {$customSkillName} — Cấp {$customSkillLvl})";
+                }
+            }
+
+            $repo->appendAuditLog($actorUserId, 'VOLUNTEER_SKILLS_UPDATED', 'volunteer_skills', (string) $volId, "Tình nguyện viên #{$volId} cập nhật danh sách kỹ năng chuyên môn{$addedCustomLabel}");
+            $flashMessage = 'Đã lưu cập nhật Hồ sơ Kỹ năng Chuyên môn thành công!' . $addedCustomLabel;
         }
     } elseif ($action === 'update_shift_capacity') {
         if (!in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)) {
@@ -606,6 +768,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
             }
         }
         $flashMessage = "Đã đăng ký nhanh {$added} ca phù hợp lịch rảnh của bạn!";
+        $_GET['vtab'] = 'vtab-register';
     } elseif ($action === 'volunteer_confirm_assignment') {
         $assignId = (int) ($_POST['assignment_id'] ?? 0);
         $pdo->prepare("UPDATE assignments SET status = 'CONFIRMED', confirmed_at = NOW() WHERE id = :id")->execute([':id' => $assignId]);
@@ -808,16 +971,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
                         ON CONFLICT (volunteer_id, skill_id)
                         DO UPDATE SET level = EXCLUDED.level
                     ');
+                    $stmtDelSk = $pdo->prepare('DELETE FROM volunteer_skills WHERE volunteer_id = :vid AND skill_id = :sid');
                     foreach ($_POST['skills'] as $sid => $lvl) {
                         $sidInt = (int) $sid;
-                        $lvlInt = max(1, min(5, (int) $lvl));
-                        if ($sidInt >= 1 && $sidInt <= 5) {
-                            $stmtSk->execute([
-                                ':vid' => $actorUserId,
-                                ':sid' => $sidInt,
-                                ':lvl' => $lvlInt,
-                            ]);
+                        $lvlInt = (int) $lvl;
+                        if ($sidInt >= 1) {
+                            if ($lvlInt <= 0) {
+                                $stmtDelSk->execute([':vid' => $actorUserId, ':sid' => $sidInt]);
+                            } else {
+                                $stmtSk->execute([
+                                    ':vid' => $actorUserId,
+                                    ':sid' => $sidInt,
+                                    ':lvl' => max(1, min(5, $lvlInt)),
+                                ]);
+                            }
                         }
+                    }
+                }
+
+                // Hỗ trợ thêm "+ Kỹ năng khác" từ trang Hồ sơ cá nhân (?view=profile)
+                $customSkillName = trim((string) ($_POST['custom_skill_name'] ?? ''));
+                $customSkillLvl = max(1, min(5, (int) ($_POST['custom_skill_level'] ?? 3)));
+                if ($customSkillName !== '') {
+                    $stmtFindSk = $pdo->prepare('SELECT id FROM skills WHERE LOWER(name) = LOWER(:nm) LIMIT 1');
+                    $stmtFindSk->execute([':nm' => $customSkillName]);
+                    $customSkillId = (int) ($stmtFindSk->fetchColumn() ?: 0);
+
+                    if ($customSkillId <= 0) {
+                        $customCode = 'OTHER_' . strtoupper(substr(md5(strtolower($customSkillName)), 0, 6));
+                        $stmtCreateSk = $pdo->prepare('
+                            INSERT INTO skills (code, name, description)
+                            VALUES (:c, :nm, :desc)
+                            ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+                            RETURNING id
+                        ');
+                        $stmtCreateSk->execute([
+                            ':c' => $customCode,
+                            ':nm' => $customSkillName,
+                            ':desc' => 'Kỹ năng bổ sung do Tình nguyện viên cập nhật',
+                        ]);
+                        $customSkillId = (int) $stmtCreateSk->fetchColumn();
+                    }
+
+                    if ($customSkillId > 0) {
+                        $pdo->prepare('
+                            INSERT INTO volunteer_skills (volunteer_id, skill_id, level, is_verified)
+                            VALUES (:vid, :sid, :lvl, TRUE)
+                            ON CONFLICT (volunteer_id, skill_id)
+                            DO UPDATE SET level = EXCLUDED.level
+                        ')->execute([
+                            ':vid' => $actorUserId,
+                            ':sid' => $customSkillId,
+                            ':lvl' => $customSkillLvl,
+                        ]);
                     }
                 }
 
@@ -1191,6 +1397,22 @@ $skillIconMap = [
     'TRAFFIC'    => 'traffic',
     'IT_SUPPORT' => 'computer',
 ];
+try {
+    $dbSkillsAll = $pdo->query('SELECT id, code, name FROM skills ORDER BY id ASC')->fetchAll();
+    foreach ($dbSkillsAll as $dbsk) {
+        $skId = (int) $dbsk['id'];
+        $skCode = (string) $dbsk['code'];
+        $skName = (string) $dbsk['name'];
+        $skillCodeById[$skId] = $skCode;
+        if (!isset($skillNameVi[$skCode])) {
+            $skillNameVi[$skCode] = $skName;
+        }
+        if (!isset($skillIconMap[$skCode])) {
+            $skillIconMap[$skCode] = 'workspace_premium';
+        }
+    }
+} catch (\Throwable) {
+}
 $dayNameVi = [
     1 => 'Thứ 2',
     2 => 'Thứ 3',
@@ -3925,6 +4147,10 @@ document.addEventListener('DOMContentLoaded', function () {
     ");
     $stmtMyAssign->execute([':aid' => $selectedActivityId, ':vid' => $vol->id]);
     $myAssignments = $stmtMyAssign->fetchAll();
+    $activeVTab = (string) ($_GET['vtab'] ?? 'vtab-my-shifts');
+    if (!in_array($activeVTab, ['vtab-my-shifts', 'vtab-register', 'vtab-profile'], true)) {
+        $activeVTab = 'vtab-my-shifts';
+    }
     ?>
     <!-- Backdrop và Menu Mini Nổi 1 Lớp Toàn Màn Hình (Full-Height Left Drawer - Không đẩy giao diện) -->
     <div id="workspace-drawer-backdrop" class="workspace-floating-backdrop no-print"></div>
@@ -3946,7 +4172,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <button
                 type="button"
                 data-workspace-tab="vtab-my-shifts"
-                class="workspace-tab-btn active flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400"
+                class="workspace-tab-btn <?= $activeVTab === 'vtab-my-shifts' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left"
             >
                 <span class="material-symbols-outlined text-[20px]">event_available</span>
                 <span>Ca trực &amp; Điểm danh (<?= count($myAssignments) ?>)</span>
@@ -3954,7 +4180,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <button
                 type="button"
                 data-workspace-tab="vtab-register"
-                class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                class="workspace-tab-btn <?= $activeVTab === 'vtab-register' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left"
             >
                 <span class="material-symbols-outlined text-[20px]">calendar_add_on</span>
                 <span>Đăng ký Ca trực (<?= count($ds->shifts) ?>)</span>
@@ -3962,7 +4188,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <button
                 type="button"
                 data-workspace-tab="vtab-profile"
-                class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                class="workspace-tab-btn <?= $activeVTab === 'vtab-profile' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left"
             >
                 <span class="material-symbols-outlined text-[20px]">schedule</span>
                 <span>Kỹ năng &amp; Lịch rảnh</span>
@@ -3972,7 +4198,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="px-3 text-[11px] font-bold uppercase text-slate-400 mb-1">Chuyển Chiến dịch</div>
             <?php foreach ($campaignMeta as $actId => $c): ?>
                 <a
-                    href="?view=volunteer&activity_id=<?= $actId ?>"
+                    href="?view=volunteer&activity_id=<?= $actId ?>&vtab=<?= h($activeVTab) ?>"
                     class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors <?= $selectedActivityId === $actId ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
                 >
                     <span><?= h($c['short_title']) ?></span>
@@ -4003,22 +4229,22 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span>Menu Cổng TNV</span>
                     </button>
                     <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block mx-0.5"></div>
-                    <button type="button" data-workspace-tab="vtab-my-shifts" class="workspace-tab-btn active inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400">
+                    <button type="button" data-workspace-tab="vtab-my-shifts" class="workspace-tab-btn <?= $activeVTab === 'vtab-my-shifts' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all">
                         <span class="material-symbols-outlined text-[16px]">event_available</span>
                         <span>Ca trực &amp; Điểm danh (<?= count($myAssignments) ?>)</span>
                     </button>
-                    <button type="button" data-workspace-tab="vtab-register" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <button type="button" data-workspace-tab="vtab-register" class="workspace-tab-btn <?= $activeVTab === 'vtab-register' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all">
                         <span class="material-symbols-outlined text-[16px]">calendar_add_on</span>
                         <span>Đăng ký Ca trực (<?= count($ds->shifts) ?>)</span>
                     </button>
-                    <button type="button" data-workspace-tab="vtab-profile" class="workspace-tab-btn inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <button type="button" data-workspace-tab="vtab-profile" class="workspace-tab-btn <?= $activeVTab === 'vtab-profile' ? 'active bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?> inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition-all">
                         <span class="material-symbols-outlined text-[16px]">schedule</span>
                         <span>Kỹ năng &amp; Lịch rảnh</span>
                     </button>
                 </div>
                 <div class="flex flex-wrap items-center gap-1.5">
                     <?php foreach ($campaignMeta as $actId => $c): ?>
-                        <a href="?view=volunteer&activity_id=<?= $actId ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
+                        <a href="?view=volunteer&activity_id=<?= $actId ?>&vtab=<?= h($activeVTab) ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
                             <?= h($c['code']) ?>: <?= h($c['short_title']) ?>
                         </a>
                     <?php endforeach; ?>
@@ -4134,7 +4360,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </section>
 
             <!-- TAB 1: CA TRỰC CỦA TÔI & QUÉT QR -->
-            <div id="vtab-my-shifts" class="workspace-tab-pane active">
+            <div id="vtab-my-shifts" class="workspace-tab-pane <?= $activeVTab === 'vtab-my-shifts' ? 'active' : '' ?>">
                 <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <h2 class="text-lg font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                         <span class="material-symbols-outlined text-[#0057B8]">qr_code_scanner</span>
@@ -4189,14 +4415,14 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
 
             <!-- TAB 2: ĐĂNG KÝ NGUYỆN VỌNG CA TRỰC -->
-            <div id="vtab-register" class="workspace-tab-pane">
+            <div id="vtab-register" class="workspace-tab-pane <?= $activeVTab === 'vtab-register' ? 'active' : '' ?>">
                 <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
                         <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                             <span class="material-symbols-outlined text-[#0057B8]">calendar_add_on</span>
                             <span>Đăng ký Nguyện vọng Ca trực</span>
                         </h2>
-                        <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&action=volunteer_quick_register_all">
+                        <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-register&action=volunteer_quick_register_all">
                             <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
                             <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
                             <button type="submit" class="btn btn-primary btn-sm">
@@ -4241,7 +4467,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         </td>
                                         <td class="py-3 px-3 whitespace-nowrap">
                                             <div class="flex flex-wrap items-center gap-1.5">
-                                                <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&action=volunteer_register_shift" class="flex items-center gap-2">
+                                                <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-register&action=volunteer_register_shift" class="flex items-center gap-2">
                                                     <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
                                                     <input type="hidden" name="shift_id" value="<?= $s->id ?>">
                                                     <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
@@ -4255,7 +4481,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                     </button>
                                                 </form>
                                                 <?php if ($myPref !== null): ?>
-                                                    <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&action=volunteer_withdraw_registration" class="inline">
+                                                    <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-register&action=volunteer_withdraw_registration" class="inline">
                                                         <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
                                                         <input type="hidden" name="shift_id" value="<?= $s->id ?>">
                                                         <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
@@ -4275,111 +4501,167 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
 
             <!-- TAB 3: KỸ NĂNG & LỊCH RẢNH -->
-            <div id="vtab-profile" class="workspace-tab-pane">
+            <div id="vtab-profile" class="workspace-tab-pane <?= $activeVTab === 'vtab-profile' ? 'active' : '' ?>">
                 <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <h2 class="text-lg font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[#0057B8]">schedule</span>
-                        <span>Cập nhật Khung Lịch rảnh Định kỳ 7 Ngày</span>
-                    </h2>
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#0057B8]">schedule</span>
+                                <span>1. Bảng Chọn Nhanh Lịch Rảnh 7 Ngày &amp; Chọn Ngày Cụ Thể</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Bấm trực tiếp vào các ô Sáng / Chiều / Tối để bật/tắt ngày rảnh, hoặc chọn Ngày cụ thể trên lịch bên dưới rồi bấm Lưu.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button type="button" id="btn-avail-preset-weekend" class="btn btn-outline btn-xs">Chọn Cuối tuần (T7 &amp; CN)</button>
+                            <button type="button" id="btn-avail-preset-all" class="btn btn-outline btn-xs">Chọn Tất cả 7 ngày</button>
+                            <button type="button" id="btn-avail-preset-clear" class="btn btn-outline btn-xs text-rose-600">Bỏ chọn hết</button>
+                        </div>
+                    </div>
 
-                    <!-- Ma trận Lịch rảnh 7 Ngày (Visual 7-Day Matrix Table) -->
+                    <!-- Ma trận Lịch rảnh 7 Ngày Tương tác (Interactive 7-Day Matrix Form) -->
                     <?php
                     $availPeriods = [
-                        'Sáng (07:00–11:30)' => [420, 690],
-                        'Chiều (13:00–17:30)' => [780, 1050],
-                        'Tối (18:00–21:30)' => [1080, 1290],
+                        'MORNING'   => ['label' => 'Sáng (07:00–11:30)',  'range' => [420, 690]],
+                        'AFTERNOON' => ['label' => 'Chiều (13:00–17:30)', 'range' => [780, 1050]],
+                        'EVENING'   => ['label' => 'Tối (18:00–21:30)',   'range' => [1080, 1290]],
                     ];
                     ?>
-                    <div class="matrix-scroll-container overflow-x-auto no-scrollbar mb-6 rounded-xl border border-slate-200 dark:border-slate-800">
-                        <table class="w-full min-w-[640px] text-center text-xs divide-y divide-slate-200 dark:divide-slate-800">
-                            <thead class="bg-slate-50 dark:bg-slate-800/60 font-bold text-slate-700 dark:text-slate-300">
-                                <tr>
-                                    <th class="py-2.5 px-3 text-left whitespace-nowrap">Khung giờ</th>
-                                    <?php for ($d = 1; $d <= 7; $d++): ?>
-                                        <th class="py-2.5 px-3 whitespace-nowrap <?= $d === 6 ? 'text-blue-600 dark:text-sky-400' : ($d === 7 ? 'text-rose-600 dark:text-rose-400' : '') ?>">
-                                            <?= h($dayNameVi[$d] ?? ('Thứ ' . $d)) ?>
-                                        </th>
-                                    <?php endfor; ?>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#131822]">
-                                <?php foreach ($availPeriods as $pName => [$pStart, $pEnd]): ?>
+                    <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-profile&action=volunteer_save_availability" id="form-avail-matrix" class="mb-6">
+                        <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
+                        <input type="hidden" name="avail_mode" value="matrix">
+                        <div class="matrix-scroll-container overflow-x-auto no-scrollbar mb-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full min-w-[680px] text-center text-xs divide-y divide-slate-200 dark:divide-slate-800">
+                                <thead class="bg-slate-50 dark:bg-slate-800/60 font-bold text-slate-700 dark:text-slate-300">
                                     <tr>
-                                        <td class="py-2.5 px-3 font-semibold text-left text-slate-600 dark:text-slate-300 whitespace-nowrap"><?= h($pName) ?></td>
-                                        <?php for ($d = 1; $d <= 7; $d++):
-                                            $isFree = false;
-                                            foreach ($vol->availabilitySlots as $slot) {
-                                                if ($slot->dayOfWeek === $d && max($slot->startMinuteOfDay, $pStart) < min($slot->endMinuteOfDay, $pEnd)) {
-                                                    $isFree = true;
-                                                    break;
-                                                }
-                                            }
-                                        ?>
-                                            <td class="py-2.5 px-3 whitespace-nowrap">
-                                                <?php if ($isFree): ?>
-                                                    <span class="badge badge-valid text-[10px] py-0.5 px-2 font-bold">Rảnh</span>
-                                                <?php else: ?>
-                                                    <span class="text-slate-300 dark:text-slate-600 font-mono">—</span>
-                                                <?php endif; ?>
-                                            </td>
+                                        <th class="py-2.5 px-3 text-left whitespace-nowrap">Buổi / Khung giờ</th>
+                                        <?php for ($d = 1; $d <= 7; $d++): ?>
+                                            <th class="py-2.5 px-2.5 whitespace-nowrap <?= $d === 6 ? 'text-blue-600 dark:text-sky-400' : ($d === 7 ? 'text-rose-600 dark:text-rose-400' : '') ?>">
+                                                <?= h($dayNameVi[$d] ?? ('Thứ ' . $d)) ?>
+                                            </th>
                                         <?php endfor; ?>
                                     </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#131822]">
+                                    <?php foreach ($availPeriods as $pKey => $pMeta):
+                                        [$pStart, $pEnd] = $pMeta['range'];
+                                    ?>
+                                        <tr>
+                                            <td class="py-2.5 px-3 font-semibold text-left text-slate-600 dark:text-slate-300 whitespace-nowrap"><?= h($pMeta['label']) ?></td>
+                                            <?php for ($d = 1; $d <= 7; $d++):
+                                                $isFree = false;
+                                                foreach ($vol->availabilitySlots as $slot) {
+                                                    if ($slot->overrideDate === null && $slot->isAvailable && $slot->dayOfWeek === $d && max($slot->startMinuteOfDay, $pStart) < min($slot->endMinuteOfDay, $pEnd)) {
+                                                        $isFree = true;
+                                                        break;
+                                                    }
+                                                }
+                                                $slotVal = $d . '_' . $pKey;
+                                            ?>
+                                                <td class="py-2 px-1.5 whitespace-nowrap">
+                                                    <label class="avail-matrix-cell inline-flex items-center justify-center w-full py-1.5 px-2 rounded-lg border cursor-pointer select-none transition-all <?= $isFree ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-400 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-slate-300' ?>">
+                                                        <input type="checkbox" name="matrix_slots[]" value="<?= h($slotVal) ?>" data-day="<?= $d ?>" data-period="<?= h($pKey) ?>" class="sr-only avail-matrix-checkbox" <?= $isFree ? 'checked' : '' ?>>
+                                                        <span class="avail-cell-text text-[11px]"><?= $isFree ? '✓ Rảnh' : '— Bận' ?></span>
+                                                    </label>
+                                                </td>
+                                            <?php endfor; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <span class="text-xs text-slate-500">Mẹo: Tích chọn các buổi bạn rảnh trong tuần rồi bấm nút Lưu bên phải.</span>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <?= icon('check', 13) ?> Lưu Bảng Lịch rảnh 7 Ngày
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Chọn Ngày Cụ thể trên Lịch (Date Picker dd/mm/yyyy) hoặc Theo Thứ & Giờ tùy chỉnh -->
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 mb-6">
+                        <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[16px] text-[#0057B8]">event</span>
+                            <span>Chọn Ngày Cụ Thể trên Lịch (Date Picker) hoặc Khung Giờ Tùy Chỉnh</span>
+                        </h3>
+                        <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-profile&action=volunteer_save_availability" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+                            <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
+                            <input type="hidden" name="avail_mode" value="custom">
+                            <div>
+                                <label class="text-xs font-bold block mb-1">Chọn Ngày cụ thể (Lịch)</label>
+                                <input type="date" id="avail-date-input" name="override_date" value="2026-06-14" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono" title="Chọn ngày cụ thể bạn rảnh hoặc để trống nếu chỉ lưu theo Thứ định kỳ" />
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold block mb-1">Hoặc Thứ định kỳ</label>
+                                <select id="avail-day-select" name="day_of_week" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs">
+                                    <option value="6">Thứ Bảy</option>
+                                    <option value="7">Chủ Nhật</option>
+                                    <option value="1">Thứ Hai</option>
+                                    <option value="2">Thứ Ba</option>
+                                    <option value="3">Thứ Tư</option>
+                                    <option value="4">Thứ Năm</option>
+                                    <option value="5">Thứ Sáu</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold block mb-1">Từ giờ</label>
+                                <input type="time" id="avail-start-input" name="start_hm" value="07:00" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono" />
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold block mb-1">Đến giờ</label>
+                                <input type="time" id="avail-end-input" name="end_hm" value="18:00" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono" />
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold block mb-1">Trạng thái</label>
+                                <select id="avail-status-select" name="is_available" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold">
+                                    <option value="1">✓ Rảnh ngày/giờ này</option>
+                                    <option value="0">✕ Báo bận ngày này</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button type="submit" id="btn-save-availability" data-volunteer-id="<?= $vol->id ?>" class="btn btn-primary w-full text-xs py-2.5">
+                                    + Lưu Ngày / Giờ
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 pb-2 mb-6">
-                        <span class="text-xs font-bold text-slate-500 whitespace-nowrap shrink-0">Chi tiết khung đã lưu:</span>
+                        <span class="text-xs font-bold text-slate-500 whitespace-nowrap shrink-0">Các ngày cụ thể &amp; khung lịch rảnh đã lưu:</span>
                         <?php foreach ($vol->availabilitySlots as $slot):
                             $stHm = sprintf('%02d:%02d', intdiv($slot->startMinuteOfDay, 60), $slot->startMinuteOfDay % 60);
                             $etHm = sprintf('%02d:%02d', intdiv($slot->endMinuteOfDay, 60), $slot->endMinuteOfDay % 60);
-                            $dLabel = $slot->overrideDate ?? ($dayNameVi[$slot->dayOfWeek] ?? ('Thứ ' . $slot->dayOfWeek));
+                            $isOverride = ($slot->overrideDate !== null && $slot->overrideDate !== '');
+                            $dLabel = $isOverride
+                                ? ('Ngày ' . date('d/m/Y', strtotime($slot->overrideDate)) . ($slot->isAvailable ? ' (Rảnh)' : ' (Bận)'))
+                                : ($dayNameVi[$slot->dayOfWeek] ?? ('Thứ ' . $slot->dayOfWeek));
+                            $badgeClass = $slot->isAvailable ? ($isOverride ? 'badge-valid' : 'badge-info') : 'badge-violation';
                         ?>
-                            <span class="badge badge-info mono py-1.5 px-3 whitespace-nowrap shrink-0 inline-flex items-center gap-1.5">
+                            <span class="badge <?= $badgeClass ?> mono py-1.5 px-3 whitespace-nowrap shrink-0 inline-flex items-center gap-1.5">
                                 <span><?= h($dLabel) ?>: <?= h($stHm) ?>–<?= h($etHm) ?></span>
-                                <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&action=volunteer_delete_availability" class="inline">
+                                <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-profile&action=volunteer_delete_availability" class="inline">
                                     <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
-                                    <input type="hidden" name="day_of_week" value="<?= (int) $slot->dayOfWeek ?>">
-                                    <button type="submit" class="text-rose-500 hover:text-rose-700 font-bold ml-1" title="Xóa khung lịch rảnh này">&times;</button>
+                                    <?php if ($isOverride): ?>
+                                        <input type="hidden" name="override_date" value="<?= h($slot->overrideDate) ?>">
+                                    <?php else: ?>
+                                        <input type="hidden" name="day_of_week" value="<?= (int) $slot->dayOfWeek ?>">
+                                        <input type="hidden" name="start_hm" value="<?= h($stHm) ?>">
+                                    <?php endif; ?>
+                                    <button type="submit" class="text-rose-500 hover:text-rose-700 font-bold ml-1" title="Xóa khung lịch này">&times;</button>
                                 </form>
                             </span>
                         <?php endforeach; ?>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end max-w-2xl mb-8">
-                        <div>
-                            <label class="text-xs font-bold block mb-1">Thứ trong tuần</label>
-                            <select id="avail-day-select" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm">
-                                <option value="6">Thứ Bảy</option>
-                                <option value="7">Chủ Nhật</option>
-                                <option value="1">Thứ Hai</option>
-                                <option value="2">Thứ Ba</option>
-                                <option value="3">Thứ Tư</option>
-                                <option value="4">Thứ Năm</option>
-                                <option value="5">Thứ Sáu</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold block mb-1">Từ giờ</label>
-                            <input type="time" id="avail-start-input" value="07:00" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm" />
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold block mb-1">Đến giờ</label>
-                            <input type="time" id="avail-end-input" value="18:00" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm" />
-                        </div>
-                        <button type="button" id="btn-save-availability" data-volunteer-id="<?= $vol->id ?>" class="btn btn-primary">Lưu lịch rảnh</button>
-                    </div>
 
-                    <!-- Quản lý Kỹ năng Chuyên môn trực tiếp tại Tab Kỹ năng & Lịch rảnh (CN1) -->
+                    <!-- Quản lý Kỹ năng Chuyên môn + Thêm Kỹ năng Khác trực tiếp tại Tab Kỹ năng & Lịch rảnh (CN1) -->
                     <div class="pt-6 border-t border-slate-200 dark:border-slate-800">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                             <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                                 <span class="material-symbols-outlined text-emerald-600">verified</span>
-                                <span>Cập nhật Hồ sơ Kỹ năng Chuyên môn (5 Kỹ năng chuẩn)</span>
+                                <span>2. Cập nhật Hồ sơ Kỹ năng Chuyên môn &amp; Bổ sung Kỹ năng Khác</span>
                             </h3>
                             <a href="?view=profile" class="text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:underline">Mở trang Hồ sơ đầy đủ &rarr;</a>
                         </div>
-                        <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&action=volunteer_save_skills" class="space-y-4">
+                        <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-profile&action=volunteer_save_skills" class="space-y-4">
                             <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                                 <?php foreach ($skillCodeById as $skId => $skCode):
@@ -4398,8 +4680,39 @@ document.addEventListener('DOMContentLoaded', function () {
                                     </div>
                                 <?php endforeach; ?>
                             </div>
-                            <div class="flex justify-end">
-                                <button type="submit" class="btn btn-primary btn-sm">
+
+                            <!-- Khối "+ Thêm Kỹ năng Khác" -->
+                            <div class="p-4 rounded-2xl bg-blue-50/50 dark:bg-sky-950/20 border border-blue-200 dark:border-sky-800/70 flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+                                <div class="flex-1">
+                                    <label class="text-xs font-extrabold text-[#0057B8] dark:text-sky-400 block mb-1">
+                                        + Thêm Kỹ năng Khác (Ngoài các kỹ năng trên)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="custom_skill_name"
+                                        list="custom-skill-suggestions"
+                                        placeholder="Nhập tên kỹ năng khác (VD: Ngoại ngữ & Phiên dịch, MC Sự kiện, Nấu ăn hậu cần, Thiết kế...)"
+                                        class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs"
+                                    />
+                                    <datalist id="custom-skill-suggestions">
+                                        <option value="Ngoại ngữ &amp; Phiên dịch"></option>
+                                        <option value="MC &amp; Hoạt náo Sự kiện"></option>
+                                        <option value="Nấu ăn &amp; Bếp ấm Hậu cần"></option>
+                                        <option value="Thiết kế Đồ họa &amp; Dựng phim"></option>
+                                        <option value="Kỹ năng Cứu hộ &amp; Bơi lội"></option>
+                                    </datalist>
+                                </div>
+                                <div class="w-full sm:w-48">
+                                    <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Cấp độ Kỹ năng Khác</label>
+                                    <select name="custom_skill_level" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold">
+                                        <option value="1">Cấp 1 — Cơ bản</option>
+                                        <option value="2">Cấp 2 — Đã tập huấn</option>
+                                        <option value="3" selected>Cấp 3 — Thành thạo</option>
+                                        <option value="4">Cấp 4 — Chuyên sâu</option>
+                                        <option value="5">Cấp 5 — Nòng cốt</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm py-2.5 px-5 shrink-0">
                                     <?= icon('check', 13) ?> Lưu Kỹ năng Chuyên môn
                                 </button>
                             </div>
@@ -4997,7 +5310,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <label class="flex items-center gap-1 whitespace-nowrap">
                                                 <span class="text-slate-500">Kỹ năng:</span>
                                                 <select name="skill_code" id="insp-form-skill-code" class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold">
-                                                    <?php foreach ($skillNameVi as $skCodeOpt => $skLabelOpt): ?>
+                                                    <?php foreach ($skillCodeById as $skIdOpt => $skCodeOpt):
+                                                        $skLabelOpt = $skillNameVi[$skCodeOpt] ?? $skCodeOpt;
+                                                    ?>
                                                         <option value="<?= h($skCodeOpt) ?>" <?= ($firstReq?->skillCode ?? 'LOGISTICS') === $skCodeOpt ? 'selected' : '' ?>><?= h($skLabelOpt) ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
@@ -6619,37 +6934,57 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
 
-                    <!-- KỸ NĂNG CHUYÊN MÔN (5 Core Skills) -->
+                    <!-- KỸ NĂNG CHUYÊN MÔN (5 Kỹ năng chuẩn + Kỹ năng bổ sung) -->
                     <div class="mb-8">
                         <label class="block text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
-                            Đánh giá Cấp độ 5 Kỹ năng Chuyên môn Đoàn Thanh niên (Cấp 1 - 5)
+                            Đánh giá Cấp độ Kỹ năng Chuyên môn Đoàn Thanh niên (Cấp 0 - 5) &amp; Bổ sung Kỹ năng Khác
                         </label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                            <?php
-                            $coreSkills = [
-                                1 => ['name' => 'Sơ cứu Y tế', 'code' => 'FIRST_AID', 'icon' => 'medical_services'],
-                                2 => ['name' => 'Hậu cần Tiếp sức', 'code' => 'LOGISTICS', 'icon' => 'inventory_2'],
-                                3 => ['name' => 'Truyền thông', 'code' => 'MEDIA', 'icon' => 'photo_camera'],
-                                4 => ['name' => 'Điều tiết GT', 'code' => 'TRAFFIC', 'icon' => 'traffic'],
-                                5 => ['name' => 'Kỹ thuật số', 'code' => 'IT_SUPPORT', 'icon' => 'computer'],
-                            ];
-                            foreach ($coreSkills as $skId => $skMeta):
-                                $currentLvl = (int) ($userSkillsById[$skId]['level'] ?? 1);
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                            <?php foreach ($skillCodeById as $skId => $skCode):
+                                $skLabel = $skillNameVi[$skCode] ?? $skCode;
+                                $skIcon = $skillIconMap[$skCode] ?? 'workspace_premium';
+                                $currentLvl = isset($userSkillsById[$skId]) ? (int) $userSkillsById[$skId]['level'] : 0;
                             ?>
                                 <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                                     <div class="flex items-center gap-2 mb-2 font-bold text-xs text-slate-800 dark:text-slate-200">
-                                        <span class="material-symbols-outlined text-[18px] text-[#0057B8] dark:text-sky-400"><?= h($skMeta['icon']) ?></span>
-                                        <span><?= h($skMeta['name']) ?></span>
+                                        <span class="material-symbols-outlined text-[18px] text-[#0057B8] dark:text-sky-400"><?= h($skIcon) ?></span>
+                                        <span><?= h($skLabel) ?></span>
                                     </div>
-                                    <select name="skills[<?= $skId ?>]" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold">
+                                    <select name="skills[<?= (int) $skId ?>]" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold">
+                                        <option value="0" <?= $currentLvl === 0 ? 'selected' : '' ?>>Chưa có kỹ năng</option>
                                         <?php for ($lvl = 1; $lvl <= 5; $lvl++): ?>
                                             <option value="<?= $lvl ?>" <?= $currentLvl === $lvl ? 'selected' : '' ?>>
-                                                Cấp <?= $lvl ?> <?= $lvl === 5 ? '(Xuất sắc)' : ($lvl >= 3 ? '(Thành thạo)' : '(Cơ bản)') ?>
+                                                Cấp <?= $lvl ?> <?= $lvl === 5 ? '(Nòng cốt)' : ($lvl >= 3 ? '(Thành thạo)' : '(Cơ bản)') ?>
                                             </option>
                                         <?php endfor; ?>
                                     </select>
                                 </div>
                             <?php endforeach; ?>
+                        </div>
+
+                        <!-- Khối "+ Thêm Kỹ năng Khác" trên trang Hồ sơ (?view=profile) -->
+                        <div class="p-4 rounded-2xl bg-blue-50/50 dark:bg-sky-950/20 border border-blue-200 dark:border-sky-800/70 flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+                            <div class="flex-1">
+                                <label class="text-xs font-extrabold text-[#0057B8] dark:text-sky-400 block mb-1">
+                                    + Thêm Kỹ năng Khác (Ngoài các kỹ năng có sẵn)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="custom_skill_name"
+                                    placeholder="Nhập tên kỹ năng khác (VD: Ngoại ngữ & Phiên dịch, MC Sự kiện, Nấu ăn hậu cần, Thiết kế...)"
+                                    class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs"
+                                />
+                            </div>
+                            <div class="w-full sm:w-48">
+                                <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Cấp độ Kỹ năng Khác</label>
+                                <select name="custom_skill_level" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold">
+                                    <option value="1">Cấp 1 — Cơ bản</option>
+                                    <option value="2">Cấp 2 — Đã tập huấn</option>
+                                    <option value="3" selected>Cấp 3 — Thành thạo</option>
+                                    <option value="4">Cấp 4 — Chuyên sâu</option>
+                                    <option value="5">Cấp 5 — Nòng cốt</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
