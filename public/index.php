@@ -961,7 +961,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
              WHERE volunteer_id = :vid AND skill_id = :sid
         ');
         $stmtVer->execute([
-            ':ver' => $verified ? 1 : 0,
+            ':ver' => $verified ? 'true' : 'false',
             ':vby' => $verified ? $actorUserId : null,
             ':vid' => $volId,
             ':sid' => $skillId,
@@ -4508,13 +4508,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     $replacementRanker = new \XanhHub\Domain\Scheduling\ReplacementRanker();
 
-    // Nạp danh sách đăng ký nguyện vọng (shift_registrations) cho từng ca trực để Điều phối viên duyệt
+    // Nạp danh sách đăng ký nguyện vọng (registrations) cho từng ca trực để Điều phối viên duyệt
     $stmtRegs = $pdo->prepare("
-        SELECT sr.shift_id, sr.volunteer_id, sr.preference_rank
-          FROM shift_registrations sr
-          JOIN shifts s ON s.id = sr.shift_id
-         WHERE s.activity_id = :actId AND sr.status = 'REGISTERED'
-         ORDER BY sr.preference_rank ASC, sr.id ASC
+        SELECT r.shift_id, r.volunteer_id, r.preference_rank
+          FROM registrations r
+         WHERE r.activity_id = :actId AND r.status = 'ACTIVE'
+         ORDER BY r.preference_rank ASC, r.id ASC
     ");
     $stmtRegs->execute([':actId' => $selectedActivityId]);
     $regsByShift = [];
