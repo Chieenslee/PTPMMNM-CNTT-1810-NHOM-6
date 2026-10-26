@@ -71,11 +71,16 @@ main, .flex-1, .grid > * {
    ========================================================================== */
 .workspace-floating-backdrop {
     position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.35);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-    z-index: 70;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 9990;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.22s ease;
@@ -86,15 +91,16 @@ main, .flex-1, .grid > * {
 }
 .workspace-floating-drawer {
     position: fixed;
-    top: 5.5rem;
-    left: 1rem;
-    bottom: 1.25rem;
-    width: 288px;
-    max-width: calc(100vw - 2rem);
-    z-index: 75;
-    border-radius: 1.25rem;
-    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(148, 163, 184, 0.22);
-    transform: translateX(calc(-100% - 2rem));
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    width: 290px;
+    max-width: 86vw;
+    z-index: 9995;
+    border-radius: 0 1.25rem 1.25rem 0;
+    box-shadow: 20px 0 48px -8px rgba(15, 23, 42, 0.35);
+    transform: translateX(-105%);
     opacity: 0;
     pointer-events: none;
     overflow-y: auto;
@@ -109,7 +115,7 @@ main, .flex-1, .grid > * {
     position: fixed;
     left: 1rem;
     bottom: 1.25rem;
-    z-index: 65;
+    z-index: 8500;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -172,7 +178,7 @@ body {
    ========================================================================== */
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    to { opacity: 1; transform: none; }
 }
 
 @keyframes fadeIn {

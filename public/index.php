@@ -3926,73 +3926,73 @@ document.addEventListener('DOMContentLoaded', function () {
     $stmtMyAssign->execute([':aid' => $selectedActivityId, ':vid' => $vol->id]);
     $myAssignments = $stmtMyAssign->fetchAll();
     ?>
-    <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0 relative">
-        <!-- Backdrop và Menu Mini Nổi 1 Lớp (Floating Overlay Drawer - Không đẩy giao diện) -->
-        <div id="workspace-drawer-backdrop" class="workspace-floating-backdrop no-print"></div>
-        <button type="button" class="workspace-mini-fab btn-toggle-workspace-drawer no-print" title="Mở/Đóng Menu Cổng Tình nguyện viên">
-            <span class="material-symbols-outlined text-[18px]">menu_open</span>
-            <span>Menu TNV</span>
-        </button>
+    <!-- Backdrop và Menu Mini Nổi 1 Lớp Toàn Màn Hình (Full-Height Left Drawer - Không đẩy giao diện) -->
+    <div id="workspace-drawer-backdrop" class="workspace-floating-backdrop no-print"></div>
+    <button type="button" class="workspace-mini-fab btn-toggle-workspace-drawer no-print" title="Mở/Đóng Menu Cổng Tình nguyện viên">
+        <span class="material-symbols-outlined text-[18px]">menu_open</span>
+        <span>Menu TNV</span>
+    </button>
 
-        <aside id="workspace-floating-drawer" class="workspace-floating-drawer bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 flex flex-col py-5 px-4 no-print" aria-label="Menu Cổng Tình nguyện viên">
-            <div class="flex items-center justify-between mb-4 px-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <h2 class="font-bold text-[#0057B8] dark:text-sky-400 flex items-center gap-2 tracking-wider text-xs uppercase">
-                    <span class="material-symbols-outlined text-[18px]">account_circle</span> Cổng Tình nguyện viên
-                </h2>
-                <button type="button" id="btn-close-workspace-drawer" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800" title="Đóng menu">
-                    <span class="material-symbols-outlined text-[18px]">close</span>
-                </button>
-            </div>
-            <nav class="flex flex-col gap-1.5">
-                <button
-                    type="button"
-                    data-workspace-tab="vtab-my-shifts"
-                    class="workspace-tab-btn active flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400"
-                >
-                    <span class="material-symbols-outlined text-[20px]">event_available</span>
-                    <span>Ca trực &amp; Điểm danh (<?= count($myAssignments) ?>)</span>
-                </button>
-                <button
-                    type="button"
-                    data-workspace-tab="vtab-register"
-                    class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                    <span class="material-symbols-outlined text-[20px]">calendar_add_on</span>
-                    <span>Đăng ký Ca trực (<?= count($ds->shifts) ?>)</span>
-                </button>
-                <button
-                    type="button"
-                    data-workspace-tab="vtab-profile"
-                    class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                    <span class="material-symbols-outlined text-[20px]">schedule</span>
-                    <span>Kỹ năng &amp; Lịch rảnh</span>
-                </button>
+    <aside id="workspace-floating-drawer" class="workspace-floating-drawer bg-white dark:bg-[#131822] border-r border-slate-200 dark:border-slate-800 flex flex-col py-6 px-4 no-print" aria-label="Menu Cổng Tình nguyện viên">
+        <div class="flex items-center justify-between mb-4 px-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h2 class="font-bold text-[#0057B8] dark:text-sky-400 flex items-center gap-2 tracking-wider text-xs uppercase">
+                <span class="material-symbols-outlined text-[18px]">account_circle</span> Cổng Tình nguyện viên
+            </h2>
+            <button type="button" id="btn-close-workspace-drawer" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800" title="Đóng menu">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+        <nav class="flex flex-col gap-1.5">
+            <button
+                type="button"
+                data-workspace-tab="vtab-my-shifts"
+                class="workspace-tab-btn active flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400"
+            >
+                <span class="material-symbols-outlined text-[20px]">event_available</span>
+                <span>Ca trực &amp; Điểm danh (<?= count($myAssignments) ?>)</span>
+            </button>
+            <button
+                type="button"
+                data-workspace-tab="vtab-register"
+                class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+                <span class="material-symbols-outlined text-[20px]">calendar_add_on</span>
+                <span>Đăng ký Ca trực (<?= count($ds->shifts) ?>)</span>
+            </button>
+            <button
+                type="button"
+                data-workspace-tab="vtab-profile"
+                class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+                <span class="material-symbols-outlined text-[20px]">schedule</span>
+                <span>Kỹ năng &amp; Lịch rảnh</span>
+            </button>
 
-                <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
-                <div class="px-3 text-[11px] font-bold uppercase text-slate-400 mb-1">Chuyển Chiến dịch</div>
-                <?php foreach ($campaignMeta as $actId => $c): ?>
-                    <a
-                        href="?view=volunteer&activity_id=<?= $actId ?>"
-                        class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors <?= $selectedActivityId === $actId ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
-                    >
-                        <span><?= h($c['short_title']) ?></span>
-                        <span class="mono text-[10px] opacity-80"><?= h($c['code']) ?></span>
-                    </a>
-                <?php endforeach; ?>
-
-                <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
-                <a href="?action=export_ics&activity_id=<?= $selectedActivityId ?>&vid=<?= $vol->id ?>" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                    <span class="material-symbols-outlined text-[18px]">download</span>
-                    <span>Tải Lịch cá nhân (.ICS)</span>
+            <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
+            <div class="px-3 text-[11px] font-bold uppercase text-slate-400 mb-1">Chuyển Chiến dịch</div>
+            <?php foreach ($campaignMeta as $actId => $c): ?>
+                <a
+                    href="?view=volunteer&activity_id=<?= $actId ?>"
+                    class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors <?= $selectedActivityId === $actId ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
+                >
+                    <span><?= h($c['short_title']) ?></span>
+                    <span class="mono text-[10px] opacity-80"><?= h($c['code']) ?></span>
                 </a>
-                <a href="?action=logout" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors">
-                    <span class="material-symbols-outlined text-[18px]">logout</span>
-                    <span>Đăng xuất</span>
-                </a>
-            </nav>
-        </aside>
+            <?php endforeach; ?>
 
+            <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
+            <a href="?action=export_ics&activity_id=<?= $selectedActivityId ?>&vid=<?= $vol->id ?>" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <span class="material-symbols-outlined text-[18px]">download</span>
+                <span>Tải Lịch cá nhân (.ICS)</span>
+            </a>
+            <a href="?action=logout" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors">
+                <span class="material-symbols-outlined text-[18px]">logout</span>
+                <span>Đăng xuất</span>
+            </a>
+        </nav>
+    </aside>
+
+    <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0">
         <!-- Main Content Full-Width (Không bị đẩy lệch phải) -->
         <main class="flex-1 min-w-0 w-full px-4 md:px-8 py-6">
             <!-- Thanh Điều hướng Nhanh & Nút Mở Menu Mini Nổi -->
@@ -4623,90 +4623,90 @@ document.addEventListener('DOMContentLoaded', function () {
         ];
     }
     ?>
-    <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0 relative">
-        <!-- Backdrop và Menu Mini Nổi 1 Lớp cho Ban Chỉ Huy (Không đẩy giao diện) -->
-        <div id="workspace-drawer-backdrop" class="workspace-floating-backdrop no-print"></div>
-        <button type="button" class="workspace-mini-fab btn-toggle-workspace-drawer no-print" title="Mở/Đóng Menu Ban Chỉ Huy">
-            <span class="material-symbols-outlined text-[18px]">menu_open</span>
-            <span>Menu BCH</span>
-        </button>
+    <!-- Backdrop và Menu Mini Nổi 1 Lớp Toàn Màn Hình cho Ban Chỉ Huy (Full-Height Left Drawer - Không đẩy giao diện) -->
+    <div id="workspace-drawer-backdrop" class="workspace-floating-backdrop no-print"></div>
+    <button type="button" class="workspace-mini-fab btn-toggle-workspace-drawer no-print" title="Mở/Đóng Menu Ban Chỉ Huy">
+        <span class="material-symbols-outlined text-[18px]">menu_open</span>
+        <span>Menu BCH</span>
+    </button>
 
-        <aside id="workspace-floating-drawer" class="workspace-floating-drawer bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 flex flex-col py-5 px-3.5 no-print" aria-label="Menu Ban Chỉ Huy">
-            <div class="px-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5">
-                    <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-[24px]">shield_person</span>
-                    <div>
-                        <div class="font-extrabold text-xs tracking-wider text-slate-900 dark:text-white">BAN CHỈ HUY</div>
-                        <div class="text-[11px] text-slate-500">Điều phối Chiến dịch</div>
-                    </div>
+    <aside id="workspace-floating-drawer" class="workspace-floating-drawer bg-white dark:bg-[#131822] border-r border-slate-200 dark:border-slate-800 flex flex-col py-6 px-3.5 no-print" aria-label="Menu Ban Chỉ Huy">
+        <div class="px-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-[24px]">shield_person</span>
+                <div>
+                    <div class="font-extrabold text-xs tracking-wider text-slate-900 dark:text-white">BAN CHỈ HUY</div>
+                    <div class="text-[11px] text-slate-500">Điều phối Chiến dịch</div>
                 </div>
-                <button type="button" id="btn-close-workspace-drawer" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800" title="Đóng menu">
-                    <span class="material-symbols-outlined text-[18px]">close</span>
-                </button>
             </div>
+            <button type="button" id="btn-close-workspace-drawer" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800" title="Đóng menu">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
 
-            <nav class="flex flex-col gap-1.5">
-                <button type="button" data-workspace-tab="tab-board" class="workspace-tab-btn active flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400 transition-all">
-                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
-                    <span>Bàn Điều phối (Master-Detail)</span>
-                </button>
-                <button type="button" data-workspace-tab="tab-volunteers" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                    <span class="material-symbols-outlined text-[20px]">group</span>
-                    <span>Lực lượng TNV (DataGrid)</span>
-                </button>
-                <button type="button" data-workspace-tab="tab-lab" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                    <span class="material-symbols-outlined text-[20px]">auto_awesome_motion</span>
-                    <span>Tự động Xếp ca</span>
-                </button>
-                <button type="button" data-workspace-tab="tab-understaffed" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                    <span class="material-symbols-outlined text-[20px]">warning</span>
-                    <span>Ca thiếu &amp; Chưa xếp (<?= count($unassignedSlots) ?>/<?= count($unassignedVolunteers) ?>)</span>
-                </button>
-                <button type="button" data-workspace-tab="tab-analytics" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                    <span class="material-symbols-outlined text-[20px]">analytics</span>
-                    <span>Phân tích &amp; Thống kê BI</span>
-                </button>
+        <nav class="flex flex-col gap-1.5">
+            <button type="button" data-workspace-tab="tab-board" class="workspace-tab-btn active flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400 transition-all">
+                <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                <span>Bàn Điều phối (Master-Detail)</span>
+            </button>
+            <button type="button" data-workspace-tab="tab-volunteers" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                <span class="material-symbols-outlined text-[20px]">group</span>
+                <span>Lực lượng TNV (DataGrid)</span>
+            </button>
+            <button type="button" data-workspace-tab="tab-lab" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                <span class="material-symbols-outlined text-[20px]">auto_awesome_motion</span>
+                <span>Tự động Xếp ca</span>
+            </button>
+            <button type="button" data-workspace-tab="tab-understaffed" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                <span class="material-symbols-outlined text-[20px]">warning</span>
+                <span>Ca thiếu &amp; Chưa xếp (<?= count($unassignedSlots) ?>/<?= count($unassignedVolunteers) ?>)</span>
+            </button>
+            <button type="button" data-workspace-tab="tab-analytics" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                <span class="material-symbols-outlined text-[20px]">analytics</span>
+                <span>Phân tích &amp; Thống kê BI</span>
+            </button>
 
-                <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
-                <div class="px-3 text-[11px] font-bold uppercase text-slate-400 mb-1">Chiến dịch Đang chọn</div>
-                <?php foreach ($campaignMeta as $actId => $c): ?>
-                    <a
-                        href="?view=coordinator&activity_id=<?= $actId ?>"
-                        class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors <?= $selectedActivityId === $actId ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
-                    >
-                        <span><?= h($c['short_title']) ?></span>
-                        <span class="mono text-[10px]"><?= h($c['code']) ?></span>
-                    </a>
-                <?php endforeach; ?>
-
-                <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
-                <button type="button" data-open-modal="modal-create-activity" id="btn-create-activity-coordinator" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 text-left">
-                    <span class="material-symbols-outlined text-[18px]">add_circle</span>
-                    <span>Tạo Hoạt động Mới</span>
-                </button>
-                <button type="button" data-open-modal="modal-ai-shift" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-slate-800 text-left">
-                    <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-                    <span>Tạo ca nhanh bằng AI</span>
-                </button>
-                <button type="button" id="btn-undo-assign" data-activity-id="<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-left">
-                    <span class="material-symbols-outlined text-[18px]">undo</span>
-                    <span>Hoàn tác phân công</span>
-                </button>
-                <a href="?view=report&activity_id=<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-slate-800">
-                    <span class="material-symbols-outlined text-[18px]">article</span>
-                    <span>Báo cáo Tổng kết Đoàn - Hội</span>
+            <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
+            <div class="px-3 text-[11px] font-bold uppercase text-slate-400 mb-1">Chiến dịch Đang chọn</div>
+            <?php foreach ($campaignMeta as $actId => $c): ?>
+                <a
+                    href="?view=coordinator&activity_id=<?= $actId ?>"
+                    class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors <?= $selectedActivityId === $actId ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
+                >
+                    <span><?= h($c['short_title']) ?></span>
+                    <span class="mono text-[10px]"><?= h($c['code']) ?></span>
                 </a>
-                <a href="?action=export_csv&activity_id=<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800">
-                    <span class="material-symbols-outlined text-[18px]">download</span>
-                    <span>Xuất Phân công &amp; Giờ (.CSV)</span>
-                </a>
-                <a href="?action=export_analytics_csv&activity_id=<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-sky-600 hover:bg-sky-50 dark:hover:bg-slate-800">
-                    <span class="material-symbols-outlined text-[18px]">table_chart</span>
-                    <span>Xuất Thống kê Tác động (.CSV)</span>
-                </a>
-            </nav>
-        </aside>
+            <?php endforeach; ?>
 
+            <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
+            <button type="button" data-open-modal="modal-create-activity" id="btn-create-activity-coordinator" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 text-left">
+                <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                <span>Tạo Hoạt động Mới</span>
+            </button>
+            <button type="button" data-open-modal="modal-ai-shift" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-slate-800 text-left">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                <span>Tạo ca nhanh bằng AI</span>
+            </button>
+            <button type="button" id="btn-undo-assign" data-activity-id="<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-left">
+                <span class="material-symbols-outlined text-[18px]">undo</span>
+                <span>Hoàn tác phân công</span>
+            </button>
+            <a href="?view=report&activity_id=<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-slate-800">
+                <span class="material-symbols-outlined text-[18px]">article</span>
+                <span>Báo cáo Tổng kết Đoàn - Hội</span>
+            </a>
+            <a href="?action=export_csv&activity_id=<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800">
+                <span class="material-symbols-outlined text-[18px]">download</span>
+                <span>Xuất Phân công &amp; Giờ (.CSV)</span>
+            </a>
+            <a href="?action=export_analytics_csv&activity_id=<?= $selectedActivityId ?>" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-sky-600 hover:bg-sky-50 dark:hover:bg-slate-800">
+                <span class="material-symbols-outlined text-[18px]">table_chart</span>
+                <span>Xuất Thống kê Tác động (.CSV)</span>
+            </a>
+        </nav>
+    </aside>
+
+    <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0">
         <!-- Main Workspace Full-Width (Không bị đẩy lệch phải) -->
         <main class="flex-1 min-w-0 w-full px-4 md:px-6 py-6">
             <!-- Thanh Điều hướng Nhanh Ban Chỉ Huy & Nút Mở Menu Mini Nổi -->
