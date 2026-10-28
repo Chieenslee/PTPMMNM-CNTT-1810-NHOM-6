@@ -35,6 +35,225 @@ $auth = new AuthService($pdo, $repo);
 $analyticsService = new AnalyticsService($pdo);
 $gamificationService = new GamificationService($pdo);
 
+function cleanCampaignTitle(string $rawTitle): string
+{
+    $cleaned = (string) preg_replace('/\s*\(Bộ\s+D\d+[^)]*\)/iu', '', trim($rawTitle));
+    return $cleaned !== '' ? $cleaned : trim($rawTitle);
+}
+
+/**
+ * Định dạng thời gian ca trực chuẩn tiếng Việt thân thiện, loại bỏ hoàn toàn chuỗi SQL timestamp thô.
+ *
+ * @param string|int $start
+ * @param string|int $end
+ * @return array{
+ *   start_ts:int,
+ *   end_ts:int,
+ *   date_key:string,
+ *   day_name:string,
+ *   short_date:string,
+ *   date_label:string,
+ *   time_range:string,
+ *   hours_label:string,
+ *   session_code:string,
+ *   session_label:string,
+ *   session_badge:string,
+ *   full_label:string
+ * }
+ */
+function formatShiftTimeRangeVn(string|int $start, string|int $end): array
+{
+    $startTs = is_int($start) ? $start : ((int) strtotime((string) $start) ?: time());
+    $endTs = is_int($end) ? $end : ((int) strtotime((string) $end) ?: ($startTs + 3600));
+
+    $dowMap = [
+        1 => 'Thứ Hai',
+        2 => 'Thứ Ba',
+        3 => 'Thứ Tư',
+        4 => 'Thứ Năm',
+        5 => 'Thứ Sáu',
+        6 => 'Thứ Bảy',
+        7 => 'Chủ Nhật',
+    ];
+    $dow = (int) date('N', $startTs);
+    $dayName = $dowMap[$dow] ?? 'Ngày';
+    $shortDate = date('d/m/Y', $startTs);
+    $dateKey = date('Y-m-d', $startTs);
+    $dateLabel = "{$dayName}, {$shortDate}";
+    $timeRange = date('H:i', $startTs) . ' – ' . date('H:i', $endTs);
+
+    $hours = max(0.5, round(($endTs - $startTs) / 3600, 1));
+    $hoursLabel = (floor($hours) == $hours ? (int) $hours : $hours) . ' giờ';
+
+    $startHour = (int) date('G', $startTs);
+    if ($startHour < 12) {
+        $sessionCode = 'MORNING';
+        $sessionLabel = 'Buổi Sáng';
+        $sessionBadge = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800';
+    } elseif ($startHour < 17) {
+        $sessionCode = 'AFTERNOON';
+        $sessionLabel = 'Buổi Chiều';
+        $sessionBadge = 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800';
+    } else {
+        $sessionCode = 'EVENING';
+        $sessionLabel = 'Buổi Tối';
+        $sessionBadge = 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800';
+    }
+
+    return [
+        'start_ts' => $startTs,
+        'end_ts' => $endTs,
+        'date_key' => $dateKey,
+        'day_name' => $dayName,
+        'short_date' => $shortDate,
+        'date_label' => $dateLabel,
+        'time_range' => $timeRange,
+        'hours_label' => $hoursLabel,
+        'session_code' => $sessionCode,
+        'session_label' => $sessionLabel,
+        'session_badge' => $sessionBadge,
+        'full_label' => "{$dateLabel} · {$timeRange} ({$hoursLabel})",
+    ];
+}
+
+/**
+ * Bộ chuyển đổi chiến dịch có tìm kiếm & cuộn thông minh (Scalable cho 100+ chiến dịch, không làm vỡ thanh công cụ).
+ */
+function renderScalableCampaignSwitcher(
+    array $campaignMeta,
+    int $activeId,
+    string $urlTemplate,
+    bool $includeAllOption = false,
+    int $totalAllShifts = 0
+): string {
+    $totalCampaigns = count($campaignMeta);
+    $activeItem = $campaignMeta[$activeId] ?? reset($campaignMeta);
+    $activeTitle = $activeId === 0 && $includeAllOption
+        ? "Tất cả chiến dịch ({$totalAllShifts} ca)"
+        : (($activeItem['short_title'] ?? 'Chiến dịch') . ' (' . (int) ($activeItem['shifts_count'] ?? 0) . ' ca)');
+    $activeCode = $activeId === 0 && $includeAllOption ? 'TẤT CẢ' : ($activeItem['code'] ?? 'CD');
+
+    ob_start();
+    ?>
+    <div class="relative inline-block text-left campaign-scalable-switcher">
+        <details class="group relative">
+            <summary class="list-none cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 transition-all select-none">
+                <span class="material-symbols-outlined text-[16px] text-[#0057B8] dark:text-sky-400">campaign</span>
+                <span class="px-1.5 py-0.5 rounded bg-[#0057B8] text-white font-mono text-[10px]"><?= h((string) $activeCode) ?></span>
+                <span class="max-w-[190px] sm:max-w-[240px] truncate"><?= h((string) $activeTitle) ?></span>
+                <span class="px-1.5 py-0.5 rounded-full bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[10px] font-mono border border-slate-200 dark:border-slate-700" title="Tổng số chiến dịch trên hệ thống">
+                    <?= $totalCampaigns ?> chiến dịch
+                </span>
+                <span class="material-symbols-outlined text-[16px] text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
+            </summary>
+
+            <div class="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-700 shadow-2xl p-3 z-50">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Chuyển đổi nhanh (<?= $totalCampaigns ?> chiến dịch)
+                    </span>
+                    <span class="text-[10px] text-slate-400">Cuộn hoặc gõ để lọc</span>
+                </div>
+                <div class="relative mb-2.5">
+                    <span class="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-[16px]">search</span>
+                    <input
+                        type="search"
+                        placeholder="Tìm tên, mã chiến dịch, địa bàn..."
+                        class="campaign-quick-filter-input w-full bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 focus:border-[#0057B8] focus:outline-none"
+                    />
+                </div>
+                <div class="max-h-64 overflow-y-auto pr-1 space-y-1 campaign-quick-filter-list">
+                    <?php if ($includeAllOption):
+                        $allUrl = str_replace('{id}', '0', $urlTemplate);
+                    ?>
+                        <a
+                            href="<?= h($allUrl) ?>"
+                            data-campaign-search="tat ca chien dich all"
+                            class="campaign-quick-filter-item flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-colors <?= $activeId === 0 ? 'bg-[#0057B8] text-white shadow-xs' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
+                        >
+                            <div class="truncate">
+                                <span class="font-extrabold">Hiển thị Tất cả Chiến dịch</span>
+                                <div class="text-[10px] <?= $activeId === 0 ? 'text-blue-100' : 'text-slate-400' ?>">Tổng hợp toàn bộ điểm trực trên hệ thống</div>
+                            </div>
+                            <span class="mono text-[10px] px-2 py-0.5 rounded-md shrink-0 <?= $activeId === 0 ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500' ?>"><?= $totalAllShifts ?> ca</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <?php foreach ($campaignMeta as $cId => $c):
+                        $itemUrl = str_replace('{id}', (string) $cId, $urlTemplate);
+                        $isCurrent = ($activeId === (int) $cId);
+                        $searchBlob = mb_strtolower(($c['code'] ?? '') . ' ' . ($c['short_title'] ?? '') . ' ' . ($c['title'] ?? '') . ' ' . ($c['location'] ?? ''));
+                    ?>
+                        <a
+                            href="<?= h($itemUrl) ?>"
+                            data-campaign-search="<?= h($searchBlob) ?>"
+                            class="campaign-quick-filter-item flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs transition-colors <?= $isCurrent ? 'bg-[#0057B8] text-white font-bold shadow-xs' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold' ?>"
+                        >
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="mono text-[10px] px-1.5 py-0.5 rounded <?= $isCurrent ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-[#0057B8] dark:text-sky-400' ?> font-bold shrink-0"><?= h((string) $c['code']) ?></span>
+                                    <span class="truncate font-bold"><?= h((string) $c['short_title']) ?></span>
+                                </div>
+                                <div class="text-[10px] truncate mt-0.5 <?= $isCurrent ? 'text-blue-100' : 'text-slate-400' ?>">
+                                    <?= h((string) ($c['location'] ?? '')) ?> &middot; <?= h((string) ($c['date_range'] ?? '')) ?>
+                                </div>
+                            </div>
+                            <span class="mono text-[10px] px-2 py-0.5 rounded-md shrink-0 <?= $isCurrent ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500' ?>">
+                                <?= (int) ($c['shifts_count'] ?? 0) ?> ca
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </details>
+    </div>
+    <?php
+    return (string) ob_get_clean();
+}
+
+/**
+ * Danh sách chuyển chiến dịch gọn gàng trong Sidebar / Drawer (Có ô lọc nhanh + giới hạn chiều cao cuộn max-h-44 cho 100+ chiến dịch).
+ */
+function renderDrawerCampaignList(array $campaignMeta, int $activeId, string $urlTemplate): string
+{
+    ob_start();
+    ?>
+    <div class="campaign-scalable-switcher space-y-1.5">
+        <div class="flex items-center justify-between px-2">
+            <span class="text-[11px] font-bold uppercase text-slate-400">Chuyển Chiến dịch</span>
+            <span class="mono text-[10px] text-slate-400"><?= count($campaignMeta) ?> hoạt động</span>
+        </div>
+        <?php if (count($campaignMeta) > 3): ?>
+            <div class="relative px-1">
+                <span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-[15px]">search</span>
+                <input
+                    type="search"
+                    placeholder="Lọc nhanh chiến dịch..."
+                    class="campaign-quick-filter-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-7 pr-2.5 py-1 text-[11px] text-slate-700 dark:text-slate-200 focus:border-[#0057B8] focus:outline-none"
+                />
+            </div>
+        <?php endif; ?>
+        <div class="max-h-44 overflow-y-auto pr-1 space-y-1 campaign-quick-filter-list">
+            <?php foreach ($campaignMeta as $actId => $c):
+                $itemUrl = str_replace('{id}', (string) $actId, $urlTemplate);
+                $isCurrent = ($activeId === (int) $actId);
+                $searchBlob = mb_strtolower(($c['code'] ?? '') . ' ' . ($c['short_title'] ?? '') . ' ' . ($c['title'] ?? ''));
+            ?>
+                <a
+                    href="<?= h($itemUrl) ?>"
+                    data-campaign-search="<?= h($searchBlob) ?>"
+                    class="campaign-quick-filter-item flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors <?= $isCurrent ? 'bg-[#0057B8] text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
+                >
+                    <span class="truncate"><?= h((string) $c['short_title']) ?></span>
+                    <span class="mono text-[10px] px-1.5 py-0.5 rounded shrink-0 <?= $isCurrent ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500' ?>"><?= (int) ($c['shifts_count'] ?? 0) ?> ca</span>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php
+    return (string) ob_get_clean();
+}
+
 $campaignMeta = [
     1 => [
         'code' => 'D1',
@@ -43,39 +262,41 @@ $campaignMeta = [
         'desc' => 'Ra quân cải tạo cảnh quan tuyến kênh Nhiêu Lộc – Thị Nghè, trồng mới 500 cây xanh đô thị và tuyên truyền phân loại rác tại nguồn.',
         'cover' => 'assets/images/campaign-d1.jpg',
         'location' => 'Quận 1, Quận 3 & Phú Nhuận, TP.HCM',
-        'date_range' => '14/06/2026 – 21/06/2026',
+        'date_range' => '06/11/2026 – 08/11/2026',
         'tag' => 'Môi trường & Đô thị xanh',
         'volunteers_needed' => 30,
         'shifts_count' => 12,
     ],
     2 => [
         'code' => 'D2',
-        'title' => 'Chiến dịch Tiếp Sức Mùa Thi — Trực Sơ cứu Y tế & Hỗ trợ Thí sinh',
-        'short_title' => 'Tiếp Sức Mùa Thi',
-        'desc' => 'Đội hình trực chốt sơ cứu y tế, phát nước uống miễn phí, hỗ trợ phân luồng giao thông tại các điểm thi đại học trọng điểm.',
+        'title' => 'Chiến dịch Mùa Hè Xanh Vùng Cao — Trực Y tế & Xây dựng Cộng đồng',
+        'short_title' => 'Mùa Hè Xanh Vùng Cao',
+        'desc' => 'Đội hình tình nguyện chuyên môn hỗ trợ trạm y tế xã, chăm sóc sức khỏe cộng đồng, chuyển đổi số và cải tạo điểm trường vùng sâu.',
         'cover' => 'assets/images/campaign-d2.jpg',
-        'location' => 'Cụm Điểm thi ĐH Bách Khoa & KHTN',
-        'date_range' => '25/06/2026 – 28/06/2026',
-        'tag' => 'Y tế & Tiếp sức Mùa thi',
+        'location' => 'Huyện Cần Giờ & Củ Chi, TP.HCM',
+        'date_range' => '13/11/2026 – 15/11/2026',
+        'tag' => 'Y tế & Phát triển Cộng đồng',
         'volunteers_needed' => 30,
         'shifts_count' => 12,
     ],
     3 => [
         'code' => 'D3',
-        'title' => 'Chiến dịch Mùa Hè Xanh Trọng điểm — Chung tay Xây dựng Cộng đồng',
-        'short_title' => 'Mùa Hè Xanh',
-        'desc' => 'Chiến dịch tình nguyện hè quy mô lớn với 12 ca trực chuyên môn: Sơ cứu Y tế, Hậu cần, Truyền thông, Điều tiết giao thông và Kỹ thuật số.',
+        'title' => 'Chiến dịch Tiếp Sức Mùa Thi 2026 — Hỗ trợ Thí sinh & Điều tiết Giao thông',
+        'short_title' => 'Tiếp Sức Mùa Thi 2026',
+        'desc' => 'Chiến dịch cao điểm hỗ trợ thí sinh tại các cụm điểm thi đại học: Trực sơ cứu y tế, hậu cần nước uống, phân luồng giao thông và truyền thông.',
         'cover' => 'assets/images/campaign-d3.jpg',
-        'location' => 'TP. Thủ Đức & Huyện Cần Giờ, TP.HCM',
-        'date_range' => '13/06/2026 – 20/06/2026',
-        'tag' => 'Chiến dịch Trọng điểm Hè',
+        'location' => 'TP. Thủ Đức & Cụm ĐH Quốc gia TP.HCM',
+        'date_range' => '20/11/2026 – 22/11/2026',
+        'tag' => 'Tiếp sức Mùa thi Trọng điểm',
         'volunteers_needed' => 30,
         'shifts_count' => 12,
     ],
 ];
 
-// Nạp các hoạt động từ PostgreSQL để bổ sung động vào $campaignMeta
+// Làm sạch hậu tố kịch bản kiểm thử "(Bộ D1...)" trong CSDL và đồng bộ $campaignMeta thực tế
 try {
+    $pdo->exec("UPDATE activities SET title = regexp_replace(title, '\\s*\\(Bộ\\s+D\\d+[^)]*\\)', '', 'gi') WHERE title LIKE '%(Bộ D%'");
+
     $dbActs = $pdo->query('
         SELECT a.id, a.code, a.title, a.description, a.location_name,
                COUNT(s.id) AS shifts_count,
@@ -90,21 +311,29 @@ try {
 
     foreach ($dbActs as $actRow) {
         $aid = (int) $actRow['id'];
-        if (!isset($campaignMeta[$aid])) {
-            $startDate = !empty($actRow['min_start']) ? date('d/m/Y', strtotime($actRow['min_start'])) : '01/07/2026';
-            $endDate = !empty($actRow['max_end']) ? date('d/m/Y', strtotime($actRow['max_end'])) : '15/07/2026';
-            $coverIdx = (($aid - 1) % 3) + 1;
+        $cleanTitle = cleanCampaignTitle((string) $actRow['title']);
+        $startDate = !empty($actRow['min_start']) ? date('d/m/Y', strtotime($actRow['min_start'])) : '01/07/2026';
+        $endDate = !empty($actRow['max_end']) ? date('d/m/Y', strtotime($actRow['max_end'])) : '15/07/2026';
+        $dateRangeStr = ($startDate === $endDate) ? $startDate : "{$startDate} – {$endDate}";
 
+        if (isset($campaignMeta[$aid])) {
+            $campaignMeta[$aid]['shifts_count'] = (int) $actRow['shifts_count'];
+            $campaignMeta[$aid]['date_range'] = $dateRangeStr;
+            if ((int) $actRow['total_max_people'] > 0) {
+                $campaignMeta[$aid]['volunteers_needed'] = (int) $actRow['total_max_people'];
+            }
+        } else {
+            $coverIdx = (($aid - 1) % 3) + 1;
             $campaignMeta[$aid] = [
                 'code' => (string) $actRow['code'],
-                'title' => (string) $actRow['title'],
-                'short_title' => (string) $actRow['title'],
+                'title' => $cleanTitle,
+                'short_title' => $cleanTitle,
                 'desc' => (string) ($actRow['description'] !== '' ? $actRow['description'] : 'Chiến dịch tình nguyện thanh niên Xanh Hub.'),
                 'cover' => "assets/images/campaign-d{$coverIdx}.jpg",
                 'location' => (string) ($actRow['location_name'] !== '' ? $actRow['location_name'] : 'TP. Hồ Chí Minh'),
-                'date_range' => "{$startDate} – {$endDate}",
-                'tag' => 'Chiến dịch Mới Tạo',
-                'volunteers_needed' => max(10, (int) $actRow['total_max_people']),
+                'date_range' => $dateRangeStr,
+                'tag' => 'Chiến dịch Hoạt động',
+                'volunteers_needed' => max(5, (int) $actRow['total_max_people']),
                 'shifts_count' => (int) $actRow['shifts_count'],
             ];
         }
@@ -3119,21 +3348,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <!-- Left Sidebar Filter (Chuẩn TechPro ProductList.jsx) -->
             <aside class="lg:col-span-3 bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sticky top-28 space-y-6 shadow-sm">
                 <div>
-                    <h3 class="font-extrabold text-sm text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[#0057B8] text-[19px]">campaign</span>
-                        <span>Chọn Chiến dịch</span>
-                    </h3>
-                    <div class="space-y-1.5">
-                        <?php foreach ($campaignMeta as $actId => $c): ?>
-                            <a
-                                href="?view=campaigns&activity_id=<?= $actId ?>&skill=<?= urlencode($filterSkill) ?>"
-                                class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
-                            >
-                                <span><?= h($c['short_title']) ?></span>
-                                <span class="mono text-[10px] opacity-85"><?= h($c['code']) ?></span>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
+                    <?= renderDrawerCampaignList($campaignMeta, $selectedActivityId, '?view=campaigns&activity_id={id}&skill=' . urlencode($filterSkill)) ?>
                 </div>
 
                 <div class="border-t border-slate-200 dark:border-slate-800 pt-5">
@@ -3348,21 +3563,19 @@ document.addEventListener('DOMContentLoaded', function () {
         <!-- Filter & Control Toolbar -->
         <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-5 mb-6 shadow-sm space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <!-- Chọn Chiến dịch -->
-                <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                    <span class="font-extrabold text-slate-700 dark:text-slate-300 mr-1 flex items-center gap-1">
+                <!-- Chọn Chiến dịch (Hỗ trợ quy mô 100+ chiến dịch không vỡ giao diện) -->
+                <?php
+                $totalMapShiftsAll = 0;
+                foreach ($campaignMeta as $cm) {
+                    $totalMapShiftsAll += (int) ($cm['shifts_count'] ?? 0);
+                }
+                ?>
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                         <span class="material-symbols-outlined text-[17px] text-[#0057B8]">campaign</span>
                         <span>Chiến dịch:</span>
                     </span>
-                    <a href="?view=map" class="px-3 py-1.5 rounded-xl font-bold transition-all <?= $mapActId === 0 ? 'bg-[#0057B8] text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
-                        Tất cả (36 ca)
-                    </a>
-                    <?php foreach ($campaignMeta as $cId => $c): ?>
-                        <a href="?view=map&activity_id=<?= $cId ?>" class="px-3 py-1.5 rounded-xl font-bold transition-all <?= $mapActId === $cId ? 'bg-[#0057B8] text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
-                            <span><?= h($c['short_title']) ?></span>
-                            <span class="opacity-75 text-[10px] ml-1">(12 ca)</span>
-                        </a>
-                    <?php endforeach; ?>
+                    <?= renderScalableCampaignSwitcher($campaignMeta, $mapActId, '?view=map&activity_id={id}', true, $totalMapShiftsAll) ?>
                 </div>
 
                 <!-- Chú thích 4 Màu Marker Quy Chuẩn -->
@@ -4320,16 +4533,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </button>
 
             <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
-            <div class="px-3 text-[11px] font-bold uppercase text-slate-400 mb-1">Chuyển Chiến dịch</div>
-            <?php foreach ($campaignMeta as $actId => $c): ?>
-                <a
-                    href="?view=volunteer&activity_id=<?= $actId ?>&vtab=<?= h($activeVTab) ?>"
-                    class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors <?= $selectedActivityId === $actId ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
-                >
-                    <span><?= h($c['short_title']) ?></span>
-                    <span class="mono text-[10px] opacity-80"><?= h($c['code']) ?></span>
-                </a>
-            <?php endforeach; ?>
+            <?= renderDrawerCampaignList($campaignMeta, $selectedActivityId, '?view=volunteer&activity_id={id}&vtab=' . urlencode($activeVTab)) ?>
 
             <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
             <a href="?action=export_ics&activity_id=<?= $selectedActivityId ?>&vid=<?= $vol->id ?>" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-[#0057B8] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-colors">
@@ -4415,26 +4619,36 @@ document.addEventListener('DOMContentLoaded', function () {
                     </button>
                 </div>
                 <div class="flex flex-wrap items-center gap-1.5">
-                    <?php foreach ($campaignMeta as $actId => $c): ?>
-                        <a href="?view=volunteer&activity_id=<?= $actId ?>&vtab=<?= h($activeVTab) ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
-                            <?= h($c['code']) ?>: <?= h($c['short_title']) ?>
-                        </a>
-                    <?php endforeach; ?>
+                    <?= renderScalableCampaignSwitcher($campaignMeta, $selectedActivityId, '?view=volunteer&activity_id={id}&vtab=' . urlencode($activeVTab)) ?>
                 </div>
             </div>
 
-            <!-- TAB 1: CA TRỰC CỦA TÔI & QUÉT QR -->
+            <!-- TAB 1: CA TRỰC CỦA TÔI & LỊCH BIỂU THỜI KHÓA BIỂU -->
             <div id="vtab-my-shifts" class="workspace-tab-pane <?= $activeVTab === 'vtab-my-shifts' ? 'active' : '' ?>">
                 <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm mb-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
                         <div>
                             <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#0057B8]">qr_code_scanner</span>
-                                <span>Lịch trực Đã được Phân công &amp; Điểm danh QR 30 giây</span>
+                                <span class="material-symbols-outlined text-[#0057B8]">calendar_month</span>
+                                <span>Lịch trực &amp; Ca được Phân công của Tôi</span>
                             </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Danh sách toàn bộ các ca trực Ban chỉ huy đã phân công cho bạn</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Theo dõi thời khóa biểu trực theo Ngày &amp; Buổi (Sáng / Chiều / Tối), xác nhận tham gia và điểm danh</p>
                         </div>
-                        <div class="flex flex-wrap items-center gap-1.5">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Chuyển chế độ xem: Lịch biểu vs Dạng Thẻ -->
+                            <div class="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <button type="button" data-my-shifts-view="schedule" class="btn-my-shifts-view active inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-[#0057B8] dark:text-sky-400 shadow-xs transition-all cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">calendar_view_week</span>
+                                    <span>Lịch theo Ngày &amp; Buổi</span>
+                                </button>
+                                <button type="button" data-my-shifts-view="cards" class="btn-my-shifts-view inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 transition-all cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">grid_view</span>
+                                    <span>Dạng Thẻ (<?= count($myAssignments) ?>)</span>
+                                </button>
+                            </div>
+
+                            <div class="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+
                             <a href="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-my-shifts&assign_filter=all"
                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all <?= $assignFilter === 'all' ? 'bg-[#0057B8] text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700' ?>">
                                 Tất cả chiến dịch (<?= count($allMyAssignments) ?>)
@@ -4464,54 +4678,199 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <p class="text-xs text-slate-500">Hãy bấm sang mục <strong>Đăng ký Ca trực</strong> ở trên để chọn ca phù hợp với lịch rảnh và kỹ năng của bạn!</p>
                             </div>
                         <?php endif; ?>
-                    <?php else: ?>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <?php foreach ($myAssignments as $ma): ?>
-                                <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-5 bg-slate-50/70 dark:bg-slate-800/40 hover:border-[#0057B8] transition-colors">
-                                    <div class="flex justify-between items-start mb-2 gap-2">
-                                        <div>
-                                            <div class="mb-1">
-                                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400 border border-blue-200 dark:border-sky-800">
-                                                    <span class="material-symbols-outlined text-[12px]">flag</span>
-                                                    <span>[<?= h($ma['activity_code']) ?>] <?= h($ma['activity_title']) ?></span>
-                                                </span>
+                    <?php else:
+                        // Gom nhóm các ca đã phân công theo Ngày (YYYY-MM-DD) và Khung buổi (MORNING / AFTERNOON / EVENING)
+                        $assignmentsByDate = [];
+                        foreach ($myAssignments as $maItem) {
+                            $fmt = formatShiftTimeRangeVn((string) $maItem['start_time'], (string) $maItem['end_time']);
+                            $maItem['_fmt'] = $fmt;
+                            $maItem['_clean_activity_title'] = cleanCampaignTitle((string) $maItem['activity_title']);
+                            $dKey = $fmt['date_key'];
+                            if (!isset($assignmentsByDate[$dKey])) {
+                                $assignmentsByDate[$dKey] = [
+                                    'date_label' => $fmt['date_label'],
+                                    'short_date' => $fmt['short_date'],
+                                    'day_name' => $fmt['day_name'],
+                                    'sessions' => [
+                                        'MORNING' => [],
+                                        'AFTERNOON' => [],
+                                        'EVENING' => [],
+                                    ],
+                                    'all' => [],
+                                ];
+                            }
+                            $assignmentsByDate[$dKey]['sessions'][$fmt['session_code']][] = $maItem;
+                            $assignmentsByDate[$dKey]['all'][] = $maItem;
+                        }
+                        ksort($assignmentsByDate);
+
+                        $renderAssignmentActionButtons = static function (array $ma) use ($assignFilter): string {
+                            ob_start();
+                            $st = (string) ($ma['status'] ?? 'ASSIGNED');
+                            ?>
+                            <div class="flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-200/70 dark:border-slate-700/60">
+                                <?php if ($st === 'ASSIGNED'): ?>
+                                    <form method="post" action="?view=volunteer&activity_id=<?= (int)$ma['activity_id'] ?>&vtab=vtab-my-shifts&assign_filter=<?= h($assignFilter) ?>&action=volunteer_confirm_assignment" class="inline">
+                                        <input type="hidden" name="assignment_id" value="<?= (int) $ma['id'] ?>">
+                                        <button type="submit" class="btn btn-sm btn-primary"><?= icon('check-circle', 13) ?> Xác nhận tham gia</button>
+                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline btn-open-absence text-rose-600" data-assignment-id="<?= (int) $ma['id'] ?>">
+                                        <?= icon('alert-triangle', 13) ?> Báo vắng / Xin đổi ca
+                                    </button>
+                                    <span class="text-[11px] text-slate-400 italic ml-auto">Xác nhận tham gia để mở điểm danh QR khi vào ca</span>
+                                <?php elseif ($st === 'CONFIRMED'): ?>
+                                    <button type="button" class="btn btn-sm btn-success btn-sim-qr-scan" data-assignment-id="<?= (int) $ma['id'] ?>" data-scan-mode="VALID">
+                                        <?= icon('qr-code', 13) ?> Quét QR Điểm danh
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline btn-open-absence text-rose-600" data-assignment-id="<?= (int) $ma['id'] ?>">
+                                        <?= icon('alert-triangle', 13) ?> Báo vắng đột xuất
+                                    </button>
+                                <?php elseif ($st === 'CHECKED_IN'): ?>
+                                    <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                        <span class="material-symbols-outlined text-[15px]">verified</span>
+                                        <span>Đã hoàn thành điểm danh</span>
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-primary btn-open-eval-shift flex items-center gap-1 ml-auto"
+                                            data-assignment-id="<?= (int) $ma['id'] ?>"
+                                            data-shift-id="<?= (int) $ma['shift_id'] ?>"
+                                            data-shift-title="<?= h((string) $ma['title']) ?>"
+                                            data-open-modal="modal-eval-shift">
+                                        <span class="material-symbols-outlined text-[14px]">rate_review</span>
+                                        <span>Đánh giá ca trực</span>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                            <?php
+                            return (string) ob_get_clean();
+                        };
+                    ?>
+                        <!-- CHẾ ĐỘ 1: LỊCH BIỂU THỜI KHÓA BIỂU THEO NGÀY & BUỔI (SÁNG / CHIỀU / TỐI) -->
+                        <div id="my-shifts-schedule-view" class="space-y-4">
+                            <?php foreach ($assignmentsByDate as $dKey => $dayBucket): ?>
+                                <div class="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50/40 dark:bg-slate-900/30">
+                                    <!-- Header Ngày -->
+                                    <div class="px-4 py-3 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-8 h-8 rounded-xl bg-[#0057B8] text-white flex items-center justify-center font-extrabold text-xs shadow-xs">
+                                                <?= h(substr($dayBucket['short_date'], 0, 5)) ?>
+                                            </span>
+                                            <div>
+                                                <h3 class="font-extrabold text-sm text-slate-900 dark:text-white"><?= h($dayBucket['date_label']) ?></h3>
+                                                <p class="text-[11px] text-slate-500">Tổng cộng <?= count($dayBucket['all']) ?> ca trực trong ngày</p>
                                             </div>
-                                            <strong class="text-slate-900 dark:text-white text-sm">[<?= h($ma['code']) ?>] <?= h($ma['title']) ?></strong>
                                         </div>
-                                        <?php if ($ma['status'] === 'CHECKED_IN'): ?>
-                                            <span class="badge badge-valid mono text-xs shrink-0">✓ Đã điểm danh</span>
-                                        <?php elseif ($ma['status'] === 'CONFIRMED'): ?>
-                                            <span class="badge badge-info mono text-xs shrink-0">✓ Đã xác nhận</span>
-                                        <?php else: ?>
-                                            <span class="badge badge-warning mono text-xs shrink-0">Chờ xác nhận</span>
-                                        <?php endif; ?>
+                                        <span class="badge badge-info mono text-[11px]"><?= count($dayBucket['all']) ?> ca trực</span>
                                     </div>
-                                    <div class="text-xs text-slate-500 dark:text-slate-400 mb-4 space-y-1">
-                                        <div class="flex items-center gap-1.5"><?= icon('map-pin', 13) ?> <span><?= h($ma['location_name']) ?></span></div>
-                                        <div class="mono flex items-center gap-1.5"><?= icon('clock', 13) ?> <span><?= h($ma['start_time']) ?> &rarr; <?= h($ma['end_time']) ?></span></div>
+
+                                    <!-- Lưới 3 Buổi: Sáng / Chiều / Tối -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800">
+                                        <?php
+                                        $sessionMetaCols = [
+                                            'MORNING' => ['label' => 'Buổi Sáng (06:00 – 12:00)', 'icon' => 'wb_sunny', 'color' => 'text-amber-600 dark:text-amber-400'],
+                                            'AFTERNOON' => ['label' => 'Buổi Chiều (12:00 – 17:00)', 'icon' => 'wb_twilight', 'color' => 'text-sky-600 dark:text-sky-400'],
+                                            'EVENING' => ['label' => 'Buổi Tối (17:00 – 22:30)', 'icon' => 'dark_mode', 'color' => 'text-indigo-600 dark:text-indigo-400'],
+                                        ];
+                                        foreach ($sessionMetaCols as $sCode => $sMeta):
+                                            $slotShifts = $dayBucket['sessions'][$sCode] ?? [];
+                                        ?>
+                                            <div class="p-3.5 flex flex-col gap-3">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="inline-flex items-center gap-1.5 text-xs font-extrabold <?= $sMeta['color'] ?>">
+                                                        <span class="material-symbols-outlined text-[16px]"><?= $sMeta['icon'] ?></span>
+                                                        <span><?= h($sMeta['label']) ?></span>
+                                                    </span>
+                                                    <span class="mono text-[10px] text-slate-400"><?= count($slotShifts) ?> ca</span>
+                                                </div>
+
+                                                <?php if (empty($slotShifts)): ?>
+                                                    <div class="flex-1 min-h-[84px] rounded-xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center justify-center text-[11px] text-slate-400 italic p-3">
+                                                        Trống lịch buổi này
+                                                    </div>
+                                                <?php else: ?>
+                                                    <?php foreach ($slotShifts as $ma):
+                                                        $fmt = $ma['_fmt'];
+                                                    ?>
+                                                        <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#131822] p-3.5 shadow-xs hover:border-[#0057B8] transition-all flex flex-col justify-between gap-2.5">
+                                                            <div>
+                                                                <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400 border border-blue-200 dark:border-sky-800 truncate">
+                                                                        <span class="material-symbols-outlined text-[11px]">flag</span>
+                                                                        <span class="truncate"><?= h($ma['_clean_activity_title']) ?></span>
+                                                                    </span>
+                                                                    <?php if ($ma['status'] === 'CHECKED_IN'): ?>
+                                                                        <span class="badge badge-valid mono text-[10px] shrink-0">✓ Đã điểm danh</span>
+                                                                    <?php elseif ($ma['status'] === 'CONFIRMED'): ?>
+                                                                        <span class="badge badge-info mono text-[10px] shrink-0">✓ Đã xác nhận</span>
+                                                                    <?php else: ?>
+                                                                        <span class="badge badge-warning mono text-[10px] shrink-0">Chờ xác nhận</span>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                                <a href="?view=shift_detail&activity_id=<?= (int)$ma['activity_id'] ?>&shift_id=<?= (int)$ma['shift_id'] ?>" class="font-extrabold text-slate-900 dark:text-white text-xs hover:text-[#0057B8] transition-colors block mb-1.5">
+                                                                    [<?= h((string) $ma['code']) ?>] <?= h((string) $ma['title']) ?>
+                                                                </a>
+                                                                <div class="text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+                                                                    <div class="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200">
+                                                                        <?= icon('clock', 12) ?>
+                                                                        <span class="mono"><?= h($fmt['time_range']) ?></span>
+                                                                        <span class="text-slate-400">&middot; <?= h($fmt['hours_label']) ?></span>
+                                                                    </div>
+                                                                    <div class="flex items-center gap-1.5">
+                                                                        <?= icon('map-pin', 12) ?>
+                                                                        <span class="truncate"><?= h((string) $ma['location_name']) ?></span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <?= $renderAssignmentActionButtons($ma) ?>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endforeach; ?>
                                     </div>
-                                    <div class="flex flex-wrap gap-2">
-                                        <?php if ($ma['status'] === 'ASSIGNED'): ?>
-                                            <form method="post" action="?view=volunteer&activity_id=<?= (int)$ma['activity_id'] ?>&vtab=vtab-my-shifts&assign_filter=<?= h($assignFilter) ?>&action=volunteer_confirm_assignment">
-                                                <input type="hidden" name="assignment_id" value="<?= (int) $ma['id'] ?>">
-                                                <button type="submit" class="btn btn-sm btn-primary"><?= icon('check-circle', 13) ?> Xác nhận tham gia</button>
-                                            </form>
-                                        <?php endif; ?>
-                                        <button type="button" class="btn btn-sm btn-success btn-sim-qr-scan" data-assignment-id="<?= (int) $ma['id'] ?>" data-scan-mode="VALID">
-                                            <?= icon('qr-code', 13) ?> Quét QR Điểm danh (30s)
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline btn-open-absence text-rose-600" data-assignment-id="<?= (int) $ma['id'] ?>">
-                                            <?= icon('alert-triangle', 13) ?> Báo vắng
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-primary btn-open-eval-shift flex items-center gap-1"
-                                                data-assignment-id="<?= (int) $ma['id'] ?>"
-                                                data-shift-id="<?= (int) $ma['shift_id'] ?>"
-                                                data-shift-title="<?= h($ma['title']) ?>"
-                                                data-open-modal="modal-eval-shift">
-                                            <span class="material-symbols-outlined text-[14px]">rate_review</span>
-                                            <span>Đánh giá ca trực</span>
-                                        </button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <!-- CHẾ ĐỘ 2: DẠNG THẺ CHI TIẾT (CARD GRID) -->
+                        <div id="my-shifts-cards-view" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <?php foreach ($myAssignments as $ma):
+                                $fmt = formatShiftTimeRangeVn((string) $ma['start_time'], (string) $ma['end_time']);
+                                $cleanActTitle = cleanCampaignTitle((string) $ma['activity_title']);
+                            ?>
+                                <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-5 bg-slate-50/70 dark:bg-slate-800/40 hover:border-[#0057B8] transition-colors flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex justify-between items-start mb-2 gap-2">
+                                            <div>
+                                                <div class="mb-1 flex flex-wrap items-center gap-1.5">
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400 border border-blue-200 dark:border-sky-800">
+                                                        <span class="material-symbols-outlined text-[12px]">flag</span>
+                                                        <span><?= h($cleanActTitle) ?></span>
+                                                    </span>
+                                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border <?= $fmt['session_badge'] ?>">
+                                                        <?= h($fmt['session_label']) ?>
+                                                    </span>
+                                                </div>
+                                                <a href="?view=shift_detail&activity_id=<?= (int)$ma['activity_id'] ?>&shift_id=<?= (int)$ma['shift_id'] ?>" class="font-extrabold text-slate-900 dark:text-white text-sm hover:text-[#0057B8] transition-colors block">
+                                                    [<?= h((string) $ma['code']) ?>] <?= h((string) $ma['title']) ?>
+                                                </a>
+                                            </div>
+                                            <?php if ($ma['status'] === 'CHECKED_IN'): ?>
+                                                <span class="badge badge-valid mono text-xs shrink-0">✓ Đã điểm danh</span>
+                                            <?php elseif ($ma['status'] === 'CONFIRMED'): ?>
+                                                <span class="badge badge-info mono text-xs shrink-0">✓ Đã xác nhận</span>
+                                            <?php else: ?>
+                                                <span class="badge badge-warning mono text-xs shrink-0">Chờ xác nhận</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-3 space-y-1">
+                                            <div class="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200">
+                                                <?= icon('clock', 13) ?>
+                                                <span><?= h($fmt['full_label']) ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-1.5"><?= icon('map-pin', 13) ?> <span><?= h((string) $ma['location_name']) ?></span></div>
+                                        </div>
                                     </div>
+                                    <?= $renderAssignmentActionButtons($ma) ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -4584,28 +4943,172 @@ document.addEventListener('DOMContentLoaded', function () {
                 </section>
             </div>
 
-            <!-- TAB 2: ĐĂNG KÝ NGUYỆN VỌNG CA TRỰC -->
+            <!-- TAB 2: ĐĂNG KÝ NGUYỆN VỌNG CA TRỰC (CÓ LỊCH BIỂU THEO NGÀY & BỘ LỌC TƯƠNG THÍCH) -->
             <div id="vtab-register" class="workspace-tab-pane <?= $activeVTab === 'vtab-register' ? 'active' : '' ?>">
                 <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
-                        <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-[#0057B8]">calendar_add_on</span>
-                            <span>Đăng ký Nguyện vọng Ca trực</span>
-                        </h2>
-                        <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-register&action=volunteer_quick_register_all">
-                            <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
-                            <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <?= icon('sparkles', 13) ?> Đăng ký nhanh mọi ca phù hợp lịch rảnh
-                            </button>
-                        </form>
+                    <div class="flex flex-wrap justify-between items-center gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#0057B8]">calendar_add_on</span>
+                                <span>Đăng ký Nguyện vọng Ca trực — <?= h($activeCampaign['short_title']) ?></span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Xem lịch các ca trực theo Ngày &amp; Buổi hoặc lọc nhanh những ca khớp với kỹ năng và lịch rảnh của bạn</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <div class="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <button type="button" data-reg-view="schedule" class="btn-reg-view active inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-[#0057B8] dark:text-sky-400 shadow-xs transition-all cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">calendar_view_day</span>
+                                    <span>Lịch theo Ngày</span>
+                                </button>
+                                <button type="button" data-reg-view="table" class="btn-reg-view inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 transition-all cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">table_rows</span>
+                                    <span>Dạng Bảng (<?= count($ds->shifts) ?>)</span>
+                                </button>
+                            </div>
+                            <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-register&action=volunteer_quick_register_all">
+                                <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
+                                <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <?= icon('sparkles', 13) ?> Đăng ký nhanh mọi ca phù hợp lịch rảnh
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="overflow-x-auto">
+
+                    <!-- Thanh Tìm kiếm & Bộ lọc Nhanh Ca trực -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-5 bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div class="md:col-span-5 relative">
+                            <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[17px]">search</span>
+                            <input type="search" id="vol-reg-search" placeholder="Tìm mã ca, tên ca, địa điểm hoặc kỹ năng..." class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs focus:border-[#0057B8] focus:outline-none" />
+                        </div>
+                        <div class="md:col-span-4 flex flex-wrap items-center gap-1.5">
+                            <button type="button" data-reg-session="ALL" class="btn-reg-session active px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#0057B8] text-white cursor-pointer">Tất cả buổi</button>
+                            <button type="button" data-reg-session="MORNING" class="btn-reg-session px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 cursor-pointer">Buổi Sáng</button>
+                            <button type="button" data-reg-session="AFTERNOON" class="btn-reg-session px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 cursor-pointer">Buổi Chiều</button>
+                            <button type="button" data-reg-session="EVENING" class="btn-reg-session px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 cursor-pointer">Buổi Tối</button>
+                        </div>
+                        <div class="md:col-span-3">
+                            <select id="vol-reg-compat" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+                                <option value="ALL">Tất cả ca trực (<?= count($ds->shifts) ?>)</option>
+                                <option value="MATCH">✓ Đủ kỹ năng &amp; Khớp lịch rảnh</option>
+                                <option value="REGISTERED">★ Ca tôi đã đăng ký (<?= count($regShiftIds) ?>)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <?php
+                    // Gom nhóm các ca của chiến dịch theo Ngày để hiển thị Lịch Đăng ký trực quan
+                    $regShiftsByDate = [];
+                    foreach ($ds->shifts as $sObj) {
+                        $sFmt = formatShiftTimeRangeVn($sObj->startEpoch, $sObj->endEpoch);
+                        $dKey = $sFmt['date_key'];
+                        if (!isset($regShiftsByDate[$dKey])) {
+                            $regShiftsByDate[$dKey] = [
+                                'date_label' => $sFmt['date_label'],
+                                'short_date' => $sFmt['short_date'],
+                                'items' => [],
+                            ];
+                        }
+                        $regShiftsByDate[$dKey]['items'][] = ['shift' => $sObj, 'fmt' => $sFmt];
+                    }
+                    ksort($regShiftsByDate);
+                    ?>
+
+                    <!-- CHẾ ĐỘ 1: LỊCH ĐĂNG KÝ THEO NGÀY & BUỔI -->
+                    <div id="vol-reg-schedule-view" class="space-y-4">
+                        <?php foreach ($regShiftsByDate as $dKey => $dayGroup): ?>
+                            <div class="vol-reg-day-group rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                <div class="px-4 py-2.5 bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-[18px]">event</span>
+                                        <span class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white"><?= h($dayGroup['date_label']) ?></span>
+                                    </div>
+                                    <span class="badge badge-subtle mono text-[10px]"><?= count($dayGroup['items']) ?> ca</span>
+                                </div>
+                                <div class="p-3.5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <?php foreach ($dayGroup['items'] as $entry):
+                                        $s = $entry['shift'];
+                                        $sFmt = $entry['fmt'];
+                                        $req = $s->requirements[0] ?? null;
+                                        $skLabel = $req !== null ? ($skillNameVi[$req->skillCode] ?? $req->skillCode) : 'Tình nguyện chung';
+                                        $hasSkill = $req === null || $vol->satisfiesRequirement($req);
+                                        $isAvail = $vol->isAvailableForShift($s);
+                                        $myPref = $regShiftIds[$s->id] ?? null;
+                                        $compatTag = ($hasSkill && $isAvail) ? 'MATCH' : 'OTHER';
+                                        $regTag = ($myPref !== null) ? 'REGISTERED' : 'UNREGISTERED';
+                                        $searchBlob = mb_strtolower($s->code . ' ' . $s->title . ' ' . $s->locationName . ' ' . $skLabel);
+                                    ?>
+                                        <div
+                                            class="vol-reg-item rounded-xl border <?= $myPref !== null ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/20 dark:bg-emerald-950/15' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131822]' ?> p-3.5 flex flex-col justify-between gap-3 hover:border-[#0057B8] transition-all"
+                                            data-reg-search="<?= h($searchBlob) ?>"
+                                            data-reg-session="<?= h($sFmt['session_code']) ?>"
+                                            data-reg-compat="<?= h($compatTag) ?>"
+                                            data-reg-registered="<?= h($regTag) ?>"
+                                        >
+                                            <div>
+                                                <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border <?= $sFmt['session_badge'] ?>">
+                                                        <?= h($sFmt['session_label']) ?> &middot; <?= h($sFmt['time_range']) ?>
+                                                    </span>
+                                                    <?php if ($hasSkill && $isAvail): ?>
+                                                        <span class="badge badge-valid text-[10px]">✓ Phù hợp</span>
+                                                    <?php elseif (!$hasSkill): ?>
+                                                        <span class="badge badge-violation text-[10px]">Thiếu kỹ năng</span>
+                                                    <?php else: ?>
+                                                        <span class="badge badge-warning text-[10px]">Lệch giờ rảnh</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="font-extrabold text-xs text-slate-900 dark:text-white mb-1">[<?= h($s->code) ?>] <?= h($s->title) ?></div>
+                                                <div class="text-[11px] text-slate-500 space-y-0.5">
+                                                    <div class="flex items-center gap-1"><?= icon('map-pin', 12) ?> <span class="truncate"><?= h($s->locationName) ?></span></div>
+                                                    <?php if ($req !== null): ?>
+                                                        <div class="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold">
+                                                            <span class="material-symbols-outlined text-[13px] text-[#0057B8]">verified</span>
+                                                            <span><?= h($skLabel) ?> &ge; Cấp <?= $req->minLevel ?></span>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex flex-wrap items-center justify-between gap-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-800">
+                                                <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-register&action=volunteer_register_shift" class="flex items-center gap-1.5 flex-1">
+                                                    <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
+                                                    <input type="hidden" name="shift_id" value="<?= $s->id ?>">
+                                                    <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
+                                                    <select name="preference_rank" class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold">
+                                                        <option value="1" <?= $myPref === 1 ? 'selected' : '' ?>>NV 1</option>
+                                                        <option value="2" <?= $myPref === 2 ? 'selected' : '' ?>>NV 2</option>
+                                                        <option value="3" <?= $myPref === 3 ? 'selected' : '' ?>>NV 3</option>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-sm <?= $myPref !== null ? 'btn-success' : 'btn-primary' ?> py-1 px-2.5 text-xs">
+                                                        <?= $myPref !== null ? '✓ Đã đăng ký' : 'Đăng ký' ?>
+                                                    </button>
+                                                </form>
+                                                <?php if ($myPref !== null): ?>
+                                                    <form method="post" action="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-register&action=volunteer_withdraw_registration" class="inline">
+                                                        <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
+                                                        <input type="hidden" name="shift_id" value="<?= $s->id ?>">
+                                                        <input type="hidden" name="volunteer_id" value="<?= $vol->id ?>">
+                                                        <button type="submit" class="btn btn-sm btn-outline text-rose-600 py-1 px-2 text-xs" title="Rút đăng ký khỏi ca trực này">
+                                                            Rút
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- CHẾ ĐỘ 2: BẢNG DANH SÁCH CA TRỰC -->
+                    <div id="vol-reg-table-view" class="hidden overflow-x-auto max-h-[620px] overflow-y-auto">
                         <table class="w-full text-left border-collapse text-sm">
-                            <thead>
+                            <thead class="sticky top-0 bg-white dark:bg-[#131822] z-10">
                                 <tr class="border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500">
                                     <th class="py-3 px-3">Mã &amp; Tên ca trực</th>
-                                    <th class="py-3 px-3 whitespace-nowrap">Khung thời gian</th>
+                                    <th class="py-3 px-3 whitespace-nowrap">Ngày &amp; Giờ trực</th>
                                     <th class="py-3 px-3 whitespace-nowrap">Kỹ năng yêu cầu</th>
                                     <th class="py-3 px-3 whitespace-nowrap">Đánh giá Tương thích</th>
                                     <th class="py-3 px-3 whitespace-nowrap">Nguyện vọng</th>
@@ -4613,17 +5116,34 @@ document.addEventListener('DOMContentLoaded', function () {
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                                 <?php foreach ($ds->shifts as $s):
+                                    $sFmt = formatShiftTimeRangeVn($s->startEpoch, $s->endEpoch);
                                     $req = $s->requirements[0] ?? null;
+                                    $skLabel = $req !== null ? ($skillNameVi[$req->skillCode] ?? $req->skillCode) : 'Tình nguyện chung';
                                     $hasSkill = $req === null || $vol->satisfiesRequirement($req);
                                     $isAvail = $vol->isAvailableForShift($s);
                                     $myPref = $regShiftIds[$s->id] ?? null;
+                                    $compatTag = ($hasSkill && $isAvail) ? 'MATCH' : 'OTHER';
+                                    $regTag = ($myPref !== null) ? 'REGISTERED' : 'UNREGISTERED';
+                                    $searchBlob = mb_strtolower($s->code . ' ' . $s->title . ' ' . $s->locationName . ' ' . $skLabel);
                                 ?>
-                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                                        <td class="py-3 px-3 font-bold max-w-[280px] leading-snug">[<?= h($s->code) ?>] <?= h($s->title) ?></td>
-                                        <td class="py-3 px-3 mono text-xs whitespace-nowrap"><?= date('d/m H:i', $s->startEpoch) ?>–<?= date('H:i', $s->endEpoch) ?></td>
+                                    <tr
+                                        class="vol-reg-item hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                        data-reg-search="<?= h($searchBlob) ?>"
+                                        data-reg-session="<?= h($sFmt['session_code']) ?>"
+                                        data-reg-compat="<?= h($compatTag) ?>"
+                                        data-reg-registered="<?= h($regTag) ?>"
+                                    >
+                                        <td class="py-3 px-3 font-bold max-w-[280px] leading-snug">
+                                            <div>[<?= h($s->code) ?>] <?= h($s->title) ?></div>
+                                            <div class="text-[11px] font-normal text-slate-400"><?= h($s->locationName) ?></div>
+                                        </td>
+                                        <td class="py-3 px-3 whitespace-nowrap">
+                                            <div class="font-bold text-xs text-slate-800 dark:text-slate-200"><?= h($sFmt['date_label']) ?></div>
+                                            <div class="mono text-xs text-slate-500"><?= h($sFmt['session_label']) ?> &middot; <?= h($sFmt['time_range']) ?></div>
+                                        </td>
                                         <td class="py-3 px-3 whitespace-nowrap">
                                             <?php if ($req !== null): ?>
-                                                <span class="badge badge-subtle"><?= h($skillNameVi[$req->skillCode] ?? $req->skillCode) ?> &ge; Cấp <?= $req->minLevel ?></span>
+                                                <span class="badge badge-subtle"><?= h($skLabel) ?> &ge; Cấp <?= $req->minLevel ?></span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="py-3 px-3 whitespace-nowrap">
@@ -5165,16 +5685,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </button>
 
             <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
-            <div class="px-3 text-[11px] font-bold uppercase text-slate-400 mb-1">Chiến dịch Đang chọn</div>
-            <?php foreach ($campaignMeta as $actId => $c): ?>
-                <a
-                    href="?view=coordinator&activity_id=<?= $actId ?>"
-                    class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors <?= $selectedActivityId === $actId ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
-                >
-                    <span><?= h($c['short_title']) ?></span>
-                    <span class="mono text-[10px]"><?= h($c['code']) ?></span>
-                </a>
-            <?php endforeach; ?>
+            <?= renderDrawerCampaignList($campaignMeta, $selectedActivityId, '?view=coordinator&activity_id={id}') ?>
 
             <div class="my-3 border-t border-slate-200 dark:border-slate-800"></div>
             <button type="button" data-open-modal="modal-create-activity" id="btn-create-activity-coordinator" class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 text-left">
@@ -5288,7 +5799,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             data-shift-id="<?= h($ds->shifts[0]->id ?? 201) ?>"
                             data-shift-title="<?= h(($ds->shifts[0]->code ?? 'CA-01') . ' · ' . ($ds->shifts[0]->title ?? 'Ca trực')) ?>"
                         >
-                            <?= icon('qr-code', 14) ?> Mở Máy chiếu QR 30s
+                            <?= icon('qr-code', 14) ?> Mở Máy chiếu QR Điểm danh
                         </button>
                     </div>
                     <span class="text-xs text-slate-500 mt-1.5 block relative z-10">Vị trí cần bổ sung: <?= count($unassignedSlots) ?> vị trí</span>
@@ -5325,11 +5836,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </button>
                 </div>
                 <div class="flex flex-wrap items-center gap-1.5">
-                    <?php foreach ($campaignMeta as $actId => $c): ?>
-                        <a href="?view=coordinator&activity_id=<?= $actId ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200' ?>">
-                            <?= h($c['code']) ?>: <?= h($c['short_title']) ?>
-                        </a>
-                    <?php endforeach; ?>
+                    <?= renderScalableCampaignSwitcher($campaignMeta, $selectedActivityId, '?view=coordinator&activity_id={id}') ?>
                 </div>
             </div>
 
@@ -5339,7 +5846,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
                         <div class="min-w-0">
                             <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white truncate"><?= h($activeCampaign['title']) ?></h2>
-                            <p class="text-xs text-slate-500">Chọn một ca trực ở cột trái để xem danh sách nhân sự, duyệt đơn đăng ký hoặc phân công ứng viên phù hợp</p>
+                            <p class="text-xs text-slate-500">Chọn một ca trực theo lịch ngày ở cột trái để xem danh sách nhân sự, duyệt đơn đăng ký hoặc phân công ứng viên phù hợp</p>
                         </div>
                         <div class="flex flex-wrap gap-1.5 shrink-0">
                             <button type="button" class="btn btn-sm btn-outline active" data-shift-filter="ALL">Tất cả (<?= count($ds->shifts) ?>)</button>
@@ -5350,15 +5857,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
 
                     <div class="flex flex-col lg:flex-row gap-5 mt-4 min-w-0">
-                        <!-- CỘT MASTER: DANH SÁCH CA TRỰC THU GỌN -->
-                        <div id="coordinator-master-col" class="w-full lg:w-[310px] xl:w-[340px] shrink-0 space-y-3">
+                        <!-- CỘT MASTER: DANH SÁCH CA TRỰC GOM NHÓM THEO NGÀY -->
+                        <div id="coordinator-master-col" class="w-full lg:w-[320px] xl:w-[350px] shrink-0 space-y-3">
                             <div class="relative">
                                 <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
-                                <input type="text" id="shift-search-input" placeholder="Tìm theo mã ca, tên ca, địa bàn..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs focus:border-[#0057B8] focus:outline-none" />
+                                <input type="text" id="shift-search-input" placeholder="Tìm theo mã ca, tên ca, ngày, địa bàn..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs focus:border-[#0057B8] focus:outline-none" />
                             </div>
 
                             <div id="compact-shifts-list" class="space-y-3 max-h-[760px] overflow-y-auto pr-1">
-                                <?php foreach ($ds->shifts as $idx => $s):
+                                <?php
+                                $lastCoordDateKey = '';
+                                foreach ($ds->shifts as $idx => $s):
+                                    $sFmt = formatShiftTimeRangeVn($s->startEpoch, $s->endEpoch);
                                     $currList = $assignedByShift[$s->id] ?? [];
                                     $currCount = count($currList);
                                     $isValidShift = ($currCount >= $s->minPeople && $currCount <= $s->maxPeople);
@@ -5370,7 +5880,16 @@ document.addEventListener('DOMContentLoaded', function () {
                                     $skCode = $req?->skillCode ?? 'LOGISTICS';
                                     $skLabel = $skillNameVi[$skCode] ?? $skCode;
                                     $isActive = ($idx === 0);
+                                    if ($sFmt['date_key'] !== $lastCoordDateKey):
+                                        $lastCoordDateKey = $sFmt['date_key'];
                                 ?>
+                                        <div class="coord-date-group-header sticky top-0 z-10 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] font-extrabold text-slate-700 dark:text-slate-200">
+                                            <span class="flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[15px] text-[#0057B8] dark:text-sky-400">calendar_today</span>
+                                                <span><?= h($sFmt['date_label']) ?></span>
+                                            </span>
+                                        </div>
+                                <?php endif; ?>
                                     <article
                                         class="compact-shift-card p-4 rounded-2xl border transition-all cursor-pointer <?= $isActive ? 'active border-[#0057B8] dark:border-sky-400 bg-blue-50/40 dark:bg-sky-950/30 ring-2 ring-[#0057B8]/20 shadow-sm' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131822] hover:border-slate-300 dark:hover:border-slate-700' ?>"
                                         data-shift-id="<?= $s->id ?>"
@@ -5381,12 +5900,13 @@ document.addEventListener('DOMContentLoaded', function () {
                                         data-min-people="<?= $s->minPeople ?>"
                                         data-max-people="<?= $s->maxPeople ?>"
                                         data-is-locked="<?= $s->isLocked ? '1' : '0' ?>"
-                                        data-search="<?= h(mb_strtolower($s->code . ' ' . $s->title . ' ' . $s->locationName . ' ' . $skLabel)) ?>"
+                                        data-search="<?= h(mb_strtolower($s->code . ' ' . $s->title . ' ' . $s->locationName . ' ' . $skLabel . ' ' . $sFmt['date_label'] . ' ' . $sFmt['session_label'])) ?>"
                                     >
                                         <div class="flex items-start justify-between gap-2 mb-2">
                                             <div>
-                                                <div class="flex items-center gap-1.5">
+                                                <div class="flex flex-wrap items-center gap-1.5">
                                                     <span class="mono font-bold text-xs text-[#0057B8] dark:text-sky-400">[<?= h($s->code) ?>]</span>
+                                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border <?= $sFmt['session_badge'] ?>"><?= h($sFmt['session_label']) ?></span>
                                                     <?php if ($s->isLocked): ?>
                                                         <span class="material-symbols-outlined text-amber-500 text-[14px]" title="Ca đã khóa chốt">lock</span>
                                                     <?php endif; ?>
@@ -5403,7 +5923,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                     <?= $s->isLocked ? icon('lock', 12) : icon('unlock', 12) ?>
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-outline btn-open-qr-projector px-1.5 py-1 text-slate-500"
-                                                        title="Mở máy chiếu QR 30 giây"
+                                                        title="Mở máy chiếu QR điểm danh"
                                                         data-shift-id="<?= $s->id ?>" data-shift-title="[<?= h($s->code) ?>] <?= h($s->title) ?>">
                                                     <?= icon('qr-code', 12) ?>
                                                 </button>
@@ -5413,7 +5933,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <div class="text-[11px] text-slate-500 dark:text-slate-400 space-y-1 mb-2.5">
                                             <div class="flex items-center gap-1.5">
                                                 <span class="material-symbols-outlined text-[13px]">schedule</span>
-                                                <span class="mono"><?= date('d/m H:i', $s->startEpoch) ?>–<?= date('H:i', $s->endEpoch) ?></span>
+                                                <span class="mono font-semibold text-slate-700 dark:text-slate-300"><?= h($sFmt['time_range']) ?></span>
                                                 <span>&middot;</span>
                                                 <span class="truncate"><?= h($s->locationName) ?></span>
                                             </div>
@@ -6256,17 +6776,13 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         </div>
 
-        <!-- Campaign Selector Pills -->
-        <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-2.5 mb-7 flex flex-wrap gap-2 shadow-sm">
-            <?php foreach ($campaignMeta as $actId => $c): ?>
-                <a
-                    href="?view=analytics&activity_id=<?= $actId ?>"
-                    class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all <?= $selectedActivityId === $actId ? 'bg-[#0057B8] text-white shadow-md shadow-blue-600/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' ?>"
-                >
-                    <span class="mono px-1.5 py-0.5 rounded <?= $selectedActivityId === $actId ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' ?> text-[10px]"><?= h($c['code']) ?></span>
-                    <span><?= h($c['short_title']) ?></span>
-                </a>
-            <?php endforeach; ?>
+        <!-- Campaign Selector (Scalable cho 100+ chiến dịch) -->
+        <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 mb-7 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+            <div class="flex items-center gap-2 text-xs font-extrabold text-slate-700 dark:text-slate-200">
+                <span class="material-symbols-outlined text-[#0057B8] text-[18px]">campaign</span>
+                <span>Chiến dịch đang phân tích: <strong class="text-[#0057B8] dark:text-sky-400"><?= h($activeCampaign['title']) ?></strong></span>
+            </div>
+            <?= renderScalableCampaignSwitcher($campaignMeta, $selectedActivityId, '?view=analytics&activity_id={id}') ?>
         </div>
 
         <!-- 4 Thẻ KPI Tác động -->
@@ -6370,13 +6886,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         $isFull = ($sf['status'] === 'FULL');
                         $isUnder = ($sf['status'] === 'UNDERSTAFFED');
                         $barColor = $isFull ? '#059669' : ($isUnder ? '#E11D48' : '#0284C7');
+                        $sfFmt = formatShiftTimeRangeVn((int) ($sf['start_epoch'] ?? 0), (int) ($sf['end_epoch'] ?? 0));
                     ?>
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                             <div class="flex justify-between items-start gap-2 mb-2">
                                 <div>
                                     <span class="mono font-extrabold text-xs text-[#0057B8] dark:text-sky-400">[<?= h($sf['shift_code']) ?>]</span>
                                     <strong class="text-xs text-slate-900 dark:text-white ml-1"><?= h($sf['shift_title']) ?></strong>
-                                    <div class="text-[11px] text-slate-400 mt-0.5"><?= h($sf['start_time']) ?> &rarr; <?= h($sf['end_time']) ?> (<?= h($sf['duration_hours']) ?>h)</div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5"><?= h($sfFmt['full_label']) ?></div>
                                 </div>
                                 <span class="badge <?= $isFull ? 'badge-valid' : ($isUnder ? 'badge-violation' : 'badge-info') ?> text-[10px]">
                                     <?= h($sf['status_label_vi']) ?>
@@ -7491,7 +8008,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 ?>
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                                         <td class="py-3 px-3">
-                                            <div class="font-bold text-slate-900 dark:text-white"><?= h($act['title']) ?></div>
+                                            <div class="font-bold text-slate-900 dark:text-white"><?= h(cleanCampaignTitle((string) $act['title'])) ?></div>
                                             <div class="font-mono text-[11px] text-slate-400"><?= h($act['code']) ?></div>
                                         </td>
                                         <td class="py-3 px-3 text-slate-600 dark:text-slate-300">
@@ -8054,7 +8571,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <div class="font-mono text-[10px] text-slate-400"><?= h($cert['student_code']) ?></div>
                                         </td>
                                         <td class="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                                            <div><?= h($cert['activity_title']) ?></div>
+                                            <div><?= h(cleanCampaignTitle((string) $cert['activity_title'])) ?></div>
                                             <div class="font-mono text-[10px] text-slate-400"><?= h($cert['activity_code']) ?></div>
                                         </td>
                                         <td class="py-2.5 px-3 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
@@ -8062,7 +8579,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         </td>
                                         <td class="py-2.5 px-3 text-slate-500">
                                             <?= h($cert['issuer_name'] ?? 'Hệ thống Thành Đoàn') ?>
-                                            <div class="text-[10px] text-slate-400"><?= h($cert['issued_at']) ?></div>
+                                            <div class="text-[10px] text-slate-400"><?= !empty($cert['issued_at']) ? date('H:i · d/m/Y', strtotime((string)$cert['issued_at'])) : '' ?></div>
                                         </td>
                                         <td class="py-2.5 px-3 text-right">
                                             <a href="?view=verify&amp;code=<?= urlencode($cert['certificate_code']) ?>" class="btn btn-outline btn-xs inline-flex items-center gap-1" target="_blank">

@@ -3040,5 +3040,148 @@
             }
         }
     }
+
+    // =========================================================================
+    // 17. BỘ CHUYỂN ĐỔI CHIẾN DỊCH QUY MÔ LỚN (100+ CHIẾN DỊCH) & LỊCH BIỂU TRỰC QUAN
+    // =========================================================================
+    document.querySelectorAll('.campaign-scalable-switcher').forEach(switcher => {
+        const input = switcher.querySelector('.campaign-quick-filter-input');
+        const items = switcher.querySelectorAll('.campaign-quick-filter-item');
+        if (input && items.length > 0) {
+            input.addEventListener('input', () => {
+                const q = input.value.toLowerCase().trim();
+                items.forEach(item => {
+                    const hay = (item.dataset.campaignSearch || item.textContent || '').toLowerCase();
+                    item.style.display = (!q || hay.includes(q)) ? '' : 'none';
+                });
+            });
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        document.querySelectorAll('.campaign-scalable-switcher details[open]').forEach(det => {
+            if (!det.contains(e.target)) {
+                det.removeAttribute('open');
+            }
+        });
+    });
+
+    // Chuyển đổi chế độ xem Lịch trực của Tình nguyện viên (Lịch theo Ngày & Buổi vs Dạng Thẻ)
+    const myShiftsViewBtns = document.querySelectorAll('.btn-my-shifts-view');
+    const myShiftsScheduleView = document.getElementById('my-shifts-schedule-view');
+    const myShiftsCardsView = document.getElementById('my-shifts-cards-view');
+    if (myShiftsViewBtns.length > 0 && myShiftsScheduleView && myShiftsCardsView) {
+        myShiftsViewBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.myShiftsView || 'schedule';
+                myShiftsViewBtns.forEach(b => {
+                    const isAct = (b.dataset.myShiftsView === mode);
+                    b.classList.toggle('active', isAct);
+                    b.classList.toggle('bg-white', isAct);
+                    b.classList.toggle('dark:bg-slate-900', isAct);
+                    b.classList.toggle('text-[#0057B8]', isAct);
+                    b.classList.toggle('dark:text-sky-400', isAct);
+                    b.classList.toggle('shadow-xs', isAct);
+                    b.classList.toggle('text-slate-600', !isAct);
+                    b.classList.toggle('dark:text-slate-300', !isAct);
+                });
+                if (mode === 'cards') {
+                    myShiftsScheduleView.classList.add('hidden');
+                    myShiftsCardsView.classList.remove('hidden');
+                } else {
+                    myShiftsCardsView.classList.add('hidden');
+                    myShiftsScheduleView.classList.remove('hidden');
+                }
+            });
+        });
+    }
+
+    // Chuyển đổi chế độ xem & Bộ lọc thông minh cho Tab Đăng ký Ca trực của Tình nguyện viên
+    const regViewBtns = document.querySelectorAll('.btn-reg-view');
+    const regScheduleView = document.getElementById('vol-reg-schedule-view');
+    const regTableView = document.getElementById('vol-reg-table-view');
+    if (regViewBtns.length > 0 && regScheduleView && regTableView) {
+        regViewBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.regView || 'schedule';
+                regViewBtns.forEach(b => {
+                    const isAct = (b.dataset.regView === mode);
+                    b.classList.toggle('active', isAct);
+                    b.classList.toggle('bg-white', isAct);
+                    b.classList.toggle('dark:bg-slate-900', isAct);
+                    b.classList.toggle('text-[#0057B8]', isAct);
+                    b.classList.toggle('dark:text-sky-400', isAct);
+                    b.classList.toggle('shadow-xs', isAct);
+                    b.classList.toggle('text-slate-600', !isAct);
+                    b.classList.toggle('dark:text-slate-300', !isAct);
+                });
+                if (mode === 'table') {
+                    regScheduleView.classList.add('hidden');
+                    regTableView.classList.remove('hidden');
+                } else {
+                    regTableView.classList.add('hidden');
+                    regScheduleView.classList.remove('hidden');
+                }
+            });
+        });
+    }
+
+    const regSearchInput = document.getElementById('vol-reg-search');
+    const regSessionBtns = document.querySelectorAll('.btn-reg-session');
+    const regCompatSelect = document.getElementById('vol-reg-compat');
+    let activeRegSession = 'ALL';
+
+    function applyVolunteerRegFilters() {
+        const q = (regSearchInput?.value || '').toLowerCase().trim();
+        const compat = regCompatSelect?.value || 'ALL';
+        const items = document.querySelectorAll('.vol-reg-item');
+        if (items.length === 0) return;
+
+        items.forEach(el => {
+            const hay = (el.dataset.regSearch || '').toLowerCase();
+            const sess = el.dataset.regSession || '';
+            const cmp = el.dataset.regCompat || '';
+            const reg = el.dataset.regRegistered || '';
+
+            const matchQ = !q || hay.includes(q);
+            const matchSess = (activeRegSession === 'ALL' || sess === activeRegSession);
+            const matchCompat = (compat === 'ALL')
+                || (compat === 'MATCH' && cmp === 'MATCH')
+                || (compat === 'REGISTERED' && reg === 'REGISTERED');
+
+            el.style.display = (matchQ && matchSess && matchCompat) ? '' : 'none';
+        });
+
+        document.querySelectorAll('.vol-reg-day-group').forEach(group => {
+            const visibleChildren = Array.from(group.querySelectorAll('.vol-reg-item')).filter(c => c.style.display !== 'none');
+            group.style.display = visibleChildren.length > 0 ? '' : 'none';
+        });
+    }
+
+    if (regSearchInput) {
+        regSearchInput.addEventListener('input', applyVolunteerRegFilters);
+    }
+    if (regCompatSelect) {
+        regCompatSelect.addEventListener('change', applyVolunteerRegFilters);
+    }
+    if (regSessionBtns.length > 0) {
+        regSessionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                activeRegSession = btn.dataset.regSession || 'ALL';
+                regSessionBtns.forEach(b => {
+                    const isAct = (b.dataset.regSession === activeRegSession);
+                    b.classList.toggle('active', isAct);
+                    b.classList.toggle('bg-[#0057B8]', isAct);
+                    b.classList.toggle('text-white', isAct);
+                    b.classList.toggle('bg-white', !isAct);
+                    b.classList.toggle('dark:bg-slate-900', !isAct);
+                    b.classList.toggle('text-slate-600', !isAct);
+                    b.classList.toggle('dark:text-slate-300', !isAct);
+                });
+                applyVolunteerRegFilters();
+            });
+        });
+    }
 })();
+
 
