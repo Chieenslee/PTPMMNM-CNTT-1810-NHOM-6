@@ -323,6 +323,12 @@ if ($action === 'export_ics') {
 }
 
 if ($action === 'export_csv') {
+    if (!in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Lỗi 403: Chỉ Người phụ trách (Ban Chỉ huy) và Quản trị viên mới có quyền xuất danh sách phân công (.CSV).';
+        exit;
+    }
     $actId = (int) ($_GET['activity_id'] ?? 3);
     $csv = CsvSafeExporter::exportDetailedAssignments($pdo, $actId, $campaignMeta);
 
@@ -333,6 +339,12 @@ if ($action === 'export_csv') {
 }
 
 if ($action === 'export_analytics_csv') {
+    if (!in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Lỗi 403: Chỉ Người phụ trách (Ban Chỉ huy) và Quản trị viên mới có quyền xuất thống kê chiến dịch (.CSV).';
+        exit;
+    }
     $actId = (int) ($_GET['activity_id'] ?? 3);
     $reportData = $analyticsService->getCampaignFormalReport($actId);
     $csv = CsvSafeExporter::exportAnalyticsSummaryCsv($reportData);
@@ -1353,6 +1365,18 @@ if ($view === 'volunteer') {
         exit;
     }
 }
+if (in_array($view, ['analytics', 'report'], true)) {
+    if ($currentRole === 'PUBLIC' || !is_array($authUser)) {
+        header('Location: ?view=login&redirect=' . urlencode($view));
+        exit;
+    }
+    if ($currentRole === 'VOLUNTEER') {
+        $_SESSION['flash_msg'] = 'Trang Thống kê BI & Báo cáo Tổng kết chỉ dành cho Người phụ trách (Ban Chỉ huy) và Quản trị viên.';
+        $_SESSION['flash_type'] = 'warning';
+        header('Location: ?view=volunteer&activity_id=' . $selectedActivityId);
+        exit;
+    }
+}
 if ($view === 'profile') {
     if ($currentRole === 'PUBLIC' || !is_array($authUser)) {
         header('Location: ?view=login&redirect=profile');
@@ -1688,7 +1712,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span>Phim Áo Xanh</span>
                     </button>
 
-                    <!-- BI Analytics Dashboard Quick Link -->
+                    <!-- BI Analytics Dashboard Quick Link (Chỉ dành cho Người phụ trách & Quản trị viên) -->
+                    <?php if (in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)): ?>
                     <a
                         href="?view=analytics&activity_id=<?= $selectedActivityId ?>"
                         class="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-sky-950/50 border border-blue-200 dark:border-sky-800 text-[#0057B8] dark:text-sky-300 hover:bg-[#0057B8] hover:text-white font-bold text-xs transition-all whitespace-nowrap shrink-0"
@@ -1697,6 +1722,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span class="material-symbols-outlined text-[17px]">analytics</span>
                         <span>Phân tích BI</span>
                     </a>
+                    <?php endif; ?>
 
                     <!-- GIS Interactive Map Quick Link -->
                     <a
@@ -1729,14 +1755,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     </button>
 
                     <!-- Registered Shifts / Coordinator Quick Link -->
-                    <?php if ($currentRole === 'VOLUNTEER'): ?>
+                    <?php if ($currentRole === 'VOLUNTEER'):
+                        $stmtHeaderAssignCount = $pdo->prepare("SELECT COUNT(*) FROM assignments WHERE volunteer_id = :vid AND status IN ('ASSIGNED', 'CONFIRMED', 'CHECKED_IN')");
+                        $stmtHeaderAssignCount->execute([':vid' => $currentVolunteerId]);
+                        $headerMyShiftCount = (int) $stmtHeaderAssignCount->fetchColumn();
+                    ?>
                     <a
-                        href="?view=volunteer&activity_id=<?= $selectedActivityId ?>"
+                        href="?view=volunteer&activity_id=<?= $selectedActivityId ?>&vtab=vtab-my-shifts&assign_filter=all"
                         class="hidden sm:flex w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 items-center justify-center text-slate-700 dark:text-slate-200 hover:text-[#0057B8] hover:border-[#0057B8] transition-colors relative shrink-0"
-                        title="Ca trực của tôi"
+                        title="Ca trực của tôi (<?= $headerMyShiftCount ?> ca đã giao)"
                     >
                         <span class="material-symbols-outlined text-[19px]">event_available</span>
-                        <span class="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">3</span>
+                        <span class="absolute -top-1 -right-1 <?= $headerMyShiftCount > 0 ? 'bg-emerald-600' : 'bg-slate-400' ?> text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center"><?= $headerMyShiftCount ?></span>
                     </a>
                     <?php elseif (in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)): ?>
                     <a
@@ -4390,9 +4420,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <button type="button" class="btn btn-sm btn-success btn-sim-qr-scan" data-assignment-id="<?= (int) $ma['id'] ?>" data-scan-mode="VALID">
                                             <?= icon('qr-code', 13) ?> Quét QR Điểm danh (30s)
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline btn-sim-qr-scan" data-assignment-id="<?= (int) $ma['id'] ?>" data-scan-mode="EXPIRED">
-                                            Thử QR hết hạn
-                                        </button>
                                         <button type="button" class="btn btn-sm btn-outline btn-open-absence text-rose-600" data-assignment-id="<?= (int) $ma['id'] ?>">
                                             <?= icon('alert-triangle', 13) ?> Báo vắng
                                         </button>
@@ -5099,39 +5126,73 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="flex-1 flex flex-col page-enter max-w-7xl w-full mx-auto min-w-0">
         <!-- Main Workspace Full-Width (Không bị đẩy lệch phải) -->
         <main class="flex-1 min-w-0 w-full px-4 md:px-6 py-6">
-            <!-- 4 Thẻ Stats Grid có Watermark Icon (Giống hệt TechPro Admin.jsx) -->
+            <?php
+            // Tính các chỉ số thực tế phục vụ công việc điều phối của Giáo viên / Người phụ trách
+            $coordTotalShifts = count($ds->shifts);
+            $coordEnoughShifts = 0;
+            $coordUnderShifts = 0;
+            foreach ($ds->shifts as $sItem) {
+                $cAssigned = count($assignedByShift[$sItem->id] ?? []);
+                if ($cAssigned >= $sItem->minPeople) {
+                    $coordEnoughShifts++;
+                } else {
+                    $coordUnderShifts++;
+                }
+            }
+            $coordCoveragePct = $coordTotalShifts > 0 ? round(($coordEnoughShifts / $coordTotalShifts) * 100, 1) : 0.0;
+            $coordPendingRegs = 0;
+            foreach ($regsByShift as $sIdKey => $rMap) {
+                foreach ($rMap as $vIdKey => $pRank) {
+                    $alreadyInShift = false;
+                    foreach (($assignedByShift[$sIdKey] ?? []) as $asItem) {
+                        if ((int)$asItem['volunteer_id'] === (int)$vIdKey) {
+                            $alreadyInShift = true;
+                            break;
+                        }
+                    }
+                    if (!$alreadyInShift) {
+                        $coordPendingRegs++;
+                    }
+                }
+            }
+            $coordTotalAbsences = 0;
+            foreach ($absencesByShift as $absList) {
+                $coordTotalAbsences += count($absList);
+            }
+            ?>
+            <!-- 4 Thẻ Chỉ số Thực tế phục vụ Điều phối Chiến dịch -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
                 <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden hover-lift shadow-sm">
                     <div class="absolute -right-3 -top-3 text-emerald-500/10">
                         <span class="material-symbols-outlined text-[88px]">verified</span>
                     </div>
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider relative z-10">Độ phủ Ca Hợp lệ</span>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider relative z-10">Tiến độ Đủ Quân số Ca</span>
                     <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 relative z-10">
-                        <?= h($planX->metrics['valid_covered_shifts']) ?> / <?= h($planX->metrics['total_shifts']) ?> (<?= h($planX->metrics['valid_coverage_rate']) ?>%)
+                        <?= $coordEnoughShifts ?> / <?= $coordTotalShifts ?> ca (<?= $coordCoveragePct ?>%)
                     </div>
-                    <span class="text-xs text-slate-500 mt-1 block relative z-10">So với xếp theo thứ tự B1: <?= h($planB1->metrics['valid_coverage_rate']) ?>%</span>
+                    <span class="text-xs text-slate-500 mt-1 block relative z-10">Còn <?= $coordUnderShifts ?> ca chưa đủ định biên tối thiểu</span>
                 </div>
 
                 <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden hover-lift shadow-sm">
                     <div class="absolute -right-3 -top-3 text-blue-500/10">
-                        <span class="material-symbols-outlined text-[88px]">shield</span>
+                        <span class="material-symbols-outlined text-[88px]">how_to_reg</span>
                     </div>
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider relative z-10">Lỗi Trùng giờ / Kỹ năng</span>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider relative z-10">Nhân sự &amp; Đơn Đăng ký</span>
                     <div class="text-2xl font-extrabold text-slate-900 dark:text-white mt-1 relative z-10">
-                        <?= h($planX->metrics['total_violations']) ?> lỗi
+                        <?= count($activeRows) ?> lượt phân công
                     </div>
-                    <span class="text-xs text-rose-500 font-semibold mt-1 block relative z-10">Đã chặn <?= h($planB0->metrics['total_violations']) ?> lỗi xếp thủ công</span>
+                    <span class="text-xs text-[#0057B8] dark:text-sky-400 font-semibold mt-1 block relative z-10"><?= $coordPendingRegs ?> nguyện vọng đang chờ duyệt</span>
                 </div>
 
                 <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden hover-lift shadow-sm">
                     <div class="absolute -right-3 -top-3 text-sky-500/10">
-                        <span class="material-symbols-outlined text-[88px]">balance</span>
+                        <span class="material-symbols-outlined text-[88px]">person_alert</span>
                     </div>
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider relative z-10">Độ đồng đều tải (&sigma;)</span>
-                    <div class="text-2xl font-extrabold text-[#0057B8] dark:text-sky-400 mt-1 relative z-10 mono">
-                        <?= h($planX->metrics['load_std_dev']) ?>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider relative z-10">Báo vắng &amp; Kiểm tra Lịch</span>
+                    <div class="text-2xl font-extrabold text-[#0057B8] dark:text-sky-400 mt-1 relative z-10">
+                        <?= $coordTotalAbsences ?> báo vắng
                     </div>
-                    <span class="text-xs text-slate-500 mt-1 block relative z-10">Chia đều số ca giữa 30 TNV</span>
+                    <span class="text-xs text-emerald-600 font-semibold mt-1 block relative z-10">✓ Đảm bảo 0 trùng giờ &middot; Đúng kỹ năng</span>
                 </div>
 
                 <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden hover-lift shadow-sm">
@@ -5149,7 +5210,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <?= icon('qr-code', 14) ?> Mở Máy chiếu QR 30s
                         </button>
                     </div>
-                    <span class="text-xs text-slate-500 mt-1.5 block relative z-10">Vị trí thiếu người: <?= count($unassignedSlots) ?></span>
+                    <span class="text-xs text-slate-500 mt-1.5 block relative z-10">Vị trí cần bổ sung: <?= count($unassignedSlots) ?> vị trí</span>
                 </div>
             </div>
 
@@ -5684,89 +5745,91 @@ document.addEventListener('DOMContentLoaded', function () {
             ], JSON_UNESCAPED_UNICODE) ?>
             </script>
 
-            <!-- TAB 2: TỰ ĐỘNG XẾP CA & ĐỐI CHIẾU HIỆU QUẢ -->
+            <!-- TAB 2: TỰ ĐỘNG ĐỀ XUẤT PHÂN CÔNG THEO ĐIỀU KIỆN & THỨ TỰ ƯU TIÊN (CN3) -->
             <div id="tab-lab" class="workspace-tab-pane">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-                            <h3 class="font-extrabold text-base">So sánh Hiệu quả Phân công Tự động (KT2)</h3>
-                            <span class="badge badge-info mono text-[10px]" title="Mã băm dữ liệu đầu vào chung (Snapshot Hash)">Hash: <?= h(substr($planX->snapshotHash, 0, 12)) ?>...</span>
+                    <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                <h3 class="font-extrabold text-base flex items-center gap-2 text-slate-900 dark:text-white">
+                                    <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400">fact_check</span>
+                                    <span>Tóm tắt Kết quả Đề xuất Phân công (CN3)</span>
+                                </h3>
+                                <span class="badge badge-valid text-xs">Đảm bảo 100% điều kiện lịch &amp; kỹ năng</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                                Công cụ hỗ trợ Người phụ trách tự động ghép Tình nguyện viên vào các ca trực đang mở dựa trên <strong>lịch rảnh đã khai báo</strong>, <strong>kỹ năng chuyên môn bắt buộc</strong> và <strong>nguyện vọng đăng ký</strong> mà không làm mất các phân công thủ công đã gán trước đó.
+                            </p>
+
+                            <div class="grid grid-cols-3 gap-3 mb-4 text-center">
+                                <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
+                                    <div class="text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-300">Ca đủ nhân sự</div>
+                                    <div class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                        <?= h($planX->metrics['valid_covered_shifts']) ?> / <?= h($planX->metrics['total_shifts']) ?>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500">Đạt <?= h($planX->metrics['valid_coverage_rate']) ?>% tổng số ca</div>
+                                </div>
+                                <div class="p-3 rounded-xl bg-blue-50/70 dark:bg-sky-950/30 border border-blue-200 dark:border-sky-800/60">
+                                    <div class="text-[11px] font-bold uppercase text-[#0057B8] dark:text-sky-300">Phân bổ số ca</div>
+                                    <div class="text-xl font-black text-[#0057B8] dark:text-sky-400 mt-0.5">
+                                        <?= (int) ($planX->metrics['min_load_per_volunteer'] ?? 0) ?>–<?= (int) ($planX->metrics['max_load_per_volunteer'] ?? 0) ?> ca
+                                    </div>
+                                    <div class="text-[11px] text-slate-500">Mỗi TNV trong tuần</div>
+                                </div>
+                                <div class="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60">
+                                    <div class="text-[11px] font-bold uppercase text-amber-700 dark:text-amber-300">Vị trí còn trống</div>
+                                    <div class="text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                                        <?= count($unassignedSlots) ?> vị trí
+                                    </div>
+                                    <div class="text-[11px] text-slate-500">Xem chi tiết ở tab Ca thiếu</div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 dark:bg-slate-800/60 border-l-4 border-[#0057B8] p-4 rounded-lg text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                <div class="font-bold text-slate-800 dark:text-slate-100 mb-1">Nhận xét &amp; Khuyến nghị Điều phối:</div>
+                                <?= nl2br(h(implode("\n\n", $aiExplanation['paragraphs'] ?? []))) ?>
+                            </div>
                         </div>
-                        <div class="overflow-x-auto no-scrollbar mb-4">
-                            <table class="w-full min-w-[540px] text-left border-collapse text-sm">
-                                <thead>
-                                    <tr class="border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500">
-                                        <th class="py-2.5 px-3 whitespace-nowrap">Phương pháp</th>
-                                        <th class="py-2.5 px-3 whitespace-nowrap">Ca đủ người</th>
-                                        <th class="py-2.5 px-3 whitespace-nowrap">Vi phạm</th>
-                                        <th class="py-2.5 px-3 whitespace-nowrap">Độ lệch &sigma;</th>
-                                        <th class="py-2.5 px-3 whitespace-nowrap">Chênh lệch ca</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                                    <tr>
-                                        <td class="py-2.5 px-3 font-semibold whitespace-nowrap">Theo thứ tự đăng ký (B0 - Không KT)</td>
-                                        <td class="py-2.5 px-3 whitespace-nowrap"><span class="badge badge-violation mono"><?= h($planB0->metrics['valid_covered_shifts']) ?>/<?= h($planB0->metrics['total_shifts']) ?> (<?= h($planB0->metrics['valid_coverage_rate']) ?>%)</span></td>
-                                        <td class="py-2.5 px-3 whitespace-nowrap"><span class="badge badge-violation mono"><?= h($planB0->metrics['total_violations']) ?> lỗi</span></td>
-                                        <td class="py-2.5 px-3 mono whitespace-nowrap"><?= h($planB0->metrics['load_std_dev']) ?></td>
-                                        <td class="py-2.5 px-3 mono text-xs whitespace-nowrap"><?= (int) ($planB0->metrics['min_load_per_volunteer'] ?? 0) ?>–<?= (int) ($planB0->metrics['max_load_per_volunteer'] ?? 0) ?> ca</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-2.5 px-3 font-semibold whitespace-nowrap">Theo thứ tự đăng ký (B1 - Có KT)</td>
-                                        <td class="py-2.5 px-3 whitespace-nowrap"><span class="badge badge-warning mono"><?= h($planB1->metrics['valid_covered_shifts']) ?>/<?= h($planB1->metrics['total_shifts']) ?> (<?= h($planB1->metrics['valid_coverage_rate']) ?>%)</span></td>
-                                        <td class="py-2.5 px-3 whitespace-nowrap"><span class="badge badge-valid mono">0 lỗi</span></td>
-                                        <td class="py-2.5 px-3 mono whitespace-nowrap"><?= h($planB1->metrics['load_std_dev']) ?></td>
-                                        <td class="py-2.5 px-3 mono text-xs whitespace-nowrap"><?= (int) ($planB1->metrics['min_load_per_volunteer'] ?? 0) ?>–<?= (int) ($planB1->metrics['max_load_per_volunteer'] ?? 0) ?> ca</td>
-                                    </tr>
-                                    <tr class="bg-emerald-50/70 dark:bg-emerald-950/30">
-                                        <td class="py-2.5 px-3 font-bold whitespace-nowrap">Xanh Hub Thông minh (Phương án X)</td>
-                                        <td class="py-2.5 px-3 whitespace-nowrap"><span class="badge badge-valid mono"><?= h($planX->metrics['valid_covered_shifts']) ?>/<?= h($planX->metrics['total_shifts']) ?> (<?= h($planX->metrics['valid_coverage_rate']) ?>%)</span></td>
-                                        <td class="py-2.5 px-3 whitespace-nowrap"><span class="badge badge-valid mono">0 lỗi</span></td>
-                                        <td class="py-2.5 px-3 mono font-bold whitespace-nowrap"><?= h($planX->metrics['load_std_dev']) ?></td>
-                                        <td class="py-2.5 px-3 mono font-bold text-xs whitespace-nowrap"><?= (int) ($planX->metrics['min_load_per_volunteer'] ?? 0) ?>–<?= (int) ($planX->metrics['max_load_per_volunteer'] ?? 0) ?> ca</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+
+                        <?php if ($currentRole === 'ADMIN'): ?>
+                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                            <span>Cấu hình trọng số toán học chuyên sâu dành cho Quản trị viên:</span>
+                            <a href="?view=admin&amp;tab=settings" class="font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[15px]">tune</span>
+                                <span>Mở Cài đặt Trọng số Hệ thống &rarr;</span>
+                            </a>
                         </div>
-                        <div class="mb-3 p-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] mono text-slate-600 dark:text-slate-300 space-y-1">
-                            <div><strong>Snapshot dữ liệu chung:</strong> <?= h($planX->snapshotHash) ?></div>
-                            <div><strong>Cấu hình B0/B1:</strong> <?= h(json_encode($planB1->config, JSON_UNESCAPED_UNICODE)) ?></div>
-                            <div><strong>Cấu hình Phương án X:</strong> <?= h(json_encode($planX->config, JSON_UNESCAPED_UNICODE)) ?></div>
-                        </div>
-                        <div class="bg-slate-50 dark:bg-slate-800/60 border-l-4 border-[#0057B8] p-4 rounded-lg text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            <?= nl2br(h(implode("\n\n", $aiExplanation['paragraphs'] ?? []))) ?>
-                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                        <h3 class="font-extrabold text-base mb-4">Chạy Tự động Phân công &amp; Biểu đồ Chia đều Ca trực</h3>
+                        <h3 class="font-extrabold text-base mb-2 flex items-center gap-2 text-slate-900 dark:text-white">
+                            <span class="material-symbols-outlined text-emerald-600">auto_awesome_motion</span>
+                            <span>Thiết lập Ưu tiên &amp; Chạy Đề xuất Phân công</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">Chọn tiêu chí ưu tiên phù hợp với tính chất chiến dịch và bấm nút để hệ thống tự động xếp ca.</p>
                         <form method="post" action="?view=coordinator&activity_id=<?= $selectedActivityId ?>&action=run_scheduler" class="mb-5 space-y-4">
                             <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
                             <div>
-                                <label class="text-xs font-bold block mb-1">Chế độ Tối ưu Chiến dịch</label>
-                                <select name="priority_mode" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm">
-                                    <option value="MAX_COVERAGE" <?= $weightsToUse->priorityMode === 'MAX_COVERAGE' ? 'selected' : '' ?>>Lấp đầy tối đa số ca trực (MAX_COVERAGE)</option>
-                                    <option value="FAIRNESS" <?= $weightsToUse->priorityMode === 'FAIRNESS' ? 'selected' : '' ?>>Chia đều ca giữa các TNV (FAIRNESS)</option>
-                                    <option value="SKILL_FIT" <?= $weightsToUse->priorityMode === 'SKILL_FIT' ? 'selected' : '' ?>>Ưu tiên giữ kỹ năng hiếm (SKILL_FIT)</option>
+                                <label class="text-xs font-bold block mb-1.5 text-slate-700 dark:text-slate-200">Tiêu chí Ưu tiên khi Xếp ca Chiến dịch</label>
+                                <select name="priority_mode" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
+                                    <option value="MAX_COVERAGE" <?= $weightsToUse->priorityMode === 'MAX_COVERAGE' ? 'selected' : '' ?>>Ưu tiên 1: Lấp đầy tối đa số ca trực đang thiếu người</option>
+                                    <option value="FAIRNESS" <?= $weightsToUse->priorityMode === 'FAIRNESS' ? 'selected' : '' ?>>Ưu tiên 2: Chia đều số ca trực công bằng giữa các TNV</option>
+                                    <option value="SKILL_FIT" <?= $weightsToUse->priorityMode === 'SKILL_FIT' ? 'selected' : '' ?>>Ưu tiên 3: Ưu tiên bảo toàn người có kỹ năng chuyên môn hiếm (Y tế, Lái xe)</option>
                                 </select>
                             </div>
-                            <div class="grid grid-cols-4 gap-2">
-                                <div><label class="mono text-[11px] font-bold">w_p</label><input type="number" step="0.5" name="w_priority" value="<?= h($weightsToUse->wPriority) ?>" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"></div>
-                                <div><label class="mono text-[11px] font-bold">w_n</label><input type="number" step="0.5" name="w_preference" value="<?= h($weightsToUse->wPreference) ?>" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"></div>
-                                <div><label class="mono text-[11px] font-bold">w_k</label><input type="number" step="0.5" name="w_skill_waste" value="<?= h($weightsToUse->wSkillWaste) ?>" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"></div>
-                                <div><label class="mono text-[11px] font-bold">w_l</label><input type="number" step="0.5" name="w_load" value="<?= h($weightsToUse->wLoad) ?>" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 text-xs"></div>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <label class="flex items-center gap-2 text-xs">
-                                    <input type="checkbox" name="apply_immediately" value="1" checked> Áp dụng ngay vào Bảng ca trực
+                            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center gap-3">
+                                <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+                                    <input type="checkbox" name="apply_immediately" value="1" checked class="rounded text-[#0057B8]">
+                                    <span>Áp dụng kết quả đề xuất vào Bảng phân công ca trực</span>
                                 </label>
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <?= icon('play', 13) ?> Chạy Tự động Phân công
+                                <button type="submit" class="btn btn-primary btn-sm px-4 py-2">
+                                    <?= icon('play', 13) ?> Chạy &amp; Áp dụng Đề xuất
                                 </button>
                             </div>
                         </form>
 
-                        <div class="text-xs font-bold text-slate-500 mb-2">Số ca được giao của từng Tình nguyện viên (SV001 &ndash; SV030):</div>
+                        <div class="text-xs font-bold text-slate-500 mb-2">Biểu đồ số ca được giao của từng Tình nguyện viên (SV001 &ndash; SV030):</div>
                         <div class="fairness-bars">
                             <?php for ($vid = 1; $vid <= 30; $vid++):
                                 $cnt = $loadX[$vid] ?? 0;
@@ -6619,7 +6682,27 @@ document.addEventListener('DOMContentLoaded', function () {
          CỔNG TRA CỨU CHỨNG NHẬN ĐIỆN TỬ & SỔ CÁI MINH BẠCH (?view=verify)
          ====================================================================== -->
     <?php
-    $certCode = trim((string) ($_GET['code'] ?? 'XH2026-SV001-9F8A2C'));
+    $defaultCertCode = 'XH2026-SV001-9F8A2C';
+    $myOwnCerts = [];
+    if ($currentRole === 'VOLUNTEER' && $currentVolunteerId !== null) {
+        $stmtMyCerts = $pdo->prepare('
+            SELECT c.certificate_code AS verify_code, c.total_hours, u.full_name, v.student_code, a.title AS activity_name
+              FROM certificates c
+              JOIN users u ON u.id = c.volunteer_id
+              JOIN volunteers v ON v.user_id = c.volunteer_id
+              JOIN activities a ON a.id = c.activity_id
+             WHERE c.volunteer_id = :vid
+             ORDER BY c.id DESC
+        ');
+        $stmtMyCerts->execute([':vid' => $currentVolunteerId]);
+        $myOwnCerts = $stmtMyCerts->fetchAll();
+        if (!empty($myOwnCerts)) {
+            $defaultCertCode = (string) $myOwnCerts[0]['verify_code'];
+        }
+    }
+    $certCode = isset($_GET['code']) && trim((string) $_GET['code']) !== ''
+        ? trim((string) $_GET['code'])
+        : $defaultCertCode;
 
     // 1. Kiểm tra nếu là mã Báo cáo Tổng kết Chiến dịch chuẩn Đoàn - Hội (XH2026-BC-D...)
     $verifiedReport = null;
@@ -6653,13 +6736,16 @@ document.addEventListener('DOMContentLoaded', function () {
         $certRow = is_array($row) ? $row : null;
     }
 
-    $allCerts = $pdo->query('
-        SELECT c.certificate_code AS verify_code, c.total_hours, u.full_name, v.student_code
-          FROM certificates c
-          JOIN users u ON u.id = c.volunteer_id
-          JOIN volunteers v ON v.user_id = c.volunteer_id
-         ORDER BY c.id ASC LIMIT 10
-    ')->fetchAll();
+    $allCerts = [];
+    if (in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)) {
+        $allCerts = $pdo->query('
+            SELECT c.certificate_code AS verify_code, c.total_hours, u.full_name, v.student_code
+              FROM certificates c
+              JOIN users u ON u.id = c.volunteer_id
+              JOIN volunteers v ON v.user_id = c.volunteer_id
+             ORDER BY c.id ASC LIMIT 10
+        ')->fetchAll();
+    }
 
     $certMerit = null;
     if ($certRow !== null && isset($gamificationService)) {
@@ -6671,12 +6757,12 @@ document.addEventListener('DOMContentLoaded', function () {
     ?>
     <main class="flex-1 max-w-4xl w-full mx-auto px-4 md:px-8 py-10 page-enter">
         <div class="mb-8 text-center no-print">
-            <span class="badge badge-info mb-2">Cổng Xác thực Văn bản Điện tử Công khai</span>
+            <span class="badge badge-info mb-2">Cổng Chứng nhận &amp; Xác thực Điện tử</span>
             <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">
-                Tra cứu &amp; Xác thực Giấy Chứng nhận Tình nguyện viên &amp; Báo cáo Đoàn - Hội
+                <?= $currentRole === 'VOLUNTEER' ? 'Chứng nhận Tình nguyện Cá nhân &amp; Tra cứu Mã Xác thực' : 'Tra cứu &amp; Xác thực Giấy Chứng nhận Tình nguyện viên' ?>
             </h1>
             <p class="text-sm text-slate-500 mt-2 max-w-2xl mx-auto">
-                Hệ thống chứng thực chữ ký số điện tử SHA-256 và mã phản hồi nhanh (QR Code) bảo đảm tính toàn vẹn 100% của giờ cống hiến tình nguyện.
+                Xem, tải về hoặc tra cứu tính hợp lệ của Giấy chứng nhận tham gia hoạt động tình nguyện qua mã số định danh.
             </p>
         </div>
 
@@ -6693,10 +6779,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
             <form method="get" class="no-print flex gap-2 mb-4">
                 <input type="hidden" name="view" value="verify">
-                <input type="text" name="code" value="<?= h($certCode) ?>" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-[#0057B8] focus:outline-none" placeholder="Nhập mã chứng nhận hoặc mã báo cáo (VD: XH2026-BC-D3-F9E13E)..." />
+                <input type="text" name="code" value="<?= h($certCode) ?>" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-[#0057B8] focus:outline-none" placeholder="Nhập mã chứng nhận tình nguyện viên để tra cứu (VD: XH2026-SV001-9F8A2C)..." />
                 <button type="submit" class="btn btn-primary px-5 font-bold">Tra cứu</button>
             </form>
 
+            <?php if ($currentRole === 'VOLUNTEER' && !empty($myOwnCerts)): ?>
+            <div class="no-print flex flex-wrap items-center gap-1.5 mb-6">
+                <span class="text-xs font-bold text-slate-500 mr-1">Chứng nhận của bạn:</span>
+                <?php foreach ($myOwnCerts as $mc): ?>
+                    <a href="?view=verify&code=<?= urlencode((string) $mc['verify_code']) ?>"
+                       class="badge <?= $mc['verify_code'] === $certCode ? 'badge-info' : 'badge-subtle' ?> mono">
+                        <?= h($mc['verify_code']) ?> (<?= h($mc['activity_name']) ?>)
+                    </a>
+                <?php endforeach; ?>
+            </div>
+            <?php elseif (in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)): ?>
             <div class="no-print flex flex-wrap gap-1.5 mb-6">
                 <a href="?view=verify&code=XH2026-BC-D3-F9E13E"
                    class="badge <?= $certCode === 'XH2026-BC-D3-F9E13E' ? 'badge-info' : 'badge-subtle' ?> mono">
@@ -6709,6 +6806,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </a>
                 <?php endforeach; ?>
             </div>
+            <?php endif; ?>
 
             <?php if ($verifiedReport !== null): ?>
                 <!-- Kết quả xác thực Báo cáo Tổng kết Chiến dịch chuẩn Đoàn - Hội -->
@@ -6765,6 +6863,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                         </div>
 
+                        <?php if (in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)): ?>
                         <div class="no-print flex flex-wrap gap-2 pt-2">
                             <a href="?view=report&activity_id=<?= (int)$verifiedReport['overview']['campaign_id'] ?>" class="btn btn-sm btn-primary flex items-center gap-1">
                                 <?= icon('file-text', 12) ?> <span>Xem Văn Bản Báo Cáo</span>
@@ -6773,6 +6872,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <span class="material-symbols-outlined text-[14px]">analytics</span> <span>Xem Phân Tích BI</span>
                             </a>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php elseif ($certRow !== null): ?>
@@ -6939,8 +7039,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="font-bold text-emerald-300 block"><?= (int) $volData['max_shifts_per_week'] ?> ca/tuần</span>
                         </div>
                         <div>
-                            <span class="text-[10px] uppercase text-sky-200 block font-semibold">Tọa độ GPS gốc</span>
-                            <span class="font-mono text-[11px] text-slate-200 block"><?= round((float)$volData['lat'], 4) ?>, <?= round((float)$volData['lng'], 4) ?></span>
+                            <span class="text-[10px] uppercase text-sky-200 block font-semibold">Trạng thái Hồ sơ</span>
+                            <span class="font-bold text-emerald-300 block">✓ Đủ điều kiện nhận ca</span>
                         </div>
                     </div>
                 </div>
@@ -7035,14 +7135,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">Hạn mức số ca tối đa / tuần</label>
                             <input type="number" name="max_shifts_per_week" min="1" max="14" value="<?= (int) $volData['max_shifts_per_week'] ?>" class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-[#0057B8] focus:outline-none" />
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">Vĩ độ GPS mặc định (Lat)</label>
-                            <input type="text" name="lat" value="<?= (float) $volData['lat'] ?>" class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-[#0057B8] focus:outline-none font-mono" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">Kinh độ GPS mặc định (Lng)</label>
-                            <input type="text" name="lng" value="<?= (float) $volData['lng'] ?>" class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:border-[#0057B8] focus:outline-none font-mono" />
-                        </div>
+                        <input type="hidden" name="lat" value="<?= (float) $volData['lat'] ?>" />
+                        <input type="hidden" name="lng" value="<?= (float) $volData['lng'] ?>" />
                     </div>
 
                     <!-- KỸ NĂNG CHUYÊN MÔN (5 Kỹ năng chuẩn + Kỹ năng bổ sung) -->
@@ -7216,21 +7310,21 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="font-bold text-white block"><?= $coordData['role'] === 'ADMIN' ? 'Quản trị viên Đoàn' : 'Điều phối viên Chiến dịch' ?></span>
                         </div>
                         <div class="col-span-2">
-                            <span class="text-[10px] uppercase text-emerald-300 block font-semibold">Phạm vi Thẩm quyền</span>
-                            <span class="font-medium text-slate-300 block">Điều hành nhân sự toàn bộ 3 chiến dịch: Chủ Nhật Xanh, Tiếp Sức Mùa Thi, Mùa Hè Xanh</span>
+                            <span class="text-[10px] uppercase text-emerald-300 block font-semibold">Nhiệm vụ Phụ trách</span>
+                            <span class="font-medium text-slate-300 block"><?= $coordData['role'] === 'ADMIN' ? 'Quản trị toàn diện hệ thống, người dùng và sổ cái kiểm toán' : 'Tổ chức hoạt động, duyệt đăng ký, phân công ca trực và điểm danh TNV' ?></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- TỔNG QUAN NĂNG LỰC ĐIỀU HÀNH HỆ THỐNG -->
+                <!-- TỔNG QUAN HOẠT ĐỘNG & CHIẾN DỊCH PHỤ TRÁCH -->
                 <div class="lg:col-span-7 flex flex-col justify-between gap-4">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
                                 <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400">query_stats</span>
-                                <span>Tổng quan Năng lực Điều hành Hệ thống</span>
+                                <span><?= $coordData['role'] === 'ADMIN' ? 'Tổng quan Vận hành Hệ thống' : 'Tổng quan Hoạt động &amp; Chiến dịch Phụ trách' ?></span>
                             </h3>
-                            <p class="text-xs text-slate-500">Giám sát tổng thể hoạt động các chiến dịch, ca trực và điều phối nhân sự trên toàn thành phố.</p>
+                            <p class="text-xs text-slate-500">Theo dõi nhanh số lượng chiến dịch, ca trực đang mở và tình hình phân công tình nguyện viên.</p>
                         </div>
                         <button type="button" data-open-modal="modal-create-activity" id="btn-open-create-activity" class="btn btn-primary btn-sm flex items-center gap-1.5 shadow-sm">
                             <span class="material-symbols-outlined text-[16px]">add_circle</span>
@@ -8001,6 +8095,75 @@ document.addEventListener('DOMContentLoaded', function () {
                     </button>
                 </div>
             </form>
+
+            <!-- KHỐI ĐỐI CHIẾU THUẬT TOÁN NỘI BỘ (B0 / B1 / PHƯƠNG ÁN X & SNAPSHOT HASH) DÀNH RIÊNG CHO QUẢN TRỊ VIÊN -->
+            <?php
+            $adminDs = $repo->loadDatasetForActivity($selectedActivityId);
+            $adminPlanB0 = (new FifoUncheckedScheduler())->schedule($adminDs, 202606);
+            $adminPlanB1 = (new FifoCheckedScheduler())->schedule($adminDs, 202606);
+            $adminWeights = new SchedulerWeights(
+                priorityMode: $priorityMode,
+                wPriority: $wPriority,
+                wPreference: $wPreference,
+                wSkillWaste: $wSkillWaste,
+                wLoad: $wLoad,
+                randomSeed: 202606,
+                wReputation: $wReputation
+            );
+            $adminPlanX = (new XanhHubScheduler())->schedule($adminDs, $adminWeights);
+            ?>
+            <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                        <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-purple-600 dark:text-purple-400">science</span>
+                            <span>Bảng Đối chiếu Thử nghiệm Thuật toán Nội bộ (B0 / B1 / Phương án X)</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Thông số đo lường kỹ thuật hệ thống và kiểm chuẩn độ lệch tải ($\sigma$) dành riêng cho Quản trị viên.</p>
+                    </div>
+                    <span class="badge badge-info mono text-[10px]">Snapshot SHA-256: <?= h(substr($adminPlanX->snapshotHash, 0, 16)) ?>...</span>
+                </div>
+                <div class="overflow-x-auto no-scrollbar mb-4">
+                    <table class="w-full min-w-[560px] text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-400">
+                                <th class="py-2.5 px-3">Mô hình Thuật toán</th>
+                                <th class="py-2.5 px-3">Ca đủ người</th>
+                                <th class="py-2.5 px-3">Vi phạm cứng</th>
+                                <th class="py-2.5 px-3">Độ lệch chuẩn tải (&sigma;)</th>
+                                <th class="py-2.5 px-3">Biên độ ca / TNV</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tr>
+                                <td class="py-2.5 px-3 font-semibold">Xếp theo thứ tự đăng ký (B0 — Không kiểm tra)</td>
+                                <td class="py-2.5 px-3"><span class="badge badge-violation mono"><?= h($adminPlanB0->metrics['valid_covered_shifts']) ?>/<?= h($adminPlanB0->metrics['total_shifts']) ?> (<?= h($adminPlanB0->metrics['valid_coverage_rate']) ?>%)</span></td>
+                                <td class="py-2.5 px-3"><span class="badge badge-violation mono"><?= h($adminPlanB0->metrics['total_violations']) ?> lỗi</span></td>
+                                <td class="py-2.5 px-3 mono"><?= h($adminPlanB0->metrics['load_std_dev']) ?></td>
+                                <td class="py-2.5 px-3 mono"><?= (int) ($adminPlanB0->metrics['min_load_per_volunteer'] ?? 0) ?>–<?= (int) ($adminPlanB0->metrics['max_load_per_volunteer'] ?? 0) ?> ca</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2.5 px-3 font-semibold">Xếp theo thứ tự đăng ký (B1 — Có kiểm tra ràng buộc)</td>
+                                <td class="py-2.5 px-3"><span class="badge badge-warning mono"><?= h($adminPlanB1->metrics['valid_covered_shifts']) ?>/<?= h($adminPlanB1->metrics['total_shifts']) ?> (<?= h($adminPlanB1->metrics['valid_coverage_rate']) ?>%)</span></td>
+                                <td class="py-2.5 px-3"><span class="badge badge-valid mono">0 lỗi</span></td>
+                                <td class="py-2.5 px-3 mono"><?= h($adminPlanB1->metrics['load_std_dev']) ?></td>
+                                <td class="py-2.5 px-3 mono"><?= (int) ($adminPlanB1->metrics['min_load_per_volunteer'] ?? 0) ?>–<?= (int) ($adminPlanB1->metrics['max_load_per_volunteer'] ?? 0) ?> ca</td>
+                            </tr>
+                            <tr class="bg-purple-50/50 dark:bg-purple-950/20">
+                                <td class="py-2.5 px-3 font-bold text-purple-700 dark:text-purple-300">Tối ưu Đa mục tiêu Xanh Hub (Phương án X)</td>
+                                <td class="py-2.5 px-3"><span class="badge badge-valid mono"><?= h($adminPlanX->metrics['valid_covered_shifts']) ?>/<?= h($adminPlanX->metrics['total_shifts']) ?> (<?= h($adminPlanX->metrics['valid_coverage_rate']) ?>%)</span></td>
+                                <td class="py-2.5 px-3"><span class="badge badge-valid mono">0 lỗi</span></td>
+                                <td class="py-2.5 px-3 mono font-bold"><?= h($adminPlanX->metrics['load_std_dev']) ?></td>
+                                <td class="py-2.5 px-3 mono font-bold"><?= (int) ($adminPlanX->metrics['min_load_per_volunteer'] ?? 0) ?>–<?= (int) ($adminPlanX->metrics['max_load_per_volunteer'] ?? 0) ?> ca</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] mono text-slate-600 dark:text-slate-300 space-y-1">
+                    <div><strong>Snapshot dữ liệu đầu vào (SHA-256):</strong> <?= h($adminPlanX->snapshotHash) ?></div>
+                    <div><strong>Cấu hình Trọng số đang áp dụng:</strong> <?= h(json_encode($adminPlanX->config, JSON_UNESCAPED_UNICODE)) ?></div>
+                </div>
+            </div>
         </div>
 
         <!-- ==================================================================

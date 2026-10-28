@@ -43,20 +43,25 @@ final class CompareReportTest extends TestCase
     {
         $pdo = Database::getConnection();
         $rows = $pdo->query("
-            SELECT p.activity_id, p.algorithm_code, p.priority_mode, p.config_json, p.metrics_json, ds.sha256_hash
+            SELECT p.id, p.activity_id, p.algorithm_code, p.priority_mode, p.config_json, p.metrics_json, ds.sha256_hash
               FROM plans p
               JOIN dataset_snapshots ds ON ds.id = p.snapshot_id
              WHERE p.activity_id IN (1, 2, 3)
-             ORDER BY p.activity_id ASC, p.id ASC
+             ORDER BY p.activity_id ASC, p.id DESC
         ")->fetchAll();
 
         $byActivity = [];
         foreach ($rows as $r) {
-            $byActivity[(int) $r['activity_id']][] = $r;
+            $actIdKey = (int) $r['activity_id'];
+            $algoKey = (string) $r['algorithm_code'];
+            // Lấy bộ 3 phương án đối chiếu mới nhất (B0, B1, X) của mỗi hoạt động
+            if (!isset($byActivity[$actIdKey][$algoKey])) {
+                $byActivity[$actIdKey][$algoKey] = $r;
+            }
         }
 
         foreach ([1, 2, 3] as $actId) {
-            $plans = $byActivity[$actId] ?? [];
+            $plans = array_values($byActivity[$actId] ?? []);
             $this->assertGreaterThanOrEqual(3, count($plans), "Hoạt động #{$actId} phải lưu đủ ít nhất 3 phương án B0, B1, X.");
 
             $hashes = array_unique(array_column($plans, 'sha256_hash'));

@@ -47,9 +47,9 @@ final class ApiController
                 'api_qr_scan'              => $this->qrScan($actorUserId),
                 'api_ai_parse_shift'       => $this->aiParseShift(),
                 'api_update_availability'  => $this->updateAvailability((int) ($currentVolunteerId ?? $actorUserId ?? 1), $actorUserId),
-                'api_analytics_data'       => $this->analyticsData(),
+                'api_analytics_data'       => $this->analyticsData($currentRole),
                 'api_shifts_gis'           => $this->shiftsGis(),
-                'api_candidate_profile'    => $this->candidateProfile(),
+                'api_candidate_profile'    => $this->candidateProfile($currentRole, $currentVolunteerId),
                 'api_submit_evaluation'    => $this->submitEvaluation($currentRole, $actorUserId, $currentVolunteerId),
                 'api_leaderboard_data'     => $this->leaderboardData(),
                 default => $this->json(['ok' => false, 'message_vi' => 'API action không tồn tại: ' . $action], 404),
@@ -470,8 +470,15 @@ final class ApiController
         ]);
     }
 
-    private function analyticsData(): void
+    private function analyticsData(string $role): void
     {
+        if (!in_array($role, ['COORDINATOR', 'ADMIN'], true)) {
+            $this->json([
+                'ok' => false,
+                'message_vi' => 'Lỗi 403: Dữ liệu Thống kê & Báo cáo chỉ dành cho Người phụ trách (Ban Chỉ huy) và Quản trị viên.',
+            ], 403);
+            return;
+        }
         $actId = (int) ($_GET['activity_id'] ?? $_POST['activity_id'] ?? 3);
         $analytics = new \XanhHub\Infrastructure\Service\AnalyticsService($this->pdo);
         $this->json([
@@ -658,11 +665,18 @@ final class ApiController
         ], 400);
     }
 
-    private function candidateProfile(): void
+    private function candidateProfile(string $role, ?int $currentVolunteerId = null): void
     {
         $volId = isset($_GET['volunteer_id']) ? (int) $_GET['volunteer_id'] : (isset($_POST['volunteer_id']) ? (int) $_POST['volunteer_id'] : 0);
         if ($volId <= 0) {
             $this->json(['ok' => false, 'message_vi' => 'Thiếu mã tình nguyện viên (volunteer_id)'], 400);
+            return;
+        }
+        if (!in_array($role, ['COORDINATOR', 'ADMIN'], true) && $volId !== (int) $currentVolunteerId) {
+            $this->json([
+                'ok' => false,
+                'message_vi' => 'Lỗi 403: Chỉ Người phụ trách hoặc Quản trị viên mới có quyền tra cứu hồ sơ chi tiết của ứng viên khác.',
+            ], 403);
             return;
         }
 
