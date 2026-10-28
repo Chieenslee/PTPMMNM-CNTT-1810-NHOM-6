@@ -93,6 +93,9 @@ final class ConstraintGuard
             if ($matchedReq === null) {
                 $hardViolations[] = ReasonCode::NO_SKILL;
             } else {
+                if (!$volunteer->satisfiesRequirement($matchedReq)) {
+                    $hardViolations[] = ReasonCode::NO_SKILL;
+                }
                 $currentSlotCount = $slotCounts[$matchedReq->id] ?? 0;
                 if ($currentSlotCount >= $matchedReq->requiredCount) {
                     // Nếu vị trí kỹ năng cụ thể này đã đủ định biên tối thiểu, nhưng ca trực vẫn còn chỗ trống
@@ -100,13 +103,9 @@ final class ConstraintGuard
                     // thay vì chặn nhầm CAPACITY_FULL của toàn ca.
                     if (count($shiftAssignments) < $shift->maxPeople) {
                         $resolvedReqId = null;
-                        $matchedReq = null;
                     } else {
                         $hardViolations[] = ReasonCode::CAPACITY_FULL;
                     }
-                }
-                if ($matchedReq !== null && !$volunteer->satisfiesRequirement($matchedReq)) {
-                    $hardViolations[] = ReasonCode::NO_SKILL;
                 }
             }
         } else {
@@ -114,10 +113,14 @@ final class ConstraintGuard
             if ($shift->requirements !== []) {
                 $foundOpenMatchingReq = null;
                 $anyOpenReq = false;
+                $satisfiesAnyReq = false;
                 $totalReqSlots = 0;
 
                 foreach ($shift->requirements as $req) {
                     $totalReqSlots += $req->requiredCount;
+                    if ($volunteer->satisfiesRequirement($req)) {
+                        $satisfiesAnyReq = true;
+                    }
                     $currentSlotCount = $slotCounts[$req->id] ?? 0;
                     if ($currentSlotCount < $req->requiredCount) {
                         $anyOpenReq = true;
@@ -139,7 +142,9 @@ final class ConstraintGuard
                             $usedGeneral++;
                         }
                     }
-                    if ($generalCapacity > $usedGeneral) {
+                    if (!$satisfiesAnyReq) {
+                        $hardViolations[] = ReasonCode::NO_SKILL;
+                    } elseif ($generalCapacity > $usedGeneral || count($shiftAssignments) < $shift->maxPeople) {
                         $resolvedReqId = null;
                     } elseif ($anyOpenReq) {
                         $hardViolations[] = ReasonCode::NO_SKILL;

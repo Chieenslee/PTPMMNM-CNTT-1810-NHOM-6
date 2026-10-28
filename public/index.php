@@ -297,8 +297,16 @@ if (str_starts_with($action, 'api_')) {
 // 3. XUẤT TỆP LỊCH .ICS (RFC 5545) VÀ BẢNG PHÂN CÔNG .CSV AN TOÀN
 // ============================================================================
 if ($action === 'export_ics') {
+    if ($currentRole === 'PUBLIC') {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Lỗi 403: Vui lòng đăng nhập để tải lịch ca trực cá nhân (.ICS).';
+        exit;
+    }
     $actId = (int) ($_GET['activity_id'] ?? 3);
-    $volId = (int) ($_GET['vid'] ?? $currentVolunteerId);
+    $volId = ($currentRole === 'VOLUNTEER')
+        ? (int) $currentVolunteerId
+        : (int) ($_GET['vid'] ?? $currentVolunteerId);
     $ds = $repo->loadDatasetForActivity($actId);
     $vol = $ds->volunteersById[$volId] ?? null;
     $activeDecisions = $repo->loadActiveAssignmentDecisions($actId);
@@ -451,255 +459,285 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
                 ':rcnt' => $maxP,
             ]);
 
-            $repo->appendAuditLog($actorUserId, 'SHIFT_CREATED', 'shifts', (string) $newShiftId, 'Tạo ca trực mới từ Trợ lý AI A1', ['code' => $code, 'title' => $title]);
+            $repo->appendAuditLog($actorUserId, 'SHIFT_CREATED', 'shifts', (string) $newShiftId, 'Tạo ca trực mới', ['code' => $code, 'title' => $title]);
             $flashMessage = "Đã tạo ca trực mới [{$code}] {$title} thành công!";
         }
     } elseif ($action === 'volunteer_register_shift') {
-        $actId = (int) ($_POST['activity_id'] ?? 3);
-        $shiftId = (int) ($_POST['shift_id'] ?? 0);
-        $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
-        $pref = max(1, min(3, (int) ($_POST['preference_rank'] ?? 1)));
-
-        $pdo->prepare("
-            INSERT INTO registrations (activity_id, shift_id, volunteer_id, preference_rank, status, registered_at)
-            VALUES (:aid, :sid, :vid, :pref, 'ACTIVE', NOW())
-            ON CONFLICT (shift_id, volunteer_id)
-            DO UPDATE SET preference_rank = EXCLUDED.preference_rank, status = 'ACTIVE', registered_at = NOW()
-        ")->execute([':aid' => $actId, ':sid' => $shiftId, ':vid' => $volId, ':pref' => $pref]);
-        $repo->appendAuditLog($actorUserId, 'REGISTRATION_CREATED', 'registrations', "{$shiftId}_{$volId}", "Tình nguyện viên #{$volId} đăng ký ca #{$shiftId} (Nguyện vọng {$pref})");
-        $flashMessage = "Đã đăng ký nguyện vọng {$pref} cho ca trực #{$shiftId}!";
-        $_GET['vtab'] = 'vtab-register';
-    } elseif ($action === 'volunteer_withdraw_registration') {
-        $actId = (int) ($_POST['activity_id'] ?? 3);
-        $shiftId = (int) ($_POST['shift_id'] ?? 0);
-        $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
-        $_GET['vtab'] = 'vtab-register';
-
-        $stmtCheckShift = $pdo->prepare('SELECT code, title, is_locked FROM shifts WHERE id = :sid LIMIT 1');
-        $stmtCheckShift->execute([':sid' => $shiftId]);
-        $shiftInfo = $stmtCheckShift->fetch();
-
-        if ($shiftInfo && !empty($shiftInfo['is_locked'])) {
+        if ($currentRole === 'PUBLIC') {
+            http_response_code(403);
             $flashType = 'error';
-            $flashMessage = "Không thể rút đăng ký: Ca trực [{$shiftInfo['code']}] đã khóa chốt danh sách nhân sự!";
+            $flashMessage = 'Lỗi 403: Vui lòng đăng nhập tài khoản Tình nguyện viên để đăng ký ca trực.';
         } else {
-            $pdo->prepare("
-                UPDATE registrations
-                   SET status = 'WITHDRAWN'
-                 WHERE shift_id = :sid AND volunteer_id = :vid
-            ")->execute([':sid' => $shiftId, ':vid' => $volId]);
+            $actId = (int) ($_POST['activity_id'] ?? 3);
+            $shiftId = (int) ($_POST['shift_id'] ?? 0);
+            $volId = ($currentRole === 'VOLUNTEER') ? (int) $currentVolunteerId : (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+            $pref = max(1, min(3, (int) ($_POST['preference_rank'] ?? 1)));
 
-            // Nếu ca có phân công tạm thời (ASSIGNED) chưa xác nhận tham gia thì gỡ phân công tạm đó
             $pdo->prepare("
-                DELETE FROM assignments
-                 WHERE shift_id = :sid AND volunteer_id = :vid AND status = 'ASSIGNED'
-            ")->execute([':sid' => $shiftId, ':vid' => $volId]);
+                INSERT INTO registrations (activity_id, shift_id, volunteer_id, preference_rank, status, registered_at)
+                VALUES (:aid, :sid, :vid, :pref, 'ACTIVE', NOW())
+                ON CONFLICT (shift_id, volunteer_id)
+                DO UPDATE SET preference_rank = EXCLUDED.preference_rank, status = 'ACTIVE', registered_at = NOW()
+            ")->execute([':aid' => $actId, ':sid' => $shiftId, ':vid' => $volId, ':pref' => $pref]);
+            $repo->appendAuditLog($actorUserId, 'REGISTRATION_CREATED', 'registrations', "{$shiftId}_{$volId}", "Tình nguyện viên #{$volId} đăng ký ca #{$shiftId} (Nguyện vọng {$pref})");
+            $flashMessage = "Đã đăng ký nguyện vọng {$pref} cho ca trực #{$shiftId}!";
+            $_GET['vtab'] = 'vtab-register';
+        }
+    } elseif ($action === 'volunteer_withdraw_registration') {
+        if ($currentRole === 'PUBLIC') {
+            http_response_code(403);
+            $flashType = 'error';
+            $flashMessage = 'Lỗi 403: Vui lòng đăng nhập để rút đăng ký ca trực.';
+        } else {
+            $actId = (int) ($_POST['activity_id'] ?? 3);
+            $shiftId = (int) ($_POST['shift_id'] ?? 0);
+            $volId = ($currentRole === 'VOLUNTEER') ? (int) $currentVolunteerId : (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+            $_GET['vtab'] = 'vtab-register';
 
-            $repo->appendAuditLog(
-                $actorUserId,
-                'REGISTRATION_WITHDRAWN',
-                'registrations',
-                "{$shiftId}_{$volId}",
-                "Tình nguyện viên #{$volId} rút đăng ký khỏi ca trực #{$shiftId}"
-            );
-            $flashMessage = "Đã rút đăng ký khỏi ca trực #{$shiftId} thành công!";
+            $stmtCheckShift = $pdo->prepare('SELECT code, title, is_locked FROM shifts WHERE id = :sid LIMIT 1');
+            $stmtCheckShift->execute([':sid' => $shiftId]);
+            $shiftInfo = $stmtCheckShift->fetch();
+
+            if ($shiftInfo && !empty($shiftInfo['is_locked'])) {
+                $flashType = 'error';
+                $flashMessage = "Không thể rút đăng ký: Ca trực [{$shiftInfo['code']}] đã khóa chốt danh sách nhân sự!";
+            } else {
+                $pdo->prepare("
+                    UPDATE registrations
+                       SET status = 'WITHDRAWN'
+                     WHERE shift_id = :sid AND volunteer_id = :vid
+                ")->execute([':sid' => $shiftId, ':vid' => $volId]);
+
+                // Nếu ca có phân công tạm thời (ASSIGNED) chưa xác nhận tham gia thì gỡ phân công tạm đó
+                $pdo->prepare("
+                    DELETE FROM assignments
+                     WHERE shift_id = :sid AND volunteer_id = :vid AND status = 'ASSIGNED'
+                ")->execute([':sid' => $shiftId, ':vid' => $volId]);
+
+                $repo->appendAuditLog(
+                    $actorUserId,
+                    'REGISTRATION_WITHDRAWN',
+                    'registrations',
+                    "{$shiftId}_{$volId}",
+                    "Tình nguyện viên #{$volId} rút đăng ký khỏi ca trực #{$shiftId}"
+                );
+                $flashMessage = "Đã rút đăng ký khỏi ca trực #{$shiftId} thành công!";
+            }
         }
     } elseif ($action === 'volunteer_delete_availability') {
-        $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
-        $overrideDate = trim((string) ($_POST['override_date'] ?? ''));
-        $dow = (int) ($_POST['day_of_week'] ?? 0);
-        $startHm = trim((string) ($_POST['start_hm'] ?? ''));
-        $_GET['vtab'] = 'vtab-profile';
+        if ($currentRole === 'PUBLIC') {
+            http_response_code(403);
+            $flashType = 'error';
+            $flashMessage = 'Lỗi 403: Vui lòng đăng nhập để cập nhật lịch rảnh.';
+        } else {
+            $volId = ($currentRole === 'VOLUNTEER') ? (int) $currentVolunteerId : (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+            $overrideDate = trim((string) ($_POST['override_date'] ?? ''));
+            $dow = (int) ($_POST['day_of_week'] ?? 0);
+            $startHm = trim((string) ($_POST['start_hm'] ?? ''));
+            $_GET['vtab'] = 'vtab-profile';
 
-        if ($volId > 0 && $overrideDate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $overrideDate)) {
-            $pdo->prepare('DELETE FROM availability_overrides WHERE volunteer_id = :vid AND override_date = :od')
-                ->execute([':vid' => $volId, ':od' => $overrideDate]);
-            $fmtD = date('d/m/Y', strtotime($overrideDate));
-            $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DATE_DELETED', 'availability_overrides', "{$volId}_{$overrideDate}", "Xóa lịch ngày cụ thể {$fmtD} của TNV #{$volId}");
-            $flashMessage = "Đã xóa lịch ngày cụ thể {$fmtD} thành công!";
-        } elseif ($volId > 0 && $dow >= 1 && $dow <= 7) {
-            if ($startHm !== '') {
-                $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow AND start_time = :st::time')
-                    ->execute([':vid' => $volId, ':dow' => $dow, ':st' => substr($startHm, 0, 5) . ':00']);
-            } else {
-                $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow')
-                    ->execute([':vid' => $volId, ':dow' => $dow]);
-            }
-            $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DELETED', 'availability', "{$volId}_{$dow}", "Xóa khung lịch rảnh Thứ {$dow} của TNV #{$volId}");
-            $flashMessage = "Đã xóa khung lịch rảnh thành công!";
-        }
-    } elseif ($action === 'volunteer_save_availability') {
-        $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
-        $_GET['vtab'] = 'vtab-profile';
-
-        if ($volId > 0) {
-            $mode = (string) ($_POST['avail_mode'] ?? '');
-            $rawMatrix = $_POST['matrix_slots'] ?? ($_POST['slots'] ?? null);
-
-            if ($mode === 'matrix' || is_array($rawMatrix)) {
-                $slotsArr = is_array($rawMatrix) ? $rawMatrix : [];
-                $byDay = [];
-                foreach ($slotsArr as $token) {
-                    if (preg_match('/^([1-7])_(MORNING|AFTERNOON|EVENING)$/', (string) $token, $m)) {
-                        $d = (int) $m[1];
-                        $byDay[$d][$m[2]] = true;
-                    }
-                }
-
-                $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid')->execute([':vid' => $volId]);
-                $stmtInsAvail = $pdo->prepare('
-                    INSERT INTO availability (volunteer_id, day_of_week, start_time, end_time, is_recurring)
-                    VALUES (:vid, :dow, :st, :et, TRUE)
-                ');
-
-                $savedSlotsCount = 0;
-                for ($d = 1; $d <= 7; $d++) {
-                    $morn = !empty($byDay[$d]['MORNING']);
-                    $aft  = !empty($byDay[$d]['AFTERNOON']);
-                    $eve  = !empty($byDay[$d]['EVENING']);
-
-                    if ($morn && $aft && $eve) {
-                        $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '22:00:00']);
-                        $savedSlotsCount++;
-                    } elseif ($morn && $aft) {
-                        $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '18:00:00']);
-                        $savedSlotsCount++;
-                    } elseif ($aft && $eve) {
-                        $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '12:30:00', ':et' => '22:00:00']);
-                        $savedSlotsCount++;
-                    } else {
-                        if ($morn) {
-                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '12:00:00']);
-                            $savedSlotsCount++;
-                        }
-                        if ($aft) {
-                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '12:30:00', ':et' => '18:00:00']);
-                            $savedSlotsCount++;
-                        }
-                        if ($eve) {
-                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '18:00:00', ':et' => '22:00:00']);
-                            $savedSlotsCount++;
-                        }
-                    }
-                }
-
-                $repo->appendAuditLog($actorUserId, 'AVAILABILITY_MATRIX_SAVED', 'availability', (string) $volId, "Tình nguyện viên #{$volId} lưu bảng ma trận lịch rảnh 7 ngày ({$savedSlotsCount} khung giờ)");
-                $flashMessage = "Đã lưu bảng Lịch rảnh 7 ngày ({$savedSlotsCount} khung giờ) thành công!";
-            } else {
-                $overrideDate = trim((string) ($_POST['override_date'] ?? ''));
-                $dayOfWeek = max(1, min(7, (int) ($_POST['day_of_week'] ?? 6)));
-                $startHm = substr(trim((string) ($_POST['start_hm'] ?? '07:00')), 0, 5);
-                $endHm = substr(trim((string) ($_POST['end_hm'] ?? '18:00')), 0, 5);
-                $isAvailable = !isset($_POST['is_available']) || (string) $_POST['is_available'] !== '0';
-
-                if ($endHm <= $startHm) {
-                    $flashType = 'error';
-                    $flashMessage = 'Giờ kết thúc phải lớn hơn giờ bắt đầu!';
-                } elseif ($overrideDate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $overrideDate)) {
-                    $pdo->prepare('DELETE FROM availability_overrides WHERE volunteer_id = :vid AND override_date = :od')
-                        ->execute([':vid' => $volId, ':od' => $overrideDate]);
-                    $pdo->prepare('
-                        INSERT INTO availability_overrides (volunteer_id, override_date, start_time, end_time, is_available, reason)
-                        VALUES (:vid, :od, :st, :et, :av, :rsn)
-                    ')->execute([
-                        ':vid' => $volId,
-                        ':od' => $overrideDate,
-                        ':st' => $startHm . ':00',
-                        ':et' => $endHm . ':00',
-                        ':av' => $isAvailable ? 'true' : 'false',
-                        ':rsn' => $isAvailable ? 'Đăng ký ngày rảnh cụ thể' : 'Báo bận ngày cụ thể',
-                    ]);
-                    $fmtDate = date('d/m/Y', strtotime($overrideDate));
-                    $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DATE_SAVED', 'availability_overrides', "{$volId}_{$overrideDate}", "Lưu lịch ngày cụ thể {$fmtDate}: {$startHm}-{$endHm}");
-                    $flashMessage = "Đã lưu lịch ngày cụ thể {$fmtDate} ({$startHm} – {$endHm}) thành công!";
+            if ($volId > 0 && $overrideDate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $overrideDate)) {
+                $pdo->prepare('DELETE FROM availability_overrides WHERE volunteer_id = :vid AND override_date = :od')
+                    ->execute([':vid' => $volId, ':od' => $overrideDate]);
+                $fmtD = date('d/m/Y', strtotime($overrideDate));
+                $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DATE_DELETED', 'availability_overrides', "{$volId}_{$overrideDate}", "Xóa lịch ngày cụ thể {$fmtD} của TNV #{$volId}");
+                $flashMessage = "Đã xóa lịch ngày cụ thể {$fmtD} thành công!";
+            } elseif ($volId > 0 && $dow >= 1 && $dow <= 7) {
+                if ($startHm !== '') {
+                    $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow AND start_time = :st::time')
+                        ->execute([':vid' => $volId, ':dow' => $dow, ':st' => substr($startHm, 0, 5) . ':00']);
                 } else {
                     $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow')
-                        ->execute([':vid' => $volId, ':dow' => $dayOfWeek]);
-                    $pdo->prepare('
+                        ->execute([':vid' => $volId, ':dow' => $dow]);
+                }
+                $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DELETED', 'availability', "{$volId}_{$dow}", "Xóa khung lịch rảnh Thứ {$dow} của TNV #{$volId}");
+                $flashMessage = "Đã xóa khung lịch rảnh thành công!";
+            }
+        }
+    } elseif ($action === 'volunteer_save_availability') {
+        if ($currentRole === 'PUBLIC') {
+            http_response_code(403);
+            $flashType = 'error';
+            $flashMessage = 'Lỗi 403: Vui lòng đăng nhập để lưu lịch rảnh.';
+        } else {
+            $volId = ($currentRole === 'VOLUNTEER') ? (int) $currentVolunteerId : (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+            $_GET['vtab'] = 'vtab-profile';
+
+            if ($volId > 0) {
+                $mode = (string) ($_POST['avail_mode'] ?? '');
+                $rawMatrix = $_POST['matrix_slots'] ?? ($_POST['slots'] ?? null);
+
+                if ($mode === 'matrix' || is_array($rawMatrix)) {
+                    $slotsArr = is_array($rawMatrix) ? $rawMatrix : [];
+                    $byDay = [];
+                    foreach ($slotsArr as $token) {
+                        if (preg_match('/^([1-7])_(MORNING|AFTERNOON|EVENING)$/', (string) $token, $m)) {
+                            $d = (int) $m[1];
+                            $byDay[$d][$m[2]] = true;
+                        }
+                    }
+
+                    $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid')->execute([':vid' => $volId]);
+                    $stmtInsAvail = $pdo->prepare('
                         INSERT INTO availability (volunteer_id, day_of_week, start_time, end_time, is_recurring)
                         VALUES (:vid, :dow, :st, :et, TRUE)
-                    ')->execute([
-                        ':vid' => $volId,
-                        ':dow' => $dayOfWeek,
-                        ':st' => $startHm . ':00',
-                        ':et' => $endHm . ':00',
-                    ]);
-                    $repo->appendAuditLog($actorUserId, 'AVAILABILITY_UPDATED', 'availability', "{$volId}_{$dayOfWeek}", "Lưu lịch rảnh thứ {$dayOfWeek}: {$startHm}-{$endHm}");
-                    $flashMessage = "Đã lưu khung lịch rảnh định kỳ ({$startHm} – {$endHm}) thành công!";
+                    ');
+
+                    $savedSlotsCount = 0;
+                    for ($d = 1; $d <= 7; $d++) {
+                        $morn = !empty($byDay[$d]['MORNING']);
+                        $aft  = !empty($byDay[$d]['AFTERNOON']);
+                        $eve  = !empty($byDay[$d]['EVENING']);
+
+                        if ($morn && $aft && $eve) {
+                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '22:00:00']);
+                            $savedSlotsCount++;
+                        } elseif ($morn && $aft) {
+                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '18:00:00']);
+                            $savedSlotsCount++;
+                        } elseif ($aft && $eve) {
+                            $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '12:30:00', ':et' => '22:00:00']);
+                            $savedSlotsCount++;
+                        } else {
+                            if ($morn) {
+                                $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '06:30:00', ':et' => '12:00:00']);
+                                $savedSlotsCount++;
+                            }
+                            if ($aft) {
+                                $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '12:30:00', ':et' => '18:00:00']);
+                                $savedSlotsCount++;
+                            }
+                            if ($eve) {
+                                $stmtInsAvail->execute([':vid' => $volId, ':dow' => $d, ':st' => '18:00:00', ':et' => '22:00:00']);
+                                $savedSlotsCount++;
+                            }
+                        }
+                    }
+
+                    $repo->appendAuditLog($actorUserId, 'AVAILABILITY_MATRIX_SAVED', 'availability', (string) $volId, "Tình nguyện viên #{$volId} lưu bảng ma trận lịch rảnh 7 ngày ({$savedSlotsCount} khung giờ)");
+                    $flashMessage = "Đã lưu bảng Lịch rảnh 7 ngày ({$savedSlotsCount} khung giờ) thành công!";
+                } else {
+                    $overrideDate = trim((string) ($_POST['override_date'] ?? ''));
+                    $dayOfWeek = max(1, min(7, (int) ($_POST['day_of_week'] ?? 6)));
+                    $startHm = substr(trim((string) ($_POST['start_hm'] ?? '07:00')), 0, 5);
+                    $endHm = substr(trim((string) ($_POST['end_hm'] ?? '18:00')), 0, 5);
+                    $isAvailable = !isset($_POST['is_available']) || (string) $_POST['is_available'] !== '0';
+
+                    if ($endHm <= $startHm) {
+                        $flashType = 'error';
+                        $flashMessage = 'Giờ kết thúc phải lớn hơn giờ bắt đầu!';
+                    } elseif ($overrideDate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $overrideDate)) {
+                        $pdo->prepare('DELETE FROM availability_overrides WHERE volunteer_id = :vid AND override_date = :od')
+                            ->execute([':vid' => $volId, ':od' => $overrideDate]);
+                        $pdo->prepare('
+                            INSERT INTO availability_overrides (volunteer_id, override_date, start_time, end_time, is_available, reason)
+                            VALUES (:vid, :od, :st, :et, :av, :rsn)
+                        ')->execute([
+                            ':vid' => $volId,
+                            ':od' => $overrideDate,
+                            ':st' => $startHm . ':00',
+                            ':et' => $endHm . ':00',
+                            ':av' => $isAvailable ? 'true' : 'false',
+                            ':rsn' => $isAvailable ? 'Đăng ký ngày rảnh cụ thể' : 'Báo bận ngày cụ thể',
+                        ]);
+                        $fmtDate = date('d/m/Y', strtotime($overrideDate));
+                        $repo->appendAuditLog($actorUserId, 'AVAILABILITY_DATE_SAVED', 'availability_overrides', "{$volId}_{$overrideDate}", "Lưu lịch ngày cụ thể {$fmtDate}: {$startHm}-{$endHm}");
+                        $flashMessage = "Đã lưu lịch ngày cụ thể {$fmtDate} ({$startHm} – {$endHm}) thành công!";
+                    } else {
+                        $pdo->prepare('DELETE FROM availability WHERE volunteer_id = :vid AND day_of_week = :dow')
+                            ->execute([':vid' => $volId, ':dow' => $dayOfWeek]);
+                        $pdo->prepare('
+                            INSERT INTO availability (volunteer_id, day_of_week, start_time, end_time, is_recurring)
+                            VALUES (:vid, :dow, :st, :et, TRUE)
+                        ')->execute([
+                            ':vid' => $volId,
+                            ':dow' => $dayOfWeek,
+                            ':st' => $startHm . ':00',
+                            ':et' => $endHm . ':00',
+                        ]);
+                        $repo->appendAuditLog($actorUserId, 'AVAILABILITY_UPDATED', 'availability', "{$volId}_{$dayOfWeek}", "Lưu lịch rảnh thứ {$dayOfWeek}: {$startHm}-{$endHm}");
+                        $flashMessage = "Đã lưu khung lịch rảnh định kỳ ({$startHm} – {$endHm}) thành công!";
+                    }
                 }
             }
         }
     } elseif ($action === 'volunteer_save_skills') {
-        $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
-        $_GET['vtab'] = 'vtab-profile';
-        $inputSkills = $_POST['skills'] ?? ($_POST['skill_level'] ?? []);
+        if ($currentRole === 'PUBLIC') {
+            http_response_code(403);
+            $flashType = 'error';
+            $flashMessage = 'Lỗi 403: Vui lòng đăng nhập để cập nhật kỹ năng.';
+        } else {
+            $volId = ($currentRole === 'VOLUNTEER') ? (int) $currentVolunteerId : (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+            $_GET['vtab'] = 'vtab-profile';
+            $inputSkills = $_POST['skills'] ?? ($_POST['skill_level'] ?? []);
 
-        if ($volId > 0) {
-            $stmtUpsertSkill = $pdo->prepare('
-                INSERT INTO volunteer_skills (volunteer_id, skill_id, level, is_verified)
-                VALUES (:vid, :sid, :lvl, TRUE)
-                ON CONFLICT (volunteer_id, skill_id)
-                DO UPDATE SET level = EXCLUDED.level
-            ');
-            $stmtDeleteSkill = $pdo->prepare('DELETE FROM volunteer_skills WHERE volunteer_id = :vid AND skill_id = :sid');
+            if ($volId > 0) {
+                $stmtUpsertSkill = $pdo->prepare('
+                    INSERT INTO volunteer_skills (volunteer_id, skill_id, level, is_verified)
+                    VALUES (:vid, :sid, :lvl, TRUE)
+                    ON CONFLICT (volunteer_id, skill_id)
+                    DO UPDATE SET level = EXCLUDED.level
+                ');
+                $stmtDeleteSkill = $pdo->prepare('DELETE FROM volunteer_skills WHERE volunteer_id = :vid AND skill_id = :sid');
 
-            if (is_array($inputSkills)) {
-                foreach ($inputSkills as $sid => $lvl) {
-                    $sidInt = (int) $sid;
-                    $lvlInt = (int) $lvl;
-                    if ($sidInt >= 1) {
-                        if ($lvlInt <= 0) {
-                            $stmtDeleteSkill->execute([':vid' => $volId, ':sid' => $sidInt]);
-                        } else {
-                            $stmtUpsertSkill->execute([
-                                ':vid' => $volId,
-                                ':sid' => $sidInt,
-                                ':lvl' => max(1, min(5, $lvlInt)),
-                            ]);
+                if (is_array($inputSkills)) {
+                    foreach ($inputSkills as $sid => $lvl) {
+                        $sidInt = (int) $sid;
+                        $lvlInt = (int) $lvl;
+                        if ($sidInt >= 1) {
+                            if ($lvlInt <= 0) {
+                                $stmtDeleteSkill->execute([':vid' => $volId, ':sid' => $sidInt]);
+                            } else {
+                                $stmtUpsertSkill->execute([
+                                    ':vid' => $volId,
+                                    ':sid' => $sidInt,
+                                    ':lvl' => max(1, min(5, $lvlInt)),
+                                ]);
+                            }
                         }
                     }
                 }
-            }
 
-            // Hỗ trợ thêm "+ Kỹ năng khác" trực tiếp vào bảng skills & volunteer_skills
-            $customSkillName = trim((string) ($_POST['custom_skill_name'] ?? ''));
-            $customSkillLvl = max(1, min(5, (int) ($_POST['custom_skill_level'] ?? 3)));
-            $addedCustomLabel = '';
-            if ($customSkillName !== '') {
-                $stmtFindSk = $pdo->prepare('SELECT id, code, name FROM skills WHERE LOWER(name) = LOWER(:nm) LIMIT 1');
-                $stmtFindSk->execute([':nm' => $customSkillName]);
-                $existingSk = $stmtFindSk->fetch();
+                // Hỗ trợ thêm "+ Kỹ năng khác" trực tiếp vào bảng skills & volunteer_skills
+                $customSkillName = trim((string) ($_POST['custom_skill_name'] ?? ''));
+                $customSkillLvl = max(1, min(5, (int) ($_POST['custom_skill_level'] ?? 3)));
+                $addedCustomLabel = '';
+                if ($customSkillName !== '') {
+                    $stmtFindSk = $pdo->prepare('SELECT id, code, name FROM skills WHERE LOWER(name) = LOWER(:nm) LIMIT 1');
+                    $stmtFindSk->execute([':nm' => $customSkillName]);
+                    $existingSk = $stmtFindSk->fetch();
 
-                if (is_array($existingSk)) {
-                    $customSkillId = (int) $existingSk['id'];
-                } else {
-                    $customCode = 'OTHER_' . strtoupper(substr(md5(strtolower($customSkillName)), 0, 6));
-                    $stmtCreateSk = $pdo->prepare('
-                        INSERT INTO skills (code, name, description)
-                        VALUES (:c, :nm, :desc)
-                        ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
-                        RETURNING id
-                    ');
-                    $stmtCreateSk->execute([
-                        ':c' => $customCode,
-                        ':nm' => $customSkillName,
-                        ':desc' => 'Kỹ năng bổ sung do Tình nguyện viên / Điều phối viên cập nhật',
-                    ]);
-                    $customSkillId = (int) $stmtCreateSk->fetchColumn();
+                    if (is_array($existingSk)) {
+                        $customSkillId = (int) $existingSk['id'];
+                    } else {
+                        $customCode = 'OTHER_' . strtoupper(substr(md5(strtolower($customSkillName)), 0, 6));
+                        $stmtCreateSk = $pdo->prepare('
+                            INSERT INTO skills (code, name, description)
+                            VALUES (:c, :nm, :desc)
+                            ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
+                            RETURNING id
+                        ');
+                        $stmtCreateSk->execute([
+                            ':c' => $customCode,
+                            ':nm' => $customSkillName,
+                            ':desc' => 'Kỹ năng bổ sung do Tình nguyện viên / Điều phối viên cập nhật',
+                        ]);
+                        $customSkillId = (int) $stmtCreateSk->fetchColumn();
+                    }
+
+                    if ($customSkillId > 0) {
+                        $stmtUpsertSkill->execute([
+                            ':vid' => $volId,
+                            ':sid' => $customSkillId,
+                            ':lvl' => $customSkillLvl,
+                        ]);
+                        $addedCustomLabel = " (đã bổ sung kỹ năng mới: {$customSkillName} — Cấp {$customSkillLvl})";
+                    }
                 }
 
-                if ($customSkillId > 0) {
-                    $stmtUpsertSkill->execute([
-                        ':vid' => $volId,
-                        ':sid' => $customSkillId,
-                        ':lvl' => $customSkillLvl,
-                    ]);
-                    $addedCustomLabel = " (đã bổ sung kỹ năng mới: {$customSkillName} — Cấp {$customSkillLvl})";
-                }
+                $repo->appendAuditLog($actorUserId, 'VOLUNTEER_SKILLS_UPDATED', 'volunteer_skills', (string) $volId, "Tình nguyện viên #{$volId} cập nhật danh sách kỹ năng chuyên môn{$addedCustomLabel}");
+                $flashMessage = 'Đã lưu cập nhật Hồ sơ Kỹ năng Chuyên môn thành công!' . $addedCustomLabel;
             }
-
-            $repo->appendAuditLog($actorUserId, 'VOLUNTEER_SKILLS_UPDATED', 'volunteer_skills', (string) $volId, "Tình nguyện viên #{$volId} cập nhật danh sách kỹ năng chuyên môn{$addedCustomLabel}");
-            $flashMessage = 'Đã lưu cập nhật Hồ sơ Kỹ năng Chuyên môn thành công!' . $addedCustomLabel;
         }
     } elseif ($action === 'update_shift_capacity') {
         if (!in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)) {
@@ -760,32 +798,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
             }
         }
     } elseif ($action === 'volunteer_quick_register_all') {
-        $actId = (int) ($_POST['activity_id'] ?? 3);
-        $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
-        $ds = $repo->loadDatasetForActivity($actId);
-        $vol = $ds->volunteersById[$volId] ?? null;
-        $added = 0;
+        if ($currentRole === 'PUBLIC') {
+            http_response_code(403);
+            $flashType = 'error';
+            $flashMessage = 'Lỗi 403: Vui lòng đăng nhập để đăng ký nhanh ca trực.';
+        } else {
+            $actId = (int) ($_POST['activity_id'] ?? 3);
+            $volId = ($currentRole === 'VOLUNTEER') ? (int) $currentVolunteerId : (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+            $ds = $repo->loadDatasetForActivity($actId);
+            $vol = $ds->volunteersById[$volId] ?? null;
+            $added = 0;
 
-        if ($vol !== null) {
-            $stmt = $pdo->prepare("
-                INSERT INTO registrations (activity_id, shift_id, volunteer_id, preference_rank, status, registered_at)
-                VALUES (:aid, :sid, :vid, 1, 'ACTIVE', NOW())
-                ON CONFLICT (shift_id, volunteer_id) DO UPDATE SET status = 'ACTIVE'
-            ");
-            foreach ($ds->shifts as $s) {
-                if ($vol->isAvailableForShift($s)) {
-                    $stmt->execute([':aid' => $actId, ':sid' => $s->id, ':vid' => $volId]);
-                    $added++;
+            if ($vol !== null) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO registrations (activity_id, shift_id, volunteer_id, preference_rank, status, registered_at)
+                    VALUES (:aid, :sid, :vid, 1, 'ACTIVE', NOW())
+                    ON CONFLICT (shift_id, volunteer_id) DO UPDATE SET status = 'ACTIVE'
+                ");
+                foreach ($ds->shifts as $s) {
+                    if ($vol->isAvailableForShift($s)) {
+                        $stmt->execute([':aid' => $actId, ':sid' => $s->id, ':vid' => $volId]);
+                        $added++;
+                    }
                 }
             }
+            $flashMessage = "Đã đăng ký nhanh {$added} ca phù hợp lịch rảnh của bạn!";
+            $_GET['vtab'] = 'vtab-register';
         }
-        $flashMessage = "Đã đăng ký nhanh {$added} ca phù hợp lịch rảnh của bạn!";
-        $_GET['vtab'] = 'vtab-register';
     } elseif ($action === 'volunteer_confirm_assignment') {
-        $assignId = (int) ($_POST['assignment_id'] ?? 0);
-        $pdo->prepare("UPDATE assignments SET status = 'CONFIRMED', confirmed_at = NOW() WHERE id = :id")->execute([':id' => $assignId]);
-        $repo->appendAuditLog($actorUserId, 'ASSIGNMENT_CONFIRMED', 'assignments', (string) $assignId, 'Tình nguyện viên xác nhận tham gia ca trực');
-        $flashMessage = "Đã xác nhận tham gia phân công #{$assignId}!";
+        if ($currentRole === 'PUBLIC') {
+            http_response_code(403);
+            $flashType = 'error';
+            $flashMessage = 'Lỗi 403: Vui lòng đăng nhập để xác nhận tham gia ca trực.';
+        } else {
+            $assignId = (int) ($_POST['assignment_id'] ?? 0);
+            if ($currentRole === 'VOLUNTEER') {
+                $stmtConf = $pdo->prepare("UPDATE assignments SET status = 'CONFIRMED', confirmed_at = NOW() WHERE id = :id AND volunteer_id = :vid");
+                $stmtConf->execute([':id' => $assignId, ':vid' => (int) $currentVolunteerId]);
+                if ($stmtConf->rowCount() === 0) {
+                    http_response_code(403);
+                    $flashType = 'error';
+                    $flashMessage = 'Lỗi 403: Bạn chỉ được phép xác nhận ca trực được phân công cho chính mình.';
+                } else {
+                    $repo->appendAuditLog($actorUserId, 'ASSIGNMENT_CONFIRMED', 'assignments', (string) $assignId, 'Tình nguyện viên xác nhận tham gia ca trực');
+                    $flashMessage = "Đã xác nhận tham gia phân công #{$assignId}!";
+                }
+            } else {
+                $pdo->prepare("UPDATE assignments SET status = 'CONFIRMED', confirmed_at = NOW() WHERE id = :id")->execute([':id' => $assignId]);
+                $repo->appendAuditLog($actorUserId, 'ASSIGNMENT_CONFIRMED', 'assignments', (string) $assignId, 'Xác nhận tham gia ca trực');
+                $flashMessage = "Đã xác nhận tham gia phân công #{$assignId}!";
+            }
+        }
     } elseif ($action === 'create_activity') {
         if (!in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)) {
             http_response_code(403);
@@ -1554,14 +1617,14 @@ $pageDescriptions = [
     'news'         => 'Phim tài liệu thực địa và bản tin hoạt động thanh niên tình nguyện Việt Nam, ghi dấu những hành trình cống hiến.',
     'about'        => 'Giới thiệu về hệ sinh thái Xanh Hub, sứ mệnh tuổi trẻ Việt Nam và thông tin liên hệ Ban Chỉ huy các chiến dịch.',
     'volunteer'    => 'Cổng thông tin cá nhân dành cho tình nguyện viên: theo dõi lịch trực, điểm danh QR xoay vòng 30 giây và xuất lịch ICS.',
-    'coordinator'  => 'Bàn điều phối Đoàn Thanh niên: phân công nhân sự tự động bằng thuật toán Kuhn-Munkres, kiểm soát xung đột và công bằng.',
+    'coordinator'  => 'Bàn điều phối Đoàn Thanh niên: phân công nhân sự tự động theo kỹ năng và lịch rảnh, kiểm soát xung đột và công bằng.',
     'profile'      => 'Quản lý thông tin định danh số, bộ huy hiệu cống hiến và cập nhật kỹ năng chuyên môn tình nguyện viên.',
-    'analytics'    => 'Trung tâm phân tích số liệu cống hiến theo trường Đại học, tỷ lệ lấp đầy ca trực (Staffing Ratio) và cơ cấu kỹ năng chuyên môn chuẩn Đoàn Thanh niên.',
-    'report'       => 'Báo cáo Tổng kết Chiến dịch Tình nguyện chuẩn Đoàn TNCS Hồ Chí Minh - Hội Liên hiệp Thanh niên Việt Nam kèm mã QR kiểm thực và sổ cái minh bạch.',
-    'verify'       => 'Tra cứu và xác thực tính hợp lệ của Giấy chứng nhận tình nguyện viên điện tử và sổ cái minh bạch SHA-256.',
-    'map'          => 'Bản đồ số tương tác định vị 36 ca trực tình nguyện tại TP.HCM, lọc theo bán kính GPS Haversine và ứng tuyển trực quan.',
+    'analytics'    => 'Trung tâm phân tích số liệu cống hiến theo trường Đại học, tỷ lệ lấp đầy ca trực và cơ cấu kỹ năng chuyên môn chuẩn Đoàn Thanh niên.',
+    'report'       => 'Báo cáo Tổng kết Chiến dịch Tình nguyện chuẩn Đoàn TNCS Hồ Chí Minh - Hội Liên hiệp Thanh niên Việt Nam kèm mã QR kiểm thực.',
+    'verify'       => 'Tra cứu và xác thực tính hợp lệ của Giấy chứng nhận tình nguyện viên điện tử.',
+    'map'          => 'Bản đồ số tương tác định vị 36 ca trực tình nguyện tại TP.HCM, lọc theo bán kính khoảng cách và ứng tuyển trực quan.',
     'leaderboard'  => 'Bảng Vàng Thi Đua Đoàn Thanh niên vinh danh Top 10 cá nhân tiêu biểu và các cơ sở Đoàn xuất sắc trong các chiến dịch tình nguyện Xanh Hub.',
-    'login'        => 'Đăng nhập hệ thống Xanh Hub bằng tài khoản hoặc xác thực OAuth 2.0 đa nền tảng Google, Zalo, Microsoft Edu, Facebook, GitHub.',
+    'login'        => 'Đăng nhập hệ thống Xanh Hub bằng tài khoản sinh viên hoặc liên kết Google, Zalo, Microsoft Edu, Facebook, GitHub.',
     'register'     => 'Đăng ký trở thành tình nguyện viên Xanh Hub, kết nối chuyên môn và thời gian cống hiến vì cộng đồng.',
     'admin'        => 'Cổng Quản trị Hệ thống Xanh Hub: Quản lý người dùng, phân quyền điều phối, xác minh kỹ năng, duyệt chứng nhận và sổ cái kiểm toán SHA-256.',
     '404'          => '404 — Trang bạn tìm kiếm không tồn tại hoặc đã được chuyển dời. Khám phá các chiến dịch tình nguyện trên Xanh Hub.',
@@ -2936,7 +2999,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="mt-5 flex items-start gap-3 p-3.5 rounded-xl border border-blue-200/80 dark:border-sky-900/60 bg-blue-50/50 dark:bg-sky-950/20">
                     <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-[20px] mt-0.5 filled">verified_user</span>
                     <div>
-                        <h4 class="font-bold text-xs text-[#0057B8] dark:text-sky-400 mb-0.5">Xác thực Đa nền tảng OAuth 2.0 &amp; RBAC</h4>
+                        <h4 class="font-bold text-xs text-[#0057B8] dark:text-sky-400 mb-0.5">Cổng Đăng nhập Tập trung — Đoàn Thanh niên &amp; Hội Sinh viên</h4>
                         <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                             Hỗ trợ liên kết tài khoản Google, Email Sinh viên (.edu.vn), Facebook, Zalo và GitHub. Mọi phiên đăng nhập đều được bảo vệ.
                         </p>
@@ -3251,7 +3314,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span>Bản đồ Số GIS &amp; Định vị Điểm Tình nguyện</span>
                     </h1>
                     <p class="text-xs md:text-sm text-slate-200 leading-relaxed max-w-2xl">
-                        Bản đồ tương tác OpenStreetMap &amp; Leaflet định vị 36 ca trực thực tế tại TP.HCM (Trường Đại học, Bệnh viện, Tuyến đường, Kênh mương). Hỗ trợ bộ lọc cự ly hình cầu Haversine chuẩn xác và ứng tuyển 1-chạm.
+                        Bản đồ trực quan định vị 36 điểm trực thực tế tại TP.HCM (Trường Đại học, Bệnh viện, Tuyến đường, Kênh mương). Hỗ trợ lọc theo khoảng cách gần nơi ở của bạn và đăng ký nhanh 1 chạm.
                     </p>
                     <div class="flex flex-wrap items-center gap-2 mt-4 text-xs">
                         <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold flex items-center gap-1">
@@ -3260,7 +3323,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </span>
                         <span class="px-3 py-1 rounded-full bg-blue-500/20 text-sky-300 border border-blue-500/30 font-semibold flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px]">near_me</span>
-                            <span>Cự ly Haversine chuẩn xác</span>
+                            <span>Lọc ca trực gần vị trí của bạn</span>
                         </span>
                         <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px]">touch_app</span>
@@ -3304,7 +3367,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 <!-- Chú thích 4 Màu Marker Quy Chuẩn -->
                 <div class="flex flex-wrap items-center gap-3 text-xs bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <span class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider">Nhóm Marker:</span>
+                    <span class="font-bold text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider">Nhóm Điểm trực:</span>
                     <span class="inline-flex items-center gap-1.5 font-semibold text-rose-600 dark:text-rose-400">
                         <span class="w-3 h-3 rounded-full bg-[#EF4444] shadow-sm"></span>
                         <span>Y tế đỏ</span>
@@ -3325,11 +3388,11 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
 
             <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
-                <!-- Bộ lọc Bán kính GPS & Cự ly Haversine -->
+                <!-- Bộ lọc Bán kính Khoảng cách -->
                 <div class="flex flex-wrap items-center gap-2 text-xs">
                     <span class="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                         <span class="material-symbols-outlined text-[17px] text-emerald-600">radar</span>
-                        <span>Bán kính GPS (Haversine):</span>
+                        <span>Khoảng cách tìm kiếm:</span>
                     </span>
                     <button type="button" class="gis-radius-btn px-3 py-1.5 rounded-lg font-bold border border-slate-200 dark:border-slate-700 bg-[#0057B8] text-white transition-all shadow-sm" data-radius="ALL">
                         Tất cả
@@ -3358,14 +3421,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         <!-- Two-column GIS Workspace: Map + Filtered Shifts List -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <!-- Left: Leaflet Interactive Map Container (OpenStreetMap) -->
+            <!-- Left: Interactive Map Container -->
             <div class="lg:col-span-8 space-y-3">
                 <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-3xl p-3 shadow-sm relative overflow-hidden">
                     <div id="gis-map" class="w-full h-[620px] rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 relative z-10">
-                        <!-- Fallback khi tải Leaflet -->
                         <noscript>
                             <div class="p-6 text-center text-sm text-slate-600 dark:text-slate-400">
-                                Vui lòng bật JavaScript để hiển thị bản đồ tương tác Leaflet và OpenStreetMap.
+                                Vui lòng bật JavaScript để hiển thị bản đồ tương tác các điểm trực tình nguyện.
                             </div>
                         </noscript>
                     </div>
@@ -3373,7 +3435,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <!-- Overlay Badge góc bản đồ -->
                     <div class="absolute bottom-6 left-6 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-md text-xs pointer-events-none flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span class="font-bold text-slate-800 dark:text-slate-200">OpenStreetMap &amp; Leaflet GIS Active</span>
+                        <span class="font-bold text-slate-800 dark:text-slate-200">Bản đồ Điểm trực Trực tuyến</span>
                     </div>
                 </div>
 
@@ -3381,9 +3443,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-2">
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-[16px] text-[#0057B8]">info</span>
-                        <span>Click vào Marker để xem tóm tắt quân số và ứng tuyển 1-chạm. Click vào bản đồ để đổi tâm định vị.</span>
+                        <span>Bấm vào biểu tượng điểm trực trên bản đồ để xem quân số và đăng ký nhanh. Bấm vào vị trí bất kỳ trên bản đồ để đổi tâm tìm kiếm.</span>
                     </div>
-                    <span>Nguồn dữ liệu: OpenStreetMap Contributors</span>
+                    <span>Bản đồ Thành Đoàn TP.HCM</span>
                 </div>
             </div>
 
@@ -3906,7 +3968,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <input type="hidden" name="volunteer_id" value="<?= $currentVolunteerId ?>">
                         <button type="submit" class="w-full py-2.5 px-4 border border-rose-200 dark:border-rose-800/80 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100 text-rose-600 dark:text-rose-400 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5">
                             <span class="material-symbols-outlined text-[16px]">person_remove</span>
-                            <span>Rút đăng ký khỏi ca trực này (CN2)</span>
+                            <span>Rút đăng ký khỏi ca trực này</span>
                         </button>
                     </form>
                 </div>
@@ -3916,9 +3978,19 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span class="material-symbols-outlined text-[16px] text-emerald-600">qr_code_scanner</span>
                         <span>Có điểm danh QR 30 giây</span>
                     </span>
-                    <a href="?view=coordinator&activity_id=<?= $selectedActivityId ?>" class="font-bold text-[#0057B8] dark:text-sky-400 hover:underline">
-                        Mở trong Bàn Điều phối &rarr;
-                    </a>
+                    <?php if (in_array($currentRole, ['COORDINATOR', 'ADMIN'], true)): ?>
+                        <a href="?view=coordinator&activity_id=<?= $selectedActivityId ?>" class="font-bold text-[#0057B8] dark:text-sky-400 hover:underline">
+                            Mở trong Bàn Điều phối &rarr;
+                        </a>
+                    <?php elseif ($currentRole === 'VOLUNTEER'): ?>
+                        <a href="?view=volunteer&activity_id=<?= $selectedActivityId ?>" class="font-bold text-[#0057B8] dark:text-sky-400 hover:underline">
+                            Mở Sổ tay Ca trực Cá nhân &rarr;
+                        </a>
+                    <?php else: ?>
+                        <a href="?view=campaigns&activity_id=<?= $selectedActivityId ?>" class="font-bold text-[#0057B8] dark:text-sky-400 hover:underline">
+                            Xem các ca khác &rarr;
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -3935,16 +4007,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             <?php else: ?>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <?php foreach ($shiftMembers as $sm): ?>
+                    <?php foreach ($shiftMembers as $sm):
+                        $smStatusVi = match ((string) ($sm['status'] ?? '')) {
+                            'CHECKED_IN' => '✓ Đã điểm danh',
+                            'CONFIRMED' => '✓ Đã xác nhận',
+                            'ASSIGNED' => 'Đã xếp ca',
+                            'AT_RISK' => 'Cần hỗ trợ',
+                            default => 'Đã xếp ca',
+                        };
+                    ?>
                         <div class="flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
                             <div class="flex items-center gap-3">
                                 <img src="<?= h(avatarUrlFor((int) $sm['volunteer_id'], $sm['full_name'])) ?>" alt="" class="w-11 h-11 rounded-full object-cover border-2 border-[#0057B8]">
                                 <div>
                                     <div class="font-bold text-sm text-slate-900 dark:text-white"><?= h($sm['full_name']) ?></div>
-                                    <div class="text-xs text-slate-500 mono"><?= h($sm['student_code']) ?> &middot; <?= h($sm['chapter_name']) ?></div>
+                                    <div class="text-xs text-slate-500 mono"><?= $currentRole !== 'PUBLIC' ? (h($sm['student_code']) . ' &middot; ') : '' ?><?= h($sm['chapter_name']) ?></div>
                                 </div>
                             </div>
-                            <span class="badge badge-valid mono"><?= h($sm['status']) ?></span>
+                            <span class="badge badge-valid"><?= h($smStatusVi) ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -4098,8 +4178,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="text-xs font-bold uppercase tracking-wider text-sky-200">Bảo vệ Lịch học &amp; Lịch thi Cá nhân</div>
                     </div>
                     <div class="bg-emerald-600 text-white rounded-3xl p-7 flex-1 flex flex-col justify-center items-center text-center shadow-lg">
-                        <div class="text-4xl font-extrabold mono mb-1">SHA-256</div>
-                        <div class="text-xs font-bold uppercase tracking-wider text-emerald-100">Chứng nhận Số &amp; Nhật ký Minh bạch</div>
+                        <div class="text-4xl font-extrabold mono mb-1">100%</div>
+                        <div class="text-xs font-bold uppercase tracking-wider text-emerald-100">Minh bạch Giờ Cống hiến &amp; Chứng nhận Điện tử</div>
                     </div>
                 </div>
             </div>
@@ -4742,7 +4822,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <?php endforeach; ?>
                     </div>
 
-                    <!-- Quản lý Kỹ năng Chuyên môn + Thêm Kỹ năng Khác trực tiếp tại Tab Kỹ năng & Lịch rảnh (CN1) -->
+                    <!-- Quản lý Kỹ năng Chuyên môn + Thêm Kỹ năng Khác trực tiếp tại Tab Kỹ năng & Lịch rảnh -->
                     <div class="pt-6 border-t border-slate-200 dark:border-slate-800">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                             <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -4852,11 +4932,12 @@ document.addEventListener('DOMContentLoaded', function () {
         $assignedShiftsByVol[$vid][] = $sid;
     }
 
-    $loadX = array_fill(1, 30, 0);
+    $loadX = [];
+    foreach ($ds->volunteers as $vInit) {
+        $loadX[$vInit->id] = 0;
+    }
     foreach ($planX->decisions as $d) {
-        if (isset($loadX[$d->volunteerId])) {
-            $loadX[$d->volunteerId]++;
-        }
+        $loadX[$d->volunteerId] = ($loadX[$d->volunteerId] ?? 0) + 1;
     }
     $unassignedSlots = array_values(array_filter(
         $planX->unassigned,
@@ -5064,11 +5145,11 @@ document.addEventListener('DOMContentLoaded', function () {
         <nav class="flex flex-col gap-1.5">
             <button type="button" data-workspace-tab="tab-board" class="workspace-tab-btn active flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left bg-blue-50 dark:bg-sky-950/60 text-[#0057B8] dark:text-sky-400 transition-all">
                 <span class="material-symbols-outlined text-[20px]">dashboard</span>
-                <span>Bàn Điều phối (Master-Detail)</span>
+                <span>Bàn Điều phối Ca trực</span>
             </button>
             <button type="button" data-workspace-tab="tab-volunteers" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                 <span class="material-symbols-outlined text-[20px]">group</span>
-                <span>Lực lượng TNV (DataGrid)</span>
+                <span>Danh sách Tình nguyện viên</span>
             </button>
             <button type="button" data-workspace-tab="tab-lab" class="workspace-tab-btn flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-left text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                 <span class="material-symbols-outlined text-[20px]">auto_awesome_motion</span>
@@ -5258,7 +5339,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
                         <div class="min-w-0">
                             <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white truncate"><?= h($activeCampaign['title']) ?></h2>
-                            <p class="text-xs text-slate-500">Bàn Điều phối Master-Detail Thông minh: Chọn ca trực để kiểm tra quân số và điều động ứng viên phù hợp</p>
+                            <p class="text-xs text-slate-500">Chọn một ca trực ở cột trái để xem danh sách nhân sự, duyệt đơn đăng ký hoặc phân công ứng viên phù hợp</p>
                         </div>
                         <div class="flex flex-wrap gap-1.5 shrink-0">
                             <button type="button" class="btn btn-sm btn-outline active" data-shift-filter="ALL">Tất cả (<?= count($ds->shifts) ?>)</button>
@@ -5399,7 +5480,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <div class="flex flex-wrap items-center gap-2 mb-1">
                                                 <span id="insp-shift-code" class="mono font-extrabold text-sm text-[#0057B8] dark:text-sky-400">[<?= h($firstShift?->code ?? 'CA-01') ?>]</span>
                                                 <span id="insp-shift-status-badge" class="badge badge-info">Đang điều phối</span>
-                                                <span id="insp-shift-lock-badge" class="hidden"><span class="badge badge-warning text-[10px] mono">LOCKED</span></span>
+                                                <span id="insp-shift-lock-badge" class="hidden"><span class="badge badge-warning text-[10px]">ĐÃ KHÓA</span></span>
                                             </div>
                                             <h2 id="insp-shift-title" class="text-base font-extrabold text-slate-900 dark:text-white truncate"><?= h($firstShift?->title ?? 'Ca trực') ?></h2>
                                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1.5">
@@ -5415,14 +5496,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                         </div>
                                     </div>
 
-                                    <!-- Form Cập nhật Nhanh Số người cần cho từng ca & Yêu cầu Kỹ năng (CN1) -->
+                                    <!-- Form Cập nhật Nhanh Số người cần cho từng ca & Yêu cầu Kỹ năng -->
                                     <form method="post" action="?view=coordinator&activity_id=<?= $selectedActivityId ?>&action=update_shift_capacity" class="p-2.5 rounded-xl bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-2 text-xs">
                                         <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
                                         <input type="hidden" name="shift_id" id="insp-form-shift-id" value="<?= (int) ($firstShift?->id ?? 0) ?>">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1 whitespace-nowrap">
                                                 <span class="material-symbols-outlined text-[15px] text-[#0057B8]">tune</span>
-                                                <span>Định biên ca (CN1):</span>
+                                                <span>Số người cần &amp; Kỹ năng:</span>
                                             </span>
                                             <label class="flex items-center gap-1 whitespace-nowrap">
                                                 <span class="text-slate-500">Min:</span>
@@ -5477,7 +5558,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                     data-inspector-tab="eligible"
                                                     data-tab-target="#inspector-tab-eligible">
                                                 <span class="material-symbols-outlined text-[15px]">person_add</span>
-                                                <span>Phân công Thủ công &amp; DS Ứng viên (CN4)</span>
+                                                <span>Phân công Thủ công &amp; DS Ứng viên</span>
                                                 <span id="badge-eligible-count" class="badge badge-info mono text-[10px] ml-0.5">0 ứng viên</span>
                                             </button>
                                             <button type="button"
@@ -5486,7 +5567,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                     data-inspector-tab="replacement"
                                                     data-tab-target="#inspector-tab-replacement">
                                                 <span class="material-symbols-outlined text-[15px]">published_with_changes</span>
-                                                <span>Báo Vắng &amp; Thay Thế (CN5)</span>
+                                                <span>Báo Vắng &amp; Thay Thế</span>
                                                 <span id="badge-replacement-tab-count" class="badge badge-warning mono text-[10px] ml-0.5">0 yêu cầu</span>
                                             </button>
                                         </div>
@@ -5498,23 +5579,23 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <input type="hidden" name="w_skill_waste" value="3">
                                             <input type="hidden" name="w_load" value="1">
                                             <input type="hidden" name="apply_immediately" value="1">
-                                            <button type="submit" class="btn btn-sm btn-success flex items-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs" title="Chạy thuật toán tự động xét duyệt đăng ký và phân công toàn chiến dịch">
+                                            <button type="submit" class="btn btn-sm btn-success flex items-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-xs" title="Chạy tự động xét duyệt đăng ký và phân công toàn chiến dịch">
                                                 <span class="material-symbols-outlined text-[15px]">bolt</span>
-                                                <span>Tự động Đề xuất &amp; Duyệt Phân công (CN3)</span>
+                                                <span>Tự động Đề xuất &amp; Duyệt Phân công</span>
                                             </button>
                                         </form>
                                     </div>
 
                                     <!-- TAB 1: NHÂN SỰ ĐÃ PHÂN CÔNG & PHÂN CÔNG THỦ CÔNG TRỰC TIẾP (#inspector-tab-assigned) -->
                                     <div id="inspector-tab-assigned" class="inspector-tab-pane w-full block">
-                                        <!-- Khung Phân công Thủ công Trực tiếp vào Ca đang chọn (CN4: Kiểm tra Trùng lịch, Thiếu kỹ năng, Vượt số người) -->
+                                        <!-- Khung Phân công Thủ công Trực tiếp vào Ca đang chọn -->
                                         <div class="mb-3.5 p-3.5 rounded-xl bg-blue-50/60 dark:bg-sky-950/25 border border-blue-200 dark:border-sky-800/80">
                                             <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                                                 <div class="text-xs font-extrabold text-[#0057B8] dark:text-sky-400 flex items-center gap-1.5">
                                                     <span class="material-symbols-outlined text-[17px]">person_add</span>
-                                                    <span>Phân công Thủ công / Thêm Người vào Ca trực này (CN4)</span>
+                                                    <span>Phân công Thủ công / Thêm Người vào Ca trực này</span>
                                                 </div>
-                                                <span class="text-[11px] text-slate-500">Tự động kiểm tra: Trùng lịch (H1) &middot; Kỹ năng (H2) &middot; Lịch rảnh (H3) &middot; Sĩ số tối đa (H4)</span>
+                                                <span class="text-[11px] text-slate-500">Tự động kiểm tra: Không trùng lịch &middot; Đủ kỹ năng &middot; Phù hợp lịch rảnh &middot; Không vượt quân số</span>
                                             </div>
                                             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
                                                 <div class="sm:col-span-6">
@@ -5614,15 +5695,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 </div>
                                             </div>
 
-                                            <!-- 3.2. Bảng xếp hạng ứng viên thay thế tối ưu từ ReplacementRanker A3 -->
+                                            <!-- 3.2. Bảng xếp hạng ứng viên thay thế phù hợp -->
                                             <div class="border-t border-slate-200 dark:border-slate-800 pt-4">
                                                 <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                                                     <div>
                                                         <div class="flex items-center gap-2">
                                                             <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-[18px]">auto_awesome</span>
-                                                            <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">Đề Xuất Ứng Viên Thay Thế Tối Ưu (ReplacementRanker A3)</h4>
+                                                            <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">Đề Xuất Ứng Viên Thay Thế Phù Hợp Nhất</h4>
                                                         </div>
-                                                        <p class="text-[11px] text-slate-500 mt-0.5">Lọc qua ConstraintGuard (0 vi phạm H1–H3) và xếp hạng đa tiêu chí</p>
+                                                        <p class="text-[11px] text-slate-500 mt-0.5">Chỉ hiển thị ứng viên rảnh giờ, đủ kỹ năng chuyên môn và chưa trùng lịch</p>
                                                     </div>
                                                     <span id="badge-shift-replacements-count" class="badge badge-info mono text-[10px]">Top 5 gợi ý</span>
                                                 </div>
@@ -5639,7 +5720,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             </div>
 
-            <!-- TAB 1.5: DANH SÁCH TÌNH NGUYỆN VIÊN (PAGINATED DATAGRID) -->
+            <!-- TAB 1.5: DANH SÁCH TÌNH NGUYỆN VIÊN -->
             <div id="tab-volunteers" class="workspace-tab-pane">
                 <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
@@ -5648,7 +5729,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400">group</span>
                                 <span>Lực lượng Tình nguyện viên &amp; Năng lực Điều phối</span>
                             </h2>
-                            <p class="text-xs text-slate-500">Tra cứu toàn diện 30 tình nguyện viên, phân tích kỹ năng chuyên môn, lịch rảnh và số ca đã nhận</p>
+                            <p class="text-xs text-slate-500">Tra cứu toàn diện <?= count($ds->volunteers) ?> tình nguyện viên, phân tích kỹ năng chuyên môn, lịch rảnh và số ca đã nhận</p>
                         </div>
                         <div class="flex items-center gap-2 text-xs">
                             <span class="text-slate-500">Hiển thị mỗi trang:</span>
@@ -5703,7 +5784,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
 
-                    <!-- DataGrid Table Responsive -->
+                    <!-- Bảng danh sách tình nguyện viên -->
                     <div class="overflow-x-auto no-scrollbar border border-slate-200 dark:border-slate-800 rounded-xl mb-4">
                         <table class="w-full min-w-[960px] text-left text-xs border-collapse">
                             <thead>
@@ -5724,7 +5805,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </table>
                     </div>
 
-                    <!-- DataGrid Pagination Bar -->
+                    <!-- Thanh phân trang danh sách -->
                     <div id="datagrid-pagination-bar" class="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-2">
                         <div id="datagrid-info-text">
                             Đang tải danh sách tình nguyện viên...
@@ -5745,7 +5826,7 @@ document.addEventListener('DOMContentLoaded', function () {
             ], JSON_UNESCAPED_UNICODE) ?>
             </script>
 
-            <!-- TAB 2: TỰ ĐỘNG ĐỀ XUẤT PHÂN CÔNG THEO ĐIỀU KIỆN & THỨ TỰ ƯU TIÊN (CN3) -->
+            <!-- TAB 2: TỰ ĐỘNG ĐỀ XUẤT PHÂN CÔNG THEO ĐIỀU KIỆN & THỨ TỰ ƯU TIÊN -->
             <div id="tab-lab" class="workspace-tab-pane">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
@@ -5753,7 +5834,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                                 <h3 class="font-extrabold text-base flex items-center gap-2 text-slate-900 dark:text-white">
                                     <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400">fact_check</span>
-                                    <span>Tóm tắt Kết quả Đề xuất Phân công (CN3)</span>
+                                    <span>Tóm tắt Kết quả Đề xuất Phân công</span>
                                 </h3>
                                 <span class="badge badge-valid text-xs">Đảm bảo 100% điều kiện lịch &amp; kỹ năng</span>
                             </div>
@@ -5829,23 +5910,23 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                         </form>
 
-                        <div class="text-xs font-bold text-slate-500 mb-2">Biểu đồ số ca được giao của từng Tình nguyện viên (SV001 &ndash; SV030):</div>
+                        <div class="text-xs font-bold text-slate-500 mb-2">Biểu đồ số ca được giao của từng Tình nguyện viên (<?= count($ds->volunteers) ?> TNV):</div>
                         <div class="fairness-bars">
-                            <?php for ($vid = 1; $vid <= 30; $vid++):
-                                $cnt = $loadX[$vid] ?? 0;
+                            <?php foreach ($ds->volunteers as $vBar):
+                                $cnt = $loadX[$vBar->id] ?? 0;
                                 $heightPct = max(8, min(100, (int) round(($cnt / 3.0) * 100)));
                             ?>
-                                <div class="fairness-bar-col" title="SV<?= sprintf('%03d', $vid) ?>: <?= $cnt ?> ca">
+                                <div class="fairness-bar-col" title="<?= h($vBar->studentCode) ?> (<?= h($vBar->fullName) ?>): <?= $cnt ?> ca">
                                     <div class="fairness-bar" style="height:<?= $heightPct ?>%;"></div>
                                     <span class="mono text-[10px] text-slate-400"><?= $cnt ?></span>
                                 </div>
-                            <?php endfor; ?>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 3: CHỈ RÕ CA CHƯA ĐỦ NGƯỜI & NGƯỜI CHƯA BỐ TRÍ ĐƯỢC (CN3) -->
+            <!-- TAB 3: CHỈ RÕ CA CHƯA ĐỦ NGƯỜI & NGƯỜI CHƯA BỐ TRÍ ĐƯỢC -->
             <div id="tab-understaffed" class="workspace-tab-pane">
                 <div class="space-y-6">
                     <!-- PHẦN 1: CÁC CA CHƯA BỐ TRÍ ĐỦ NGƯỜI (SLOT) -->
@@ -5855,11 +5936,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <span class="material-symbols-outlined text-rose-500">warning</span>
                                 <span>1. Danh sách Ca trực Chưa Bố trí Đủ người (<?= count($unassignedSlots) ?> ca)</span>
                             </h3>
-                            <span class="badge badge-subtle mono text-xs">Không tạo thêm người giả để lấp chỗ</span>
+                            <span class="badge badge-subtle text-xs">Cần bổ sung nhân sự thực tế</span>
                         </div>
                         <?php if (empty($unassignedSlots)): ?>
                             <div class="p-5 text-center text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/30 rounded-xl text-sm">
-                                Đã lấp đầy 100% các ca trực (đạt định biên tối thiểu min_people) trong chiến dịch này! Hãy chọn chiến dịch <strong>Mùa Hè Xanh Vùng Cao (D2)</strong> ở cột trái để kiểm tra kịch bản thiếu nhân sự Y tế.
+                                Đã lấp đầy 100% các ca trực (đạt định biên tối thiểu) trong chiến dịch này!
                             </div>
                         <?php else: ?>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -5880,14 +5961,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         <?php endif; ?>
                     </div>
 
-                    <!-- PHẦN 2: CÁC TÌNH NGUYỆN VIÊN CHƯA BỐ TRÍ ĐƯỢC (VOLUNTEER - CN3) -->
+                    <!-- PHẦN 2: CÁC TÌNH NGUYỆN VIÊN CHƯA BỐ TRÍ ĐƯỢC -->
                     <div class="bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                             <h3 class="font-extrabold text-base flex items-center gap-2">
                                 <span class="material-symbols-outlined text-amber-500">person_off</span>
                                 <span>2. Danh sách Tình nguyện viên Đã Đăng ký nhưng Chưa Bố trí Được Ca (<?= count($unassignedVolunteers) ?> người)</span>
                             </h3>
-                            <span class="badge badge-info mono text-xs">Chẩn đoán tự động CN3</span>
+                            <span class="badge badge-info text-xs">Lý do cụ thể từng ứng viên</span>
                         </div>
                         <?php if (empty($unassignedVolunteers)): ?>
                             <div class="p-5 text-center text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/30 rounded-xl text-sm">
@@ -5966,7 +6047,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden shadow-sm">
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Tổng Giờ Cống hiến</span>
                             <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mono"><?= h($tabOv['total_hours_contributed']) ?> <span class="text-sm font-semibold text-slate-500">giờ</span></div>
-                            <span class="text-[11px] text-slate-500 mt-1 block">Minh bạch qua sổ cái SHA-256</span>
+                            <span class="text-[11px] text-slate-500 mt-1 block">Đã đối soát &amp; xác nhận điểm danh</span>
                         </div>
                         <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden shadow-sm">
                             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Cơ sở Đoàn Phối hợp</span>
@@ -6203,7 +6284,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden shadow-sm hover-lift">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Tổng Giờ Cống hiến</span>
                 <div class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mono mt-1"><?= h($pOv['total_hours_contributed']) ?> <span class="text-base font-semibold text-slate-500">giờ</span></div>
-                <span class="text-xs text-slate-500 mt-2 block">Kiểm thực &amp; mã hóa SHA-256</span>
+                <span class="text-xs text-slate-500 mt-2 block">Đã đối soát &amp; xác thực điện tử</span>
             </div>
             <div class="bg-white dark:bg-[#131822] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden shadow-sm hover-lift">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Cơ sở Đoàn Phối hợp</span>
@@ -6647,7 +6728,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     <div class="youth-stamp-box">
                         <div>★ BAN CHỈ HUY CHIẾN DỊCH TÌNH NGUYỆN HÈ ★</div>
-                        <div class="text-[9px] mt-0.5 font-mono">ĐÃ ĐỐI CHIẾU SỐ LIỆU ĐIỆN TỬ · SHA-256 VERIFIED</div>
+                        <div class="text-[9px] mt-0.5 font-mono">ĐÃ ĐỐI CHIẾU SỐ LIỆU ĐIỆN TỬ &middot; XÁC THỰC HỢP LỆ</div>
                     </div>
                 </div>
 
@@ -6854,7 +6935,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2 border-t border-slate-200">
                             <div>
-                                <div class="text-xs text-slate-500">Chữ ký số toàn vẹn (SHA-256):</div>
+                                <div class="text-xs text-slate-500">Mã đối chiếu văn bản điện tử:</div>
                                 <div class="mono text-[10px] text-slate-700 font-semibold break-all bg-slate-100 p-1.5 rounded border border-slate-200"><?= h($verifiedReport['verification']['sha256_hash']) ?></div>
                                 <div class="text-xs font-bold text-slate-800 mt-1.5"><?= h($verifiedReport['verification']['signer_title']) ?> &middot; <?= h($verifiedReport['verification']['signer_name']) ?></div>
                             </div>
@@ -7114,7 +7195,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400">tune</span>
                         <span>Cập nhật Thông tin Hồ sơ &amp; Năng lực Chuyên môn</span>
                     </h3>
-                    <p class="text-xs text-slate-500 mt-1">Thông tin được đồng bộ trực tiếp vào cơ sở dữ liệu PostgreSQL và áp dụng ngay cho thuật toán phân công tự động.</p>
+                    <p class="text-xs text-slate-500 mt-1">Thông tin được lưu tự động vào hồ sơ cá nhân để Ban Chỉ huy sắp xếp ca trực phù hợp nhất với chuyên môn của bạn.</p>
                 </div>
 
                 <form id="form-volunteer-profile" method="post" action="?action=update_profile">
@@ -7432,7 +7513,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             </div>
                                         </td>
                                         <td class="py-3 px-3 text-center">
-                                            <span class="badge badge-success text-[10px]"><?= h($act['status']) ?></span>
+                                            <span class="badge badge-success text-[10px]"><?= ($act['status'] === 'ACTIVE' || $act['status'] === 'OPEN') ? 'Đang triển khai' : h($act['status']) ?></span>
                                         </td>
                                         <td class="py-3 px-3 text-right whitespace-nowrap">
                                             <div class="inline-flex items-center gap-1.5">
@@ -7791,7 +7872,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <div class="font-mono text-[11px] text-slate-400"><?= h($act['code']) ?></div>
                                     </td>
                                     <td class="py-3 px-3 text-slate-600 dark:text-slate-300"><?= h($act['location_name'] ?? 'Toàn thành phố') ?></td>
-                                    <td class="py-3 px-3"><span class="badge badge-success text-[10px]"><?= h($act['status']) ?></span></td>
+                                    <td class="py-3 px-3"><span class="badge badge-success text-[10px]"><?= ($act['status'] === 'ACTIVE' || $act['status'] === 'OPEN') ? 'Đang triển khai' : h($act['status']) ?></span></td>
                                     <td class="py-3 px-3">
                                         <?php if (empty($cList)): ?>
                                             <span class="text-slate-400 italic">Chưa phân công cán bộ</span>
@@ -8363,7 +8444,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="material-symbols-outlined text-[22px]">workspace_premium</span>
                         </div>
                         <h3 class="font-bold text-sm text-slate-900 dark:text-white mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Tra cứu Chứng nhận</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Xác thực chứng nhận điện tử và kiểm chứng sổ cái điều phối SHA-256 minh bạch.</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Xác thực giấy chứng nhận điện tử và kiểm tra giờ tình nguyện tích lũy công khai.</p>
                     </div>
                     <span class="text-xs font-bold text-purple-600 dark:text-purple-400 mt-4 flex items-center gap-1">Tra cứu ngay &rarr;</span>
                 </a>
@@ -8397,7 +8478,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <a href="?view=verify" class="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-500 hover:text-[#0057B8] border border-slate-200 dark:border-slate-700 transition-colors">
                             <span class="material-symbols-outlined text-[18px]">workspace_premium</span>
                         </a>
-                        <a href="?view=login" class="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-500 hover:text-[#0057B8] border border-slate-200 dark:border-slate-700 transition-colors">
+                        <a href="?view=about" class="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-500 hover:text-[#0057B8] border border-slate-200 dark:border-slate-700 transition-colors">
                             <span class="material-symbols-outlined text-[18px]">mail</span>
                         </a>
                     </div>
@@ -8429,10 +8510,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div>
                     <h3 class="font-bold text-xs text-slate-900 dark:text-white mb-4 uppercase tracking-wider">Cổng Thành viên</h3>
                     <ul class="space-y-2.5 text-sm text-slate-500 dark:text-slate-400">
-                        <li><a href="?view=login" class="hover:text-[#0057B8] transition-colors">Đăng nhập Hệ thống</a></li>
-                        <li><a href="?view=register" class="hover:text-[#0057B8] transition-colors">Đăng ký Tình nguyện viên</a></li>
-                        <li><a href="?view=coordinator&activity_id=3" class="hover:text-[#0057B8] transition-colors">Bàn Điều phối Đoàn</a></li>
-                        <li><a href="?view=verify" class="hover:text-[#0057B8] transition-colors">Tra cứu Chứng nhận Điện tử</a></li>
+                        <?php if ($currentRole === 'PUBLIC'): ?>
+                            <li><a href="?view=login" class="hover:text-[#0057B8] transition-colors">Đăng nhập Hệ thống</a></li>
+                            <li><a href="?view=register" class="hover:text-[#0057B8] transition-colors">Đăng ký Tình nguyện viên</a></li>
+                            <li><a href="?view=leaderboard" class="hover:text-[#0057B8] transition-colors">Bảng Vàng Thi Đua</a></li>
+                            <li><a href="?view=verify" class="hover:text-[#0057B8] transition-colors">Tra cứu Chứng nhận Điện tử</a></li>
+                        <?php elseif ($currentRole === 'VOLUNTEER'): ?>
+                            <li><a href="?view=volunteer&activity_id=<?= (int) $selectedActivityId ?>" class="hover:text-[#0057B8] transition-colors">Sổ tay Ca trực Cá nhân</a></li>
+                            <li><a href="?view=profile" class="hover:text-[#0057B8] transition-colors">Hồ sơ &amp; Kỹ năng của tôi</a></li>
+                            <li><a href="?view=leaderboard" class="hover:text-[#0057B8] transition-colors">Bảng Vàng Thi Đua</a></li>
+                            <li><a href="?view=verify" class="hover:text-[#0057B8] transition-colors">Chứng nhận Tình nguyện Số</a></li>
+                        <?php else: ?>
+                            <li><a href="?view=coordinator&activity_id=<?= (int) $selectedActivityId ?>" class="hover:text-[#0057B8] transition-colors">Bàn Điều phối Chiến dịch</a></li>
+                            <li><a href="?view=analytics&activity_id=<?= (int) $selectedActivityId ?>" class="hover:text-[#0057B8] transition-colors">Trung tâm Thống kê &amp; Báo cáo</a></li>
+                            <li><a href="?view=profile" class="hover:text-[#0057B8] transition-colors">Hồ sơ Ban Chỉ huy</a></li>
+                            <li><a href="?view=verify" class="hover:text-[#0057B8] transition-colors">Tra cứu Chứng nhận Điện tử</a></li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </div>
@@ -8442,7 +8535,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="flex gap-6">
                     <a href="?view=home" class="hover:text-[#0057B8] transition-colors">Trang chủ</a>
                     <a href="?view=verify" class="hover:text-[#0057B8] transition-colors">Chứng nhận Số</a>
-                    <a href="?view=login" class="hover:text-[#0057B8] transition-colors">Đăng nhập</a>
+                    <?php if ($currentRole === 'PUBLIC'): ?>
+                        <a href="?view=login" class="hover:text-[#0057B8] transition-colors">Đăng nhập</a>
+                    <?php else: ?>
+                        <a href="?view=profile" class="hover:text-[#0057B8] transition-colors">Tài khoản của tôi</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -8470,16 +8567,16 @@ document.addEventListener('DOMContentLoaded', function () {
         <?php elseif ($currentRole === 'VOLUNTEER'): ?>
             <a href="?view=volunteer&activity_id=<?= (int) $selectedActivityId ?>" class="flex flex-col items-center gap-0.5 text-[10px] sm:text-[11px] whitespace-nowrap shrink-0 <?= $activeNav === 'volunteer' ? 'text-[#0057B8] dark:text-sky-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#0057B8]' ?>">
                 <span class="material-symbols-outlined text-[20px] shrink-0 <?= $activeNav === 'volunteer' ? 'filled' : '' ?>">badge</span>
-                <span class="truncate max-w-[60px] sm:max-w-none">TNV</span>
+                <span class="truncate max-w-[60px] sm:max-w-none">Ca của tôi</span>
             </a>
             <a href="?view=profile" class="flex flex-col items-center gap-0.5 text-[10px] sm:text-[11px] whitespace-nowrap shrink-0 <?= $activeNav === 'profile' ? 'text-[#0057B8] dark:text-sky-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#0057B8]' ?>">
                 <span class="material-symbols-outlined text-[20px] shrink-0 <?= $activeNav === 'profile' ? 'filled' : '' ?>">person</span>
                 <span class="truncate max-w-[60px] sm:max-w-none">Hồ sơ</span>
             </a>
         <?php else: ?>
-            <a href="?view=volunteer&activity_id=<?= (int) $selectedActivityId ?>" class="flex flex-col items-center gap-0.5 text-[10px] sm:text-[11px] whitespace-nowrap shrink-0 <?= $activeNav === 'volunteer' ? 'text-[#0057B8] dark:text-sky-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#0057B8]' ?>">
-                <span class="material-symbols-outlined text-[20px] shrink-0 <?= $activeNav === 'volunteer' ? 'filled' : '' ?>">badge</span>
-                <span class="truncate max-w-[60px] sm:max-w-none">TNV</span>
+            <a href="?view=map" class="flex flex-col items-center gap-0.5 text-[10px] sm:text-[11px] whitespace-nowrap shrink-0 <?= $activeNav === 'map' ? 'text-[#0057B8] dark:text-sky-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#0057B8]' ?>">
+                <span class="material-symbols-outlined text-[20px] shrink-0 <?= $activeNav === 'map' ? 'filled' : '' ?>">map</span>
+                <span class="truncate max-w-[60px] sm:max-w-none">Bản đồ</span>
             </a>
             <a href="?view=login" class="flex flex-col items-center gap-0.5 text-[10px] sm:text-[11px] whitespace-nowrap shrink-0 <?= $activeNav === 'login' ? 'text-[#0057B8] dark:text-sky-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-[#0057B8]' ?>">
                 <span class="material-symbols-outlined text-[20px] shrink-0 <?= $activeNav === 'login' ? 'filled' : '' ?>">login</span>
@@ -8498,14 +8595,14 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="modal-dialog">
         <div class="flex justify-between items-center mb-3">
             <h3 class="font-extrabold text-base flex items-center gap-2">
-                <?= icon('sparkles', 16) ?> Tạo Ca trực Nhanh từ Câu Tiếng Việt (AI A1)
+                <?= icon('sparkles', 16) ?> Tạo Ca trực Nhanh từ Mô tả Tiếng Việt
             </h3>
             <button type="button" class="btn btn-sm btn-outline" data-close-modal="modal-ai-shift"><?= icon('x', 14) ?></button>
         </div>
         <div class="flex gap-2 mb-4">
             <input type="text" id="input-ai-shift-prompt" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs"
                    value="Cần 3 bạn sơ cứu y tế và 2 bạn hậu cần trực điểm thi Bách Khoa sáng thứ Bảy từ 7h00 đến 11h30, ưu tiên cao">
-            <button type="button" id="btn-ai-parse-shift" class="btn btn-primary btn-sm">AI Bóc tách</button>
+            <button type="button" id="btn-ai-parse-shift" class="btn btn-primary btn-sm">Điền tự động</button>
         </div>
         <form method="post" action="?view=coordinator&activity_id=<?= $selectedActivityId ?>&action=create_shift_from_draft">
             <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
@@ -8544,7 +8641,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="modal-dialog">
         <div class="flex justify-between items-center mb-3">
             <h3 class="font-extrabold text-base text-amber-600 flex items-center gap-2">
-                <?= icon('alert-triangle', 16) ?> Cảnh báo Mềm (Yêu cầu Lý do Kiểm toán)
+                <?= icon('alert-triangle', 16) ?> Cảnh báo Ngoại lệ (Cần ghi chú lý do)
             </h3>
             <button type="button" class="btn btn-sm btn-outline" data-close-modal="modal-override"><?= icon('x', 14) ?></button>
         </div>
@@ -8582,7 +8679,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="modal-dialog">
         <div class="flex justify-between items-center mb-3">
             <h3 class="font-extrabold text-base flex items-center gap-2">
-                <?= icon('refresh', 16) ?> Báo vắng &amp; Đề xuất Người thay thế (AI A3)
+                <?= icon('refresh', 16) ?> Báo vắng &amp; Đề xuất Người thay thế
             </h3>
             <button type="button" class="btn btn-sm btn-outline" data-close-modal="modal-absence"><?= icon('x', 14) ?></button>
         </div>
@@ -8614,7 +8711,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div id="live-qr-svg-box" class="inline-block p-4 bg-white border-2 border-[#0057B8] rounded-2xl mb-3"></div>
         <div class="flex justify-center gap-2 mb-2">
             <span class="badge badge-valid mono">Đổi mã sau: <strong id="live-qr-countdown">30s</strong></span>
-            <span class="badge badge-subtle mono">HMAC-SHA256</span>
+            <span class="badge badge-subtle">Mã Bảo mật 30s</span>
         </div>
         <div id="live-qr-token-text" class="mono text-[11px] text-slate-500 break-all bg-slate-100 dark:bg-slate-800 p-2 rounded-lg"></div>
     </div>

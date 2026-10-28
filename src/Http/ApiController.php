@@ -41,12 +41,12 @@ final class ApiController
                 'api_undo_last_assign'     => $this->undoLastAssign($currentRole, $actorUserId),
                 'api_toggle_shift_lock'    => $this->toggleShiftLock($currentRole, $actorUserId),
                 'api_run_scheduler'        => $this->runScheduler($currentRole, $actorUserId),
-                'api_suggest_replacements' => $this->suggestReplacements(),
-                'api_report_absence'       => $this->reportAbsence($actorUserId),
-                'api_qr_refresh'           => $this->qrRefresh(),
-                'api_qr_scan'              => $this->qrScan($actorUserId),
-                'api_ai_parse_shift'       => $this->aiParseShift(),
-                'api_update_availability'  => $this->updateAvailability((int) ($currentVolunteerId ?? $actorUserId ?? 1), $actorUserId),
+                'api_suggest_replacements' => $this->suggestReplacements($currentRole),
+                'api_report_absence'       => $this->reportAbsence($currentRole, $actorUserId, $currentVolunteerId),
+                'api_qr_refresh'           => $this->qrRefresh($currentRole),
+                'api_qr_scan'              => $this->qrScan($currentRole, $actorUserId, $currentVolunteerId),
+                'api_ai_parse_shift'       => $this->aiParseShift($currentRole),
+                'api_update_availability'  => $this->updateAvailability($currentRole, (int) ($currentVolunteerId ?? $actorUserId ?? 1), $actorUserId),
                 'api_analytics_data'       => $this->analyticsData($currentRole),
                 'api_shifts_gis'           => $this->shiftsGis(),
                 'api_candidate_profile'    => $this->candidateProfile($currentRole, $currentVolunteerId),
@@ -252,8 +252,13 @@ final class ApiController
         ]);
     }
 
-    private function suggestReplacements(): void
+    private function suggestReplacements(string $role): void
     {
+        if (!in_array($role, ['COORDINATOR', 'ADMIN'], true)) {
+            $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Chỉ Người phụ trách hoặc Quản trị viên mới có quyền tra cứu đề xuất người thay thế.'], 403);
+            return;
+        }
+
         $assignId = (int) ($_GET['assignment_id'] ?? $_POST['assignment_id'] ?? 0);
         $stmt = $this->pdo->prepare('
             SELECT a.id, a.activity_id, a.shift_id, a.requirement_id, a.volunteer_id,
@@ -295,20 +300,42 @@ final class ApiController
         ]);
     }
 
-    private function reportAbsence(?int $actorUserId): void
+    private function reportAbsence(string $role, ?int $actorUserId, ?int $currentVolunteerId = null): void
     {
+        if ($role === 'PUBLIC') {
+            $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Vui lòng đăng nhập để báo vắng ca trực.'], 403);
+            return;
+        }
+
         $assignId = (int) ($_POST['assignment_id'] ?? 0);
         $reason = trim((string) ($_POST['reason'] ?? 'Bận đột xuất / Báo ốm'));
         $replaceVolId = isset($_POST['replacement_volunteer_id']) && $_POST['replacement_volunteer_id'] !== ''
             ? (int) $_POST['replacement_volunteer_id']
             : null;
 
+        if ($role === 'VOLUNTEER') {
+            $stmtChk = $this->pdo->prepare('SELECT volunteer_id FROM assignments WHERE id = :id LIMIT 1');
+            $stmtChk->execute([':id' => $assignId]);
+            $ownerVolId = (int) $stmtChk->fetchColumn();
+            $expectedVolId = (int) ($currentVolunteerId ?? $actorUserId ?? 0);
+            if ($ownerVolId <= 0 || $ownerVolId !== $expectedVolId) {
+                $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Bạn chỉ được phép báo vắng cho ca trực của chính mình.'], 403);
+                return;
+            }
+            $replaceVolId = null;
+        }
+
         $res = $this->repo->reportAbsenceAndReplace($assignId, $reason, $replaceVolId, $actorUserId);
         $this->json($res, $res['ok'] ? 200 : 422);
     }
 
-    private function qrRefresh(): void
+    private function qrRefresh(string $role): void
     {
+        if (!in_array($role, ['COORDINATOR', 'ADMIN'], true)) {
+            $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Chỉ Người phụ trách tại điểm trực mới có quyền mở màn chiếu mã QR điểm danh.'], 403);
+            return;
+        }
+
         $shiftId = (int) ($_GET['shift_id'] ?? $_POST['shift_id'] ?? 201);
         $now = time();
         $token = $this->qrService->generateToken($shiftId, $now);
@@ -323,8 +350,13 @@ final class ApiController
         ]);
     }
 
-    private function qrScan(?int $actorUserId): void
+    private function qrScan(string $role, ?int $actorUserId, ?int $currentVolunteerId = null): void
     {
+        if ($role === 'PUBLIC') {
+            $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Vui lòng đăng nhập tài khoản để điểm danh ca trực.'], 403);
+            return;
+        }
+
         $assignId = (int) ($_POST['assignment_id'] ?? 0);
         $mode = (string) ($_POST['scan_mode'] ?? 'VALID'); // 'VALID' | 'EXPIRED' | 'WRONG_SHIFT'
 
@@ -344,6 +376,14 @@ final class ApiController
         if (!is_array($row)) {
             $this->json(['ok' => false, 'message_vi' => 'Không tìm thấy phân công để quét QR.']);
             return;
+        }
+
+        if ($role === 'VOLUNTEER') {
+            $expectedVolId = (int) ($currentVolunteerId ?? $actorUserId ?? 0);
+            if ((int) $row['volunteer_id'] !== $expectedVolId) {
+                $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Bạn chỉ được phép điểm danh ca trực của chính mình.'], 403);
+                return;
+            }
         }
 
         $shiftId = (int) $row['shift_id'];
@@ -378,7 +418,7 @@ final class ApiController
                 VALUES (:aid, 'QR_HMAC', :thash)
                 ON CONFLICT (assignment_id) DO NOTHING
             ")->execute([':aid' => $assignId, ':thash' => $verify['token_hash']]);
-            $this->repo->appendAuditLog($actorUserId, 'QR_CHECKIN_SUCCESS', 'checkins', (string) $assignId, 'Điểm danh QR HMAC 30s thành công');
+            $this->repo->appendAuditLog($actorUserId, 'QR_CHECKIN_SUCCESS', 'checkins', (string) $assignId, 'Điểm danh QR 30s thành công');
         }
 
         $this->json([
@@ -390,9 +430,14 @@ final class ApiController
         ]);
     }
 
-    private function aiParseShift(): void
+    private function aiParseShift(string $role): void
     {
-        $prompt = (string) ($_POST['shift_prompt'] ?? '');
+        if (!in_array($role, ['COORDINATOR', 'ADMIN'], true)) {
+            $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Chỉ Người phụ trách hoặc Quản trị viên mới được phép sử dụng công cụ tạo ca nhanh.'], 403);
+            return;
+        }
+
+        $prompt = trim((string) ($_POST['shift_prompt'] ?? $_POST['prompt'] ?? ''));
         $draft = $this->aiService->parseNaturalLanguageShift($prompt);
         $this->json([
             'ok' => true,
@@ -400,9 +445,21 @@ final class ApiController
         ]);
     }
 
-    private function updateAvailability(int $currentVolunteerId, ?int $actorUserId): void
+    private function updateAvailability(string $role, int $currentVolunteerId, ?int $actorUserId): void
     {
-        $volId = (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
+        if ($role === 'PUBLIC') {
+            $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Vui lòng đăng nhập để cập nhật lịch rảnh.'], 403);
+            return;
+        }
+
+        if ($role === 'VOLUNTEER' && isset($_POST['volunteer_id']) && (int) $_POST['volunteer_id'] !== $currentVolunteerId) {
+            $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Bạn chỉ được phép cập nhật lịch rảnh của chính mình.'], 403);
+            return;
+        }
+
+        $volId = ($role === 'VOLUNTEER')
+            ? $currentVolunteerId
+            : (int) ($_POST['volunteer_id'] ?? $currentVolunteerId);
         $overrideDate = trim((string) ($_POST['override_date'] ?? ''));
         $dayOfWeek = max(1, min(7, (int) ($_POST['day_of_week'] ?? 6)));
         $startHm = substr(trim((string) ($_POST['start_hm'] ?? '07:00')), 0, 5);
@@ -601,15 +658,37 @@ final class ApiController
         }
 
         if ($evalType === 'VOLUNTEER_TO_SHIFT') {
+            if ($role === 'PUBLIC') {
+                $this->json([
+                    'ok' => false,
+                    'message_vi' => 'Lỗi 403: Vui lòng đăng nhập để gửi đánh giá ca trực.',
+                ], 403);
+                return;
+            }
+
             $volUserId = $actorUserId ?? $currentVolunteerId;
             $shiftId = (int) ($input['shift_id'] ?? 0);
-            if ($shiftId <= 0 && $assignmentId > 0) {
+            if ($assignmentId > 0) {
                 try {
-                    $stmt = $this->pdo->prepare('SELECT shift_id FROM assignments WHERE id = :aid LIMIT 1');
+                    $stmt = $this->pdo->prepare('SELECT shift_id, volunteer_id FROM assignments WHERE id = :aid LIMIT 1');
                     $stmt->execute([':aid' => $assignmentId]);
-                    $shiftId = (int) $stmt->fetchColumn();
+                    $assignRow = $stmt->fetch();
+                    if (is_array($assignRow)) {
+                        if ($role === 'VOLUNTEER' && (int) $assignRow['volunteer_id'] !== (int) ($currentVolunteerId ?? $actorUserId ?? 0)) {
+                            $this->json([
+                                'ok' => false,
+                                'message_vi' => 'Lỗi 403: Bạn chỉ được phép đánh giá ca trực mà mình đã tham gia.',
+                            ], 403);
+                            return;
+                        }
+                        if ($shiftId <= 0) {
+                            $shiftId = (int) $assignRow['shift_id'];
+                        }
+                    }
                 } catch (\Throwable) {
-                    $shiftId = 101;
+                    if ($shiftId <= 0) {
+                        $shiftId = 101;
+                    }
                 }
             }
             if ($shiftId <= 0) {

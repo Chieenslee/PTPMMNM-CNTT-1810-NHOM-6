@@ -423,8 +423,8 @@
         { title: 'Nhóm kỹ năng: Sơ cứu Y tế Điểm thi', sub: 'Lọc các ca trực Y tế', url: '?view=campaigns&skill=FIRST_AID', icon: 'medical_services' },
         { title: 'Nhóm kỹ năng: Hậu cần & Tiếp sức', sub: 'Lọc các ca trực Hậu cần', url: '?view=campaigns&skill=LOGISTICS', icon: 'inventory_2' },
         { title: 'Nhóm kỹ năng: Truyền thông & Nhiếp ảnh', sub: 'Lọc các ca trực Truyền thông', url: '?view=campaigns&skill=MEDIA', icon: 'photo_camera' },
-        { title: 'Phim Tài liệu & Bản tin Tuổi trẻ Áo Xanh', sub: 'Xem phim thực địa H.264', url: '?view=news', icon: 'movie' },
-        { title: 'Tra cứu Giấy Chứng nhận Tình nguyện Số', sub: 'Xác thực mã QR & Nhật ký SHA-256', url: '?view=verify', icon: 'workspace_premium' }
+        { title: 'Phim Tài liệu & Bản tin Tuổi trẻ Áo Xanh', sub: 'Xem phim tư liệu thực địa', url: '?view=news', icon: 'movie' },
+        { title: 'Tra cứu Giấy Chứng nhận Tình nguyện Số', sub: 'Tra cứu & Xác thực Chứng nhận Điện tử', url: '?view=verify', icon: 'workspace_premium' }
     ];
 
     function applyHomeShiftSkillFilter(skillCode, searchText = '') {
@@ -1171,7 +1171,7 @@
                     }
                     XanhHubUI.toast(
                         'error',
-                        'Chặn vi phạm ràng buộc cứng (ConstraintGuard)',
+                        'Không thể phân công (Chưa đáp ứng điều kiện ca trực)',
                         (res.messages_vi || ['Không thể gán ca']).join('<br>'),
                         res.hard_violations || []
                     );
@@ -1278,8 +1278,8 @@
             }
             if (descEl) {
                 descEl.textContent = isLocked
-                    ? 'Ca trực này đã chốt trước đó. Vui lòng nhập lý do kiểm toán để mở khóa và cho phép điều chỉnh nhân sự:'
-                    : 'Sau khi khóa chốt ca, mọi thao tác kéo thả hoặc gỡ người khỏi ca này sẽ bị chặn cứng (SHIFT_LOCKED) cho tới khi mở khóa lại:';
+                    ? 'Ca trực này đã chốt trước đó. Vui lòng nhập lý do để mở khóa và cho phép điều chỉnh nhân sự:'
+                    : 'Sau khi khóa chốt ca, danh sách nhân sự trong ca này sẽ được bảo vệ cho tới khi mở khóa lại:';
             }
             XanhHubUI.openModal('modal-lock-shift');
         });
@@ -1358,7 +1358,7 @@
             const targetEl = document.getElementById('a3-target-summary');
             const inputAssign = document.getElementById('absence-assignment-id');
             if (inputAssign) inputAssign.value = assignId;
-            if (listEl) listEl.innerHTML = '<div style="padding:1rem; color:var(--text-muted);">Đang xếp hạng ứng viên thay thế khả thi (ReplacementRanker A3)...</div>';
+            if (listEl) listEl.innerHTML = '<div style="padding:1rem; color:var(--text-muted);">Đang tìm ứng viên thay thế phù hợp lịch rảnh và kỹ năng...</div>';
 
             XanhHubUI.openModal('modal-absence');
 
@@ -1418,7 +1418,7 @@
                         XanhHubUI.toast('error', 'Không thể thay thế', res.message_vi);
                         return;
                     }
-                    XanhHubUI.toast('success', 'Đã xử lý báo vắng & thay người (A3)', res.message_vi);
+                    XanhHubUI.toast('success', 'Đã xử lý báo vắng & thay người', res.message_vi);
                     setTimeout(() => window.location.reload(), 700);
                 });
         });
@@ -1513,7 +1513,7 @@
                     if (d.skills && d.skills[0]) {
                         setVal('shift-form-skill', d.skills[0].skill_code);
                     }
-                    XanhHubUI.toast('success', 'Trợ lý AI A1 đã bóc tách ca trực', `Đã điền tự động thông tin ca "${d.title}" vào biểu mẫu.`);
+                    XanhHubUI.toast('success', 'Đã tự động điền thông tin ca trực', `Đã điền tự động thông tin ca "${d.title}" vào biểu mẫu.`);
                 });
         });
     }
@@ -2419,7 +2419,7 @@
                             const reqId = btn.dataset.reqId || '';
                             const actId = coordinatorData.activity_id || '3';
                             const targetCard = document.querySelector(`.compact-shift-card[data-shift-id="${shiftId}"]`);
-                            submitManualAssignment(actId, shiftId, volId, reqId, 'Phân công thay thế từ gợi ý ReplacementRanker A3', targetCard);
+                            submitManualAssignment(actId, shiftId, volId, reqId, 'Phân công thay thế nhân sự báo vắng', targetCard);
                         });
                     });
 
