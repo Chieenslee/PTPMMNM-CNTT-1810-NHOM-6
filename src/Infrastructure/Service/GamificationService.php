@@ -777,7 +777,7 @@ final class GamificationService
         }
 
         $code = sprintf('XH-KHEN-%s-%04d', strtoupper(substr(md5('vol_' . $volunteerId), 0, 6)), $volunteerId);
-        $verifyUrl = 'https://xanhhub.vn/verify?code=' . $code;
+        $verifyUrl = SvgQrGenerator::buildVerifyUrl($code);
         $qrSvg = SvgQrGenerator::renderSvg($verifyUrl, 110);
 
         return [

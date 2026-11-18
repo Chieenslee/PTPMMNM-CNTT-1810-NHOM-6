@@ -471,7 +471,7 @@ final class AnalyticsService
 
         // Mã báo cáo chuẩn Đoàn và băm SHA-256 bảo đảm tính bất biến
         $reportCode = sprintf('XH2026-BC-D%d-%s', $activityId, strtoupper(substr(md5("XANHHUB-REPORT-{$activityId}-2026"), 0, 6)));
-        $verificationUrl = "https://xanhhub.vn/verify?code=" . $reportCode;
+        $verificationUrl = SvgQrGenerator::buildVerifyUrl($reportCode);
         $qrSvg = SvgQrGenerator::renderSvg($verificationUrl, 120);
 
         return [

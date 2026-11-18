@@ -14,7 +14,9 @@ use XanhHub\Infrastructure\Ai\HybridAiService;
 use XanhHub\Infrastructure\Dataset\DatasetGenerator;
 use XanhHub\Infrastructure\Persistence\XanhHubRepository;
 use XanhHub\Infrastructure\Service\GamificationService;
+use XanhHub\Infrastructure\Service\GeocodingService;
 use XanhHub\Infrastructure\Service\QrCheckinService;
+use XanhHub\Infrastructure\Service\TranslationService;
 
 /**
  * Bộ điều khiển API JSON cho không gian làm việc tương tác thời gian thực của Xanh Hub.
@@ -52,6 +54,10 @@ final class ApiController
                 'api_candidate_profile'    => $this->candidateProfile($currentRole, $currentVolunteerId),
                 'api_submit_evaluation'    => $this->submitEvaluation($currentRole, $actorUserId, $currentVolunteerId),
                 'api_leaderboard_data'     => $this->leaderboardData(),
+                'api_places_autocomplete'  => $this->placesAutocomplete(),
+                'api_reverse_geocode'      => $this->reverseGeocode(),
+                'api_global_search'        => $this->globalSearch(),
+                'api_translate'            => $this->translateBatch(),
                 default => $this->json(['ok' => false, 'message_vi' => 'API action không tồn tại: ' . $action], 404),
             };
         } catch (\Throwable $e) {
@@ -340,13 +346,34 @@ final class ApiController
         $now = time();
         $token = $this->qrService->generateToken($shiftId, $now);
         $secondsRemaining = 30 - ($now % 30);
+        $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8000';
+        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $directUrl = "{$proto}://{$host}/?action=qr_scan_direct&token={$token}";
+
+        $stmtShift = $this->pdo->prepare("
+            SELECT s.id, s.code, s.title, s.location_name, s.max_people, a.title AS activity_title,
+                   (SELECT COUNT(*) FROM assignments asm WHERE asm.shift_id = s.id AND asm.status IN ('ASSIGNED', 'CONFIRMED', 'CHECKED_IN')) AS assigned_count
+              FROM shifts s
+              JOIN activities a ON a.id = s.activity_id
+             WHERE s.id = :sid
+             LIMIT 1
+        ");
+        $stmtShift->execute([':sid' => $shiftId]);
+        $shiftInfo = $stmtShift->fetch(PDO::FETCH_ASSOC) ?: [];
 
         $this->json([
             'ok' => true,
             'shift_id' => $shiftId,
+            'shift_code' => $shiftInfo['code'] ?? ('CA-' . $shiftId),
+            'shift_title' => $shiftInfo['title'] ?? 'Ca trực chiến dịch',
+            'location_name' => $shiftInfo['location_name'] ?? 'TP. Hồ Chí Minh',
+            'activity_title' => $shiftInfo['activity_title'] ?? 'Chiến dịch Xanh Hub',
+            'assigned_count' => (int) ($shiftInfo['assigned_count'] ?? 0),
+            'max_people' => (int) ($shiftInfo['max_people'] ?? 5),
             'token' => $token,
+            'direct_url' => $directUrl,
             'seconds_remaining' => $secondsRemaining,
-            'svg' => SvgQrGenerator::renderSvg($token, 190),
+            'svg' => SvgQrGenerator::renderSvg($directUrl, 220),
         ]);
     }
 
@@ -357,29 +384,157 @@ final class ApiController
             return;
         }
 
+        $expectedVolId = (int) ($currentVolunteerId ?? $actorUserId ?? 0);
+        $rawInput = trim((string) ($_POST['token'] ?? $_POST['qr_token'] ?? ''));
         $assignId = (int) ($_POST['assignment_id'] ?? 0);
         $mode = (string) ($_POST['scan_mode'] ?? 'VALID'); // 'VALID' | 'EXPIRED' | 'WRONG_SHIFT'
+
+        // Hỗ trợ quét mã QR của Giấy Chứng nhận Điện tử hoặc Báo cáo Tổng kết Đoàn
+        $verifyCode = null;
+        if (str_contains($rawInput, 'code=')) {
+            $parsedUrl = parse_url($rawInput);
+            if (!empty($parsedUrl['query'])) {
+                parse_str($parsedUrl['query'], $qParams);
+                if (!empty($qParams['code'])) {
+                    $verifyCode = strtoupper(trim((string) $qParams['code']));
+                }
+            }
+        } elseif (preg_match('/^(XH\d{4}-[A-Z0-9-]+)$/i', $rawInput, $cm)) {
+            $verifyCode = strtoupper($cm[1]);
+        }
+
+        if ($verifyCode !== null) {
+            $this->json([
+                'ok' => true,
+                'scan_type' => 'VERIFY_CODE',
+                'code' => $verifyCode,
+                'redirect_url' => '?view=verify&code=' . urlencode($verifyCode),
+                'message_vi' => "Đã giải mã Mã Chứng thực Điện tử {$verifyCode}! Đang mở hồ sơ xác thực...",
+            ]);
+            return;
+        }
+
+        // Phân tích nếu chuỗi là URL điểm danh (ví dụ: http://.../?action=qr_scan_direct&token=XHQR-...)
+        $token = $rawInput;
+        if (str_contains($rawInput, 'token=')) {
+            $parsedUrl = parse_url($rawInput);
+            if (!empty($parsedUrl['query'])) {
+                parse_str($parsedUrl['query'], $qParams);
+                if (!empty($qParams['token'])) {
+                    $token = trim((string) $qParams['token']);
+                }
+            }
+        }
+
+        // Nếu có token XHQR-... truyền vào: trích xuất shiftId từ token
+        $tokenShiftId = null;
+        if (preg_match('/^XHQR-(\d+)-(\d+)-([a-f0-9]{24})$/', trim($token), $m)) {
+            $tokenShiftId = (int) $m[1];
+        }
+
+        // Nếu chưa có assignId nhưng có tokenShiftId, tự động tìm phân công của TNV vào ca này
+        if ($assignId <= 0 && $tokenShiftId !== null && $role === 'VOLUNTEER') {
+            $stmtFind = $this->pdo->prepare("
+                SELECT id FROM assignments
+                 WHERE shift_id = :sid AND volunteer_id = :vid
+                 ORDER BY id DESC LIMIT 1
+            ");
+            $stmtFind->execute([':sid' => $tokenShiftId, ':vid' => $expectedVolId]);
+            $foundAid = $stmtFind->fetchColumn();
+            if ($foundAid) {
+                $assignId = (int) $foundAid;
+            }
+        }
+
+        // Trường hợp Điều phối viên / Admin quét thử QR ca trực trên máy chiếu (không truyền assignment_id)
+        if ($assignId <= 0 && $tokenShiftId !== null && in_array($role, ['COORDINATOR', 'ADMIN'], true)) {
+            $stmtShift = $this->pdo->prepare("
+                SELECT s.id, s.activity_id, s.code, s.title, s.location_name, s.max_people,
+                       a.title AS activity_title,
+                       EXTRACT(EPOCH FROM s.start_time)::bigint AS start_ep,
+                       EXTRACT(EPOCH FROM s.end_time)::bigint AS end_ep,
+                       (SELECT COUNT(*) FROM assignments asm WHERE asm.shift_id = s.id AND asm.status IN ('ASSIGNED', 'CONFIRMED', 'CHECKED_IN')) AS assigned_count
+                  FROM shifts s
+                  JOIN activities a ON a.id = s.activity_id
+                 WHERE s.id = :sid
+                 LIMIT 1
+            ");
+            $stmtShift->execute([':sid' => $tokenShiftId]);
+            $shiftRow = $stmtShift->fetch(PDO::FETCH_ASSOC);
+
+            if (!is_array($shiftRow)) {
+                $this->json(['ok' => false, 'message_vi' => "Không tìm thấy ca trực #{$tokenShiftId} trong hệ thống."]);
+                return;
+            }
+
+            $liveNow = time();
+            $verify = $this->qrService->verifyCheckin(
+                token: $token,
+                expectedShiftId: $tokenShiftId,
+                shiftStartEpoch: $liveNow - 60,
+                shiftEndEpoch: $liveNow + 60,
+                isAssignedVolunteer: true,
+                alreadyCheckedIn: false,
+                nowEpoch: $liveNow
+            );
+
+            $this->json([
+                'ok' => $verify['valid'],
+                'scan_type' => 'COORDINATOR_PREVIEW',
+                'error_code' => $verify['error_code'],
+                'message_vi' => $verify['valid']
+                    ? "Xác thực Mã QR Điểm danh Hợp lệ! Ca [{$shiftRow['code']}] {$shiftRow['title']} · Địa điểm: {$shiftRow['location_name']}"
+                    : $verify['message_vi'],
+                'volunteer_name' => 'Kiểm tra trực tiếp (Cán bộ Điều phối)',
+                'shift_code' => $shiftRow['code'],
+                'shift_title' => $shiftRow['title'],
+                'location_name' => $shiftRow['location_name'],
+                'activity_id' => (int) $shiftRow['activity_id'],
+                'activity_title' => $shiftRow['activity_title'],
+                'assigned_count' => (int) $shiftRow['assigned_count'],
+                'max_people' => (int) $shiftRow['max_people'],
+                'checked_in_at' => date('d/m/Y H:i:s'),
+            ]);
+            return;
+        }
 
         $stmt = $this->pdo->prepare("
             SELECT a.id, a.shift_id, a.volunteer_id, a.status,
                    EXTRACT(EPOCH FROM s.start_time)::bigint AS start_ep,
                    EXTRACT(EPOCH FROM s.end_time)::bigint AS end_ep,
-                   s.code AS shift_code, u.full_name
+                   s.code AS shift_code, s.title AS shift_title, s.location_name, s.activity_id, u.full_name,
+                   v.student_code
               FROM assignments a
               JOIN shifts s ON s.id = a.shift_id
               JOIN users u ON u.id = a.volunteer_id
+              LEFT JOIN volunteers v ON v.user_id = u.id
              WHERE a.id = :id
         ");
         $stmt->execute([':id' => $assignId]);
         $row = $stmt->fetch();
 
         if (!is_array($row)) {
-            $this->json(['ok' => false, 'message_vi' => 'Không tìm thấy phân công để quét QR.']);
+            if ($tokenShiftId !== null) {
+                $stmtSh = $this->pdo->prepare('SELECT code, title, location_name FROM shifts WHERE id = :sid LIMIT 1');
+                $stmtSh->execute([':sid' => $tokenShiftId]);
+                $sh = $stmtSh->fetch(PDO::FETCH_ASSOC);
+                if (is_array($sh)) {
+                    $this->json([
+                        'ok' => false,
+                        'error_code' => 'NOT_ASSIGNED_TO_SHIFT',
+                        'shift_code' => $sh['code'],
+                        'shift_title' => $sh['title'],
+                        'location_name' => $sh['location_name'],
+                        'message_vi' => "Đã giải mã ca [{$sh['code']}] {$sh['title']} tại {$sh['location_name']}, nhưng tài khoản của bạn chưa được phân công vào ca trực này.",
+                    ]);
+                    return;
+                }
+            }
+            $this->json(['ok' => false, 'message_vi' => 'Không tìm thấy phân công ca trực tương ứng với mã QR. Vui lòng kiểm tra lại danh sách ca của bạn.']);
             return;
         }
 
         if ($role === 'VOLUNTEER') {
-            $expectedVolId = (int) ($currentVolunteerId ?? $actorUserId ?? 0);
             if ((int) $row['volunteer_id'] !== $expectedVolId) {
                 $this->json(['ok' => false, 'message_vi' => 'Lỗi 403: Bạn chỉ được phép điểm danh ca trực của chính mình.'], 403);
                 return;
@@ -391,13 +546,15 @@ final class ApiController
         $endEp = (int) $row['end_ep'];
         $simNow = $startEp + 600; // Giả lập đồng hồ nằm trong ca trực
 
-        if ($mode === 'EXPIRED') {
-            // Tạo mã QR của 60 giây trước để thử kịch bản hết hạn 30 giây
-            $token = $this->qrService->generateToken($shiftId, $simNow - 60);
-        } elseif ($mode === 'WRONG_SHIFT') {
-            $token = $this->qrService->generateToken($shiftId + 1, $simNow);
-        } else {
-            $token = $this->qrService->generateToken($shiftId, $simNow);
+        if ($token === '' || $token === 'QUICK_CHECKIN') {
+            if ($mode === 'EXPIRED') {
+                // Tạo mã QR của 60 giây trước để thử kịch bản hết hạn 30 giây
+                $token = $this->qrService->generateToken($shiftId, $simNow - 60);
+            } elseif ($mode === 'WRONG_SHIFT') {
+                $token = $this->qrService->generateToken($shiftId + 1, $simNow);
+            } else {
+                $token = $this->qrService->generateToken($shiftId, $simNow);
+            }
         }
 
         $already = ((string) $row['status'] === 'CHECKED_IN');
@@ -411,6 +568,23 @@ final class ApiController
             nowEpoch: $simNow
         );
 
+        // Nếu không hợp lệ do lệch ca mô phỏng nhưng khớp với mã xoay vòng live 30 giây hiện tại từ máy chiếu:
+        if (!$verify['valid'] && in_array($verify['error_code'], ['QR_TOKEN_EXPIRED', 'OUTSIDE_CHECKIN_WINDOW'], true)) {
+            $liveNow = time();
+            $liveCheck = $this->qrService->verifyCheckin(
+                token: $token,
+                expectedShiftId: $shiftId,
+                shiftStartEpoch: $liveNow - 60,
+                shiftEndEpoch: $liveNow + 60,
+                isAssignedVolunteer: true,
+                alreadyCheckedIn: $already,
+                nowEpoch: $liveNow
+            );
+            if ($liveCheck['valid']) {
+                $verify = $liveCheck;
+            }
+        }
+
         if ($verify['valid']) {
             $this->pdo->prepare("UPDATE assignments SET status = 'CHECKED_IN' WHERE id = :id")->execute([':id' => $assignId]);
             $this->pdo->prepare("
@@ -423,10 +597,16 @@ final class ApiController
 
         $this->json([
             'ok' => $verify['valid'],
+            'scan_type' => 'CHECKIN_SUCCESS',
             'error_code' => $verify['error_code'],
             'message_vi' => $verify['message_vi'],
             'volunteer_name' => $row['full_name'],
+            'student_code' => $row['student_code'] ?? '',
             'shift_code' => $row['shift_code'],
+            'shift_title' => $row['shift_title'] ?? $row['shift_code'],
+            'location_name' => $row['location_name'] ?? '',
+            'activity_id' => (int) ($row['activity_id'] ?? 3),
+            'checked_in_at' => date('d/m/Y H:i:s'),
         ]);
     }
 
@@ -887,6 +1067,231 @@ final class ApiController
             'collective_faculties' => $data['collective_faculties'],
             'badges_meta' => $data['badges_meta'],
             'system_summary' => $data['system_summary'],
+        ]);
+    }
+
+    private function placesAutocomplete(): void
+    {
+        $q = trim((string) ($_GET['q'] ?? ''));
+        $refLat = isset($_GET['lat']) && is_numeric($_GET['lat']) ? (float) $_GET['lat'] : null;
+        $refLng = isset($_GET['lng']) && is_numeric($_GET['lng']) ? (float) $_GET['lng'] : null;
+        $limit = isset($_GET['limit']) && is_numeric($_GET['limit']) ? max(1, min(20, (int) $_GET['limit'])) : 8;
+
+        $geo = new GeocodingService($this->pdo);
+        $places = $geo->autocomplete($q, $refLat, $refLng, $limit);
+
+        $this->json([
+            'ok' => true,
+            'query' => $q,
+            'total' => count($places),
+            'places' => $places,
+        ]);
+    }
+
+    private function reverseGeocode(): void
+    {
+        $lat = isset($_GET['lat']) && is_numeric($_GET['lat']) ? (float) $_GET['lat'] : null;
+        $lng = isset($_GET['lng']) && is_numeric($_GET['lng']) ? (float) $_GET['lng'] : null;
+
+        if ($lat === null || $lng === null || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+            $this->json([
+                'ok' => false,
+                'message_vi' => 'Tọa độ GPS (lat, lng) không hợp lệ.',
+            ], 400);
+            return;
+        }
+
+        $geo = new GeocodingService($this->pdo);
+        $allowRemote = ($_GET['offline'] ?? '') !== '1';
+        $res = $geo->reverseGeocode($lat, $lng, $allowRemote);
+        $this->json($res);
+    }
+
+    private function globalSearch(): void
+    {
+        $rawQ = trim((string) ($_GET['q'] ?? ''));
+        $qNorm = GeocodingService::normalizeVietnamese($rawQ);
+        $tokens = $qNorm !== '' ? array_values(array_filter(explode(' ', $qNorm), static fn ($t) => $t !== '')) : [];
+        $items = [];
+
+        $matchesTokens = static function (string ...$fields) use ($tokens): bool {
+            if ($tokens === []) {
+                return true;
+            }
+            $haystack = GeocodingService::normalizeVietnamese(implode(' ', $fields));
+            foreach ($tokens as $tok) {
+                if (!str_contains($haystack, $tok)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        // 1. Chiến dịch thực tế từ bảng activities
+        $stmtActs = $this->pdo->query("
+            SELECT a.id, a.code, a.title, a.location_name, a.status,
+                   (SELECT COUNT(*) FROM shifts s WHERE s.activity_id = a.id) AS shifts_count
+              FROM activities a
+             ORDER BY a.id DESC
+        ");
+        foreach ($stmtActs->fetchAll(PDO::FETCH_ASSOC) as $a) {
+            if ($matchesTokens((string) $a['code'], (string) $a['title'], (string) $a['location_name'])) {
+                $items[] = [
+                    'category' => 'Chiến dịch',
+                    'title' => (string) $a['title'],
+                    'sub' => "{$a['code']} · {$a['location_name']} · {$a['shifts_count']} ca trực",
+                    'url' => '?view=campaigns&activity_id=' . (int) $a['id'],
+                    'icon' => 'campaign',
+                    'badge' => (string) $a['code'],
+                    'priority' => $tokens !== [] ? 100 : 90,
+                ];
+            }
+        }
+
+        // 2. Ca trực thực tế từ bảng shifts
+        $stmtShifts = $this->pdo->query("
+            SELECT s.id, s.activity_id, s.code, s.title, s.location_name, s.max_people,
+                   a.code AS act_code,
+                   COALESCE(sk.name, 'Tình nguyện') AS skill_name,
+                   COALESCE(sk.code, '') AS skill_code,
+                   (SELECT COUNT(*) FROM assignments asm WHERE asm.shift_id = s.id AND asm.status IN ('ASSIGNED', 'CONFIRMED', 'CHECKED_IN')) AS assigned_count
+              FROM shifts s
+              JOIN activities a ON a.id = s.activity_id
+              LEFT JOIN shift_requirements sr ON sr.id = (SELECT MIN(sr2.id) FROM shift_requirements sr2 WHERE sr2.shift_id = s.id)
+              LEFT JOIN skills sk ON sk.id = sr.skill_id
+             ORDER BY s.priority DESC, s.id ASC
+        ");
+        $shiftMatches = 0;
+        foreach ($stmtShifts->fetchAll(PDO::FETCH_ASSOC) as $s) {
+            if ($matchesTokens((string) $s['code'], (string) $s['title'], (string) $s['location_name'], (string) $s['skill_name'], (string) $s['skill_code'], (string) $s['act_code'])) {
+                $items[] = [
+                    'category' => 'Ca trực',
+                    'title' => "[{$s['code']}] {$s['title']}",
+                    'sub' => "{$s['location_name']} · {$s['skill_name']} ({$s['assigned_count']}/{$s['max_people']} TNV)",
+                    'url' => '?view=shift_detail&shift_id=' . (int) $s['id'] . '&activity_id=' . (int) $s['activity_id'],
+                    'icon' => 'event_available',
+                    'badge' => (string) $s['act_code'],
+                    'priority' => $tokens !== [] ? 95 : 80,
+                ];
+                $shiftMatches++;
+                if ($tokens === [] && $shiftMatches >= 3) {
+                    break;
+                }
+            }
+        }
+
+        // 3. Bản tin thực tế từ bảng news
+        try {
+            $stmtNews = $this->pdo->query("
+                SELECT id, title, tag, summary, published_at
+                  FROM news
+                 WHERE status = 'PUBLISHED'
+                 ORDER BY published_at DESC, id DESC
+            ");
+            foreach ($stmtNews->fetchAll(PDO::FETCH_ASSOC) as $n) {
+                if ($matchesTokens((string) $n['title'], (string) $n['tag'], (string) $n['summary'])) {
+                    $items[] = [
+                        'category' => 'Bản tin',
+                        'title' => (string) $n['title'],
+                        'sub' => "{$n['tag']} · Ngày đăng " . date('d/m/Y', strtotime((string) $n['published_at'])),
+                        'url' => '?view=news&news_id=' . (int) $n['id'],
+                        'icon' => 'newspaper',
+                        'badge' => (string) $n['tag'],
+                        'priority' => 70,
+                    ];
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        // 4. Đoàn viên & Giấy chứng nhận thực tế (khi có từ khóa tìm kiếm)
+        if ($tokens !== []) {
+            $stmtVols = $this->pdo->query("
+                SELECT u.id, u.full_name, v.student_code, v.chapter_name,
+                       (SELECT c.certificate_code FROM certificates c WHERE c.volunteer_id = u.id ORDER BY c.id DESC LIMIT 1) AS cert_code
+                  FROM users u
+                  JOIN volunteers v ON v.user_id = u.id
+                 ORDER BY u.id ASC
+            ");
+            foreach ($stmtVols->fetchAll(PDO::FETCH_ASSOC) as $v) {
+                $certCode = (string) ($v['cert_code'] ?? '');
+                if ($matchesTokens((string) $v['full_name'], (string) $v['student_code'], (string) $v['chapter_name'], $certCode)) {
+                    $url = $certCode !== ''
+                        ? '?view=verify&code=' . urlencode($certCode)
+                        : '?view=leaderboard&q=' . urlencode((string) $v['student_code']);
+                    $items[] = [
+                        'category' => $certCode !== '' ? 'Chứng nhận Số' : 'Đoàn viên',
+                        'title' => "{$v['full_name']} ({$v['student_code']})",
+                        'sub' => $certCode !== '' ? "{$v['chapter_name']} · Mã CN: {$certCode}" : (string) $v['chapter_name'],
+                        'url' => $url,
+                        'icon' => $certCode !== '' ? 'workspace_premium' : 'badge',
+                        'badge' => (string) $v['student_code'],
+                        'priority' => 75,
+                    ];
+                }
+            }
+
+            // 5. Địa điểm thực tế trên Bản đồ Số GIS
+            $geo = new GeocodingService($this->pdo);
+            foreach ($geo->autocomplete($rawQ, null, null, 3) as $pl) {
+                $items[] = [
+                    'category' => 'Bản đồ GIS',
+                    'title' => $pl['main_text'],
+                    'sub' => $pl['secondary_text'],
+                    'url' => sprintf('?view=map&lat=%.5f&lng=%.5f&place=%s', $pl['lat'], $pl['lng'], urlencode($pl['main_text'])),
+                    'icon' => 'location_on',
+                    'badge' => 'GPS',
+                    'priority' => 65,
+                ];
+            }
+        }
+
+        usort($items, static fn (array $a, array $b): int => $b['priority'] <=> $a['priority']);
+        $topItems = array_slice($items, 0, 8);
+
+        $this->json([
+            'ok' => true,
+            'query' => $rawQ,
+            'total' => count($items),
+            'results' => $topItems,
+        ]);
+    }
+
+    private function translateBatch(): void
+    {
+        $rawBody = file_get_contents('php://input');
+        $json = is_string($rawBody) && $rawBody !== '' ? json_decode($rawBody, true) : null;
+
+        $target = is_array($json) && isset($json['target'])
+            ? (string) $json['target']
+            : (string) ($_POST['target'] ?? $_GET['target'] ?? 'en');
+        $source = is_array($json) && isset($json['source'])
+            ? (string) $json['source']
+            : (string) ($_POST['source'] ?? $_GET['source'] ?? 'vi');
+
+        $texts = [];
+        if (is_array($json) && isset($json['texts']) && is_array($json['texts'])) {
+            $texts = $json['texts'];
+        } elseif (isset($_POST['texts']) && is_array($_POST['texts'])) {
+            $texts = $_POST['texts'];
+        } elseif (isset($_POST['texts']) && is_string($_POST['texts'])) {
+            $decoded = json_decode($_POST['texts'], true);
+            if (is_array($decoded)) {
+                $texts = $decoded;
+            }
+        }
+
+        // Giới hạn tối đa 250 chuỗi / request để tránh quá tải
+        $texts = array_slice(array_values(array_filter($texts, static fn ($v) => is_string($v) && trim($v) !== '')), 0, 250);
+
+        $svc = new TranslationService();
+        $map = $svc->translateBatch($texts, $target, $source);
+
+        $this->json([
+            'ok' => true,
+            'target' => $target,
+            'count' => count($map),
+            'translations' => $map,
         ]);
     }
 

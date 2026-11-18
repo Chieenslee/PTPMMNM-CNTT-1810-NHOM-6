@@ -85,13 +85,45 @@ function assertTest(bool $condition, string $code, string $desc): void
     }
 }
 
+$coordCookie = null;
+function ensureCoordSessionCookie(string $baseUrl): ?string
+{
+    global $coordCookie;
+    if ($coordCookie !== null) {
+        return $coordCookie;
+    }
+    $ch = curl_init($baseUrl . '/?action=do_login');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+    curl_setopt($ch, CURLOPT_HEADER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'identifier' => 'thao.dieuphoi@example.test',
+        'password' => 'XanhHub@2026',
+    ]));
+    $res = (string) curl_exec($ch);
+    $hs = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    $hdrs = substr($res, 0, $hs);
+    curl_close($ch);
+    if (preg_match_all('/^Set-Cookie:\s*([^;\r\n]+)/mi', $hdrs, $m) && !empty($m[1])) {
+        $coordCookie = implode('; ', $m[1]);
+    }
+    return $coordCookie;
+}
+
 function fetchHttp(string $url): array
 {
+    global $baseUrl;
+    $cookie = ensureCoordSessionCookie($baseUrl);
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 6);
     curl_setopt($ch, CURLOPT_HEADER, true);
+    if ($cookie !== null) {
+        curl_setopt($ch, CURLOPT_COOKIE, $cookie);
+    }
     $response = curl_exec($ch);
     $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);

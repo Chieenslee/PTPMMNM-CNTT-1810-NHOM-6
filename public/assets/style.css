@@ -1102,3 +1102,22 @@ html.dark .badge-violation { color: #FDA4AF; }
     cursor: grabbing;
 }
 
+/* QR Scanner Viewfinder & Laser Reticle */
+.qr-scanner-reticle {
+    position: relative;
+    overflow: hidden;
+}
+.qr-scanner-laser {
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #10b981, #06b6d4, #10b981, transparent);
+    box-shadow: 0 0 10px #10b981, 0 0 20px #06b6d4;
+    animation: qrLaserScan 2s ease-in-out infinite alternate;
+}
+@keyframes qrLaserScan {
+    0% { top: 4%; opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { top: 96%; opacity: 0.6; }
+}
+

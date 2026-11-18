@@ -97,7 +97,9 @@ final class AuthService
         string $chapterName,
         string $password,
         array $skillIds,
-        int $skillLevel = 3
+        int $skillLevel = 3,
+        float $lat = 10.7769,
+        float $lng = 106.7009
     ): array {
         $fullName = trim($fullName);
         $studentCode = strtoupper(trim($studentCode));
@@ -119,7 +121,7 @@ final class AuthService
             return ['ok' => false, 'message_vi' => 'Email hoặc Mã sinh viên này đã được đăng ký trên hệ thống.'];
         }
 
-        $hash = password_hash($password, PASSWORD_ARGON2ID);
+        $hash = password_hash($password, defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : PASSWORD_BCRYPT);
         $this->pdo->beginTransaction();
 
         try {
@@ -132,14 +134,16 @@ final class AuthService
             $newUid = (int) $stmtU->fetchColumn();
 
             $stmtV = $this->pdo->prepare('
-                INSERT INTO volunteers (user_id, student_code, chapter_name, phone, max_shifts_per_week)
-                VALUES (:uid, :sc, :ch, :ph, 3)
+                INSERT INTO volunteers (user_id, student_code, chapter_name, phone, max_shifts_per_week, lat, lng)
+                VALUES (:uid, :sc, :ch, :ph, 3, :lat, :lng)
             ');
             $stmtV->execute([
                 ':uid' => $newUid,
                 ':sc' => $studentCode,
                 ':ch' => $chapterName !== '' ? $chapterName : 'Liên chi Đoàn CNTT',
                 ':ph' => $phone !== '' ? $phone : '0901234567',
+                ':lat' => $lat,
+                ':lng' => $lng,
             ]);
 
             if (empty($skillIds)) {
@@ -325,7 +329,7 @@ final class AuthService
         $_SESSION['oauth2_state_time'] = time();
 
         if ($provider !== null && trim($provider) !== '') {
-            $pKey = strtolower(trim($provider));
+            $pKey = strtolower($this->resolveProviderKeyPrefix($provider));
             if (!isset($_SESSION['oauth_states']) || !is_array($_SESSION['oauth_states'])) {
                 $_SESSION['oauth_states'] = [];
             }
@@ -364,7 +368,7 @@ final class AuthService
 
         $isValid = false;
         $now = time();
-        $pKey = $provider !== null ? strtolower(trim($provider)) : null;
+        $pKey = ($provider !== null && trim($provider) !== '') ? strtolower($this->resolveProviderKeyPrefix($provider)) : null;
 
         // 1. Kiểm tra trong danh sách per-provider state nếu có chỉ định provider
         if ($pKey !== null && !empty($_SESSION['oauth_states'][$pKey])) {
@@ -378,16 +382,24 @@ final class AuthService
             }
         }
 
-        // 2. Kiểm tra trong oauth2_state chuẩn (khi không truyền provider HOẶC chưa khớp provider)
+        // 2. Kiểm tra trong oauth2_state chuẩn (khi dùng token toàn trang trên ?view=login hoặc không truyền provider)
         if (!$isValid && !empty($_SESSION['oauth2_state']) && !empty($_SESSION['oauth2_state_time'])) {
             if (is_string($_SESSION['oauth2_state'])) {
                 $created = (int) $_SESSION['oauth2_state_time'];
                 $stored = (string) $_SESSION['oauth2_state'];
-                // Chỉ chấp nhận nếu không truyền provider HOẶC nếu provider đó khớp với provider đã lưu state
-                $isMatchingProvider = ($pKey === null) 
-                    || (!empty($_SESSION['oauth_states'][$pKey]['token']) && hash_equals((string)$_SESSION['oauth_states'][$pKey]['token'], $stored));
-                
-                if ($isMatchingProvider && ($now - $created) >= 0 && ($now - $created) <= 600 && hash_equals($stored, $state)) {
+
+                // Chỉ từ chối nếu token đang kiểm tra được khóa riêng cho một provider KHÁC trong oauth_states
+                $boundToDifferentProvider = false;
+                if ($pKey !== null && !empty($_SESSION['oauth_states']) && is_array($_SESSION['oauth_states'])) {
+                    foreach ($_SESSION['oauth_states'] as $k => $pData) {
+                        if (isset($pData['token']) && is_string($pData['token']) && hash_equals($pData['token'], $stored) && $k !== $pKey) {
+                            $boundToDifferentProvider = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!$boundToDifferentProvider && ($now - $created) >= 0 && ($now - $created) <= 600 && hash_equals($stored, $state)) {
                     $isValid = true;
                 }
             }
@@ -531,10 +543,17 @@ final class AuthService
         return strtoupper(preg_replace('/[^a-z0-9]/i', '', $provider) ?: 'GOOGLE');
     }
 
+    public function buildLoopbackRedirectUri(string $providerSlug = 'google'): string
+    {
+        $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8000';
+        $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        return "{$proto}://{$host}/?action=oauth_callback&provider=" . urlencode($providerSlug);
+    }
+
     private function buildGoogleAuthUrl(string $state): string
     {
         $clientId = getenv('GOOGLE_CLIENT_ID') ?: ($_ENV['GOOGLE_CLIENT_ID'] ?? '');
-        $redirectUri = getenv('GOOGLE_REDIRECT_URI') ?: ($_ENV['GOOGLE_REDIRECT_URI'] ?? 'http://localhost:8080/?action=oauth_callback&provider=google');
+        $redirectUri = getenv('GOOGLE_REDIRECT_URI') ?: ($_ENV['GOOGLE_REDIRECT_URI'] ?? $this->buildLoopbackRedirectUri('google'));
         return 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
@@ -548,7 +567,7 @@ final class AuthService
     private function buildZaloAuthUrl(string $state): string
     {
         $appId = getenv('ZALO_APP_ID') ?: ($_ENV['ZALO_APP_ID'] ?? '');
-        $redirectUri = getenv('ZALO_REDIRECT_URI') ?: ($_ENV['ZALO_REDIRECT_URI'] ?? 'http://localhost:8080/?action=oauth_callback&provider=zalo');
+        $redirectUri = getenv('ZALO_REDIRECT_URI') ?: ($_ENV['ZALO_REDIRECT_URI'] ?? $this->buildLoopbackRedirectUri('zalo'));
         return 'https://oauth.zaloapp.com/v4/permission?' . http_build_query([
             'app_id' => $appId,
             'redirect_uri' => $redirectUri,
@@ -559,7 +578,7 @@ final class AuthService
     private function buildMicrosoftAuthUrl(string $state): string
     {
         $clientId = getenv('MICROSOFT_CLIENT_ID') ?: ($_ENV['MICROSOFT_CLIENT_ID'] ?? '');
-        $redirectUri = getenv('MICROSOFT_REDIRECT_URI') ?: ($_ENV['MICROSOFT_REDIRECT_URI'] ?? 'http://localhost:8080/?action=oauth_callback&provider=microsoft');
+        $redirectUri = getenv('MICROSOFT_REDIRECT_URI') ?: ($_ENV['MICROSOFT_REDIRECT_URI'] ?? $this->buildLoopbackRedirectUri('microsoft'));
         $tenant = getenv('MICROSOFT_TENANT_ID') ?: (getenv('MICROSOFT_TENANT') ?: 'common');
         return 'https://login.microsoftonline.com/' . urlencode($tenant) . '/oauth2/v2.0/authorize?' . http_build_query([
             'client_id' => $clientId,
@@ -574,7 +593,7 @@ final class AuthService
     private function buildFacebookAuthUrl(string $state): string
     {
         $appId = getenv('FACEBOOK_APP_ID') ?: ($_ENV['FACEBOOK_APP_ID'] ?? '');
-        $redirectUri = getenv('FACEBOOK_REDIRECT_URI') ?: ($_ENV['FACEBOOK_REDIRECT_URI'] ?? 'http://localhost:8080/?action=oauth_callback&provider=facebook');
+        $redirectUri = getenv('FACEBOOK_REDIRECT_URI') ?: ($_ENV['FACEBOOK_REDIRECT_URI'] ?? $this->buildLoopbackRedirectUri('facebook'));
         return 'https://www.facebook.com/v19.0/dialog/oauth?' . http_build_query([
             'client_id' => $appId,
             'redirect_uri' => $redirectUri,
@@ -586,7 +605,7 @@ final class AuthService
     private function buildGitHubAuthUrl(string $state): string
     {
         $clientId = getenv('GITHUB_CLIENT_ID') ?: ($_ENV['GITHUB_CLIENT_ID'] ?? '');
-        $redirectUri = getenv('GITHUB_REDIRECT_URI') ?: ($_ENV['GITHUB_REDIRECT_URI'] ?? 'http://localhost:8080/?action=oauth_callback&provider=github');
+        $redirectUri = getenv('GITHUB_REDIRECT_URI') ?: ($_ENV['GITHUB_REDIRECT_URI'] ?? $this->buildLoopbackRedirectUri('github'));
         return 'https://github.com/login/oauth/authorize?' . http_build_query([
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,

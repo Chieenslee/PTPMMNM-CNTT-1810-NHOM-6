@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: xanhhub-web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /?view=home
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_TIMEZONE
+        value: Asia/Ho_Chi_Minh
+      - key: APP_SECRET
+        generateValue: true
+      - key: PHP_CLI_SERVER_WORKERS
+        value: "4"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: xanhhub-db
+          property: connectionString
+
+databases:
+  - name: xanhhub-db
+    plan: free
+    databaseName: xanhhub
+    user: xanhhub

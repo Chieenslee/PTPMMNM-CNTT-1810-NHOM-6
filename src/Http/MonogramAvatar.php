@@ -57,7 +57,7 @@ final class MonogramAvatar
             if ($len >= 2) {
                 return mb_strtoupper(mb_substr($word, 0, 2, 'UTF-8'), 'UTF-8');
             }
-            return mb_strtoupper(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8');
+            return 'XH';
         }
 
         $firstWord = $words[0];

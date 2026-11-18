@@ -8,6 +8,23 @@
 (function () {
     'use strict';
 
+    const normalizeVi = (str) => String(str || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .toLowerCase()
+        .trim();
+
+    const escapeHtml = (str) => String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const modalCloseHooks = [];
+
     // =========================================================================
     // 1. QUẢN LÝ TOAST THÔNG BÁO & HỘP THOẠI MODAL TÙY BIẾN (KHÔNG DÙNG ALERT)
     // =========================================================================
@@ -63,6 +80,9 @@
         closeModal(modalId) {
             const el = document.getElementById(modalId);
             if (el) el.classList.remove('open');
+            modalCloseHooks.forEach(fn => {
+                try { fn(modalId); } catch (err) {}
+            });
         }
     };
 
@@ -77,8 +97,8 @@
         if (closeBtn) {
             XanhHubUI.closeModal(closeBtn.dataset.closeModal);
         }
-        if (e.target.classList && e.target.classList.contains('modal-backdrop')) {
-            e.target.classList.remove('open');
+        if (e.target.classList && e.target.classList.contains('modal-backdrop') && e.target.id) {
+            XanhHubUI.closeModal(e.target.id);
         }
     });
 
@@ -408,7 +428,7 @@
     }
 
     // =========================================================================
-    // 2B. BỘ LỌC CA TRỰC, HEADER LIVE AUTOCOMPLETE SEARCH & TRANG CAMPAIGNS
+    // 2B. BỘ LỌC CA TRỰC, HEADER LIVE DB SEARCH, TRANG CAMPAIGNS / NEWS / LEADERBOARD
     // =========================================================================
     const homeSkillBtns = document.querySelectorAll('[data-home-skill-filter]');
     const homeShiftCards = document.querySelectorAll('.open-shift-card[data-shift-skill]');
@@ -416,20 +436,9 @@
     const searchDropdown = document.getElementById('search-live-dropdown');
     const searchResultsBox = document.getElementById('search-live-results');
 
-    const quickSuggestions = [
-        { title: 'Chiến dịch Mùa Hè Xanh 2026 (12 Ca trực)', sub: 'TP. Thủ Đức & Cần Giờ', url: '?view=campaigns&activity_id=3', icon: 'campaign' },
-        { title: 'Chiến dịch Tiếp Sức Mùa Thi (Cần Sơ cứu Y tế)', sub: 'Cụm thi ĐH Bách Khoa & KHTN', url: '?view=campaigns&activity_id=2', icon: 'medical_services' },
-        { title: 'Chiến dịch Chủ Nhật Xanh Đô thị', sub: 'Kênh Nhiêu Lộc – Thị Nghè', url: '?view=campaigns&activity_id=1', icon: 'park' },
-        { title: 'Nhóm kỹ năng: Sơ cứu Y tế Điểm thi', sub: 'Lọc các ca trực Y tế', url: '?view=campaigns&skill=FIRST_AID', icon: 'medical_services' },
-        { title: 'Nhóm kỹ năng: Hậu cần & Tiếp sức', sub: 'Lọc các ca trực Hậu cần', url: '?view=campaigns&skill=LOGISTICS', icon: 'inventory_2' },
-        { title: 'Nhóm kỹ năng: Truyền thông & Nhiếp ảnh', sub: 'Lọc các ca trực Truyền thông', url: '?view=campaigns&skill=MEDIA', icon: 'photo_camera' },
-        { title: 'Phim Tài liệu & Bản tin Tuổi trẻ Áo Xanh', sub: 'Xem phim tư liệu thực địa', url: '?view=news', icon: 'movie' },
-        { title: 'Tra cứu Giấy Chứng nhận Tình nguyện Số', sub: 'Tra cứu & Xác thực Chứng nhận Điện tử', url: '?view=verify', icon: 'workspace_premium' }
-    ];
-
     function applyHomeShiftSkillFilter(skillCode, searchText = '') {
         const target = skillCode || 'ALL';
-        const q = (searchText || '').toLowerCase().trim();
+        const q = normalizeVi(searchText);
 
         document.querySelectorAll('.home-tab-btn[data-home-skill-filter]').forEach(btn => {
             const active = btn.dataset.homeSkillFilter === target;
@@ -440,7 +449,7 @@
 
         homeShiftCards.forEach(card => {
             const sk = card.dataset.shiftSkill || '';
-            const text = (card.dataset.shiftSearch || card.textContent || '').toLowerCase();
+            const text = normalizeVi(card.dataset.shiftSearch || card.textContent || '');
             const matchSkill = (target === 'ALL' || sk === target);
             const matchText = (!q || text.includes(q));
             card.style.display = (matchSkill && matchText) ? '' : 'none';
@@ -459,32 +468,70 @@
     });
 
     if (headerSearchInput && searchDropdown && searchResultsBox) {
-        const renderSearchDropdown = (q) => {
-            const clean = (q || '').toLowerCase().trim();
-            const matched = quickSuggestions.filter(item =>
-                !clean || item.title.toLowerCase().includes(clean) || item.sub.toLowerCase().includes(clean)
-            ).slice(0, 6);
+        let searchDebounce = null;
+        let searchRequestSeq = 0;
 
-            searchResultsBox.innerHTML = matched.map(item => `
-                <a href="${item.url}" class="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-[20px]">${item.icon}</span>
-                        <div>
-                            <div class="font-bold text-xs text-slate-900 dark:text-white">${item.title}</div>
-                            <div class="text-[11px] text-slate-500">${item.sub}</div>
+        const renderLiveSearchItems = (items, queryStr) => {
+            if (!Array.isArray(items) || items.length === 0) {
+                searchResultsBox.innerHTML = `
+                    <div class="px-4 py-5 text-center text-xs text-slate-500">
+                        Không tìm thấy dữ liệu khớp với "<strong class="text-slate-800 dark:text-slate-200">${escapeHtml(queryStr)}</strong>" trong CSDL PostgreSQL.
+                    </div>`;
+                searchDropdown.classList.remove('hidden');
+                return;
+            }
+
+            searchResultsBox.innerHTML = items.map(item => `
+                <a href="${escapeHtml(item.url || '?view=campaigns')}" class="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="material-symbols-outlined text-[#0057B8] dark:text-sky-400 text-[20px] shrink-0">${escapeHtml(item.icon || 'search')}</span>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[#0057B8] dark:text-sky-400 shrink-0">${escapeHtml(item.category || 'Dữ liệu')}</span>
+                                <span class="font-bold text-xs text-slate-900 dark:text-white truncate">${escapeHtml(item.title || '')}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 truncate">${escapeHtml(item.sub || '')}</div>
                         </div>
                     </div>
-                    <span class="material-symbols-outlined text-slate-400 text-[16px]">north_east</span>
+                    <span class="material-symbols-outlined text-slate-400 text-[16px] shrink-0">north_east</span>
                 </a>
             `).join('');
             searchDropdown.classList.remove('hidden');
         };
 
-        headerSearchInput.addEventListener('focus', () => renderSearchDropdown(headerSearchInput.value));
+        const fetchGlobalSearch = (q) => {
+            const seq = ++searchRequestSeq;
+            fetch(`?action=api_global_search&q=${encodeURIComponent(q || '')}`)
+                .then(r => r.json())
+                .then(res => {
+                    if (seq !== searchRequestSeq) return;
+                    if (res && res.ok) {
+                        renderLiveSearchItems(res.results || [], q || '');
+                    }
+                })
+                .catch(() => {});
+        };
+
+        headerSearchInput.addEventListener('focus', () => {
+            fetchGlobalSearch(headerSearchInput.value.trim());
+        });
+
         headerSearchInput.addEventListener('input', () => {
-            renderSearchDropdown(headerSearchInput.value);
+            const val = headerSearchInput.value.trim();
             if (homeShiftCards.length > 0) {
-                applyHomeShiftSkillFilter('ALL', headerSearchInput.value);
+                applyHomeShiftSkillFilter('ALL', val);
+            }
+            if (searchDebounce) clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => fetchGlobalSearch(val), 140);
+        });
+
+        headerSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const firstLink = searchResultsBox.querySelector('a[href]');
+                if (firstLink) {
+                    e.preventDefault();
+                    window.location.href = firstLink.getAttribute('href');
+                }
             }
         });
 
@@ -495,7 +542,7 @@
         });
     }
 
-    // Bộ lọc trên trang ?view=campaigns (ProductList.jsx style)
+    // Bộ lọc trên trang ?view=campaigns (Hỗ trợ tìm kiếm tiếng Việt không dấu)
     const campShiftItems = document.querySelectorAll('.camp-shift-item');
     if (campShiftItems.length > 0) {
         let activeCampSkill = new URLSearchParams(window.location.search).get('skill') || 'ALL';
@@ -507,12 +554,12 @@
         const btnList = document.getElementById('btn-camp-list');
 
         const filterCampCatalog = () => {
-            const q = (campSearchInput?.value || '').toLowerCase().trim();
+            const q = normalizeVi(campSearchInput?.value || '');
             let visible = 0;
             campShiftItems.forEach(item => {
                 const sk = item.dataset.skill || '';
                 const sess = item.dataset.session || '';
-                const txt = item.dataset.search || '';
+                const txt = normalizeVi((item.dataset.search || '') + ' ' + (item.textContent || ''));
                 const okSkill = (activeCampSkill === 'ALL' || sk === activeCampSkill);
                 const okSess = (activeCampSession === 'ALL' || sess === activeCampSession);
                 const okTxt = (!q || txt.includes(q));
@@ -582,6 +629,88 @@
         filterCampCatalog();
     }
 
+    // Tìm kiếm & đọc chi tiết Bản tin từ PostgreSQL (?view=news)
+    const newsGrid = document.getElementById('news-articles-grid');
+    if (newsGrid) {
+        let activeNewsTag = 'ALL';
+        const newsSearchInput = document.getElementById('news-search-input');
+        const newsCards = document.querySelectorAll('.news-article-card');
+        const newsEmpty = document.getElementById('news-empty-state');
+
+        const filterNewsArticles = () => {
+            const q = normalizeVi(newsSearchInput ? newsSearchInput.value : '');
+            let visible = 0;
+            newsCards.forEach(card => {
+                const tag = card.dataset.newsTag || '';
+                const text = normalizeVi((card.dataset.newsSearch || '') + ' ' + (card.textContent || ''));
+                const okTag = (activeNewsTag === 'ALL' || tag === activeNewsTag);
+                const okQ = (!q || text.includes(q));
+                const show = okTag && okQ;
+                card.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            if (newsEmpty) newsEmpty.classList.toggle('hidden', visible > 0);
+        };
+
+        document.querySelectorAll('[data-news-cat-filter]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                activeNewsTag = btn.dataset.newsCatFilter || 'ALL';
+                document.querySelectorAll('[data-news-cat-filter]').forEach(b => {
+                    const act = b.dataset.newsCatFilter === activeNewsTag;
+                    b.className = act
+                        ? 'news-cat-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0057B8] text-white transition-all'
+                        : 'news-cat-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all';
+                });
+                filterNewsArticles();
+            });
+        });
+
+        if (newsSearchInput) {
+            newsSearchInput.addEventListener('input', filterNewsArticles);
+        }
+
+        const openNewsReader = (btn) => {
+            const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || ''; };
+            setTxt('news-reader-cat', btn.dataset.newsCategory || 'Bản tin');
+            setTxt('news-reader-date', btn.dataset.newsDate || '');
+            setTxt('news-reader-title', btn.dataset.newsTitle || '');
+            setTxt('news-reader-author', 'Tác giả: ' + (btn.dataset.newsAuthor || 'Đội Truyền thông Xanh Hub'));
+            setTxt('news-reader-summary', btn.dataset.newsSummary || '');
+            setTxt('news-reader-content', btn.dataset.newsContent || btn.dataset.newsSummary || '');
+            const imgEl = document.getElementById('news-reader-img');
+            if (imgEl) imgEl.src = btn.dataset.newsImg || 'assets/images/campaign-d1.jpg';
+            const linkEl = document.getElementById('news-reader-camp-link');
+            if (linkEl) linkEl.href = '?view=campaigns&activity_id=' + encodeURIComponent(btn.dataset.newsActId || '3');
+            XanhHubUI.openModal('modal-news-reader');
+        };
+
+        document.querySelectorAll('.btn-read-news-article').forEach(btn => {
+            btn.addEventListener('click', () => openNewsReader(btn));
+        });
+
+        filterNewsArticles();
+        const autoNewsId = parseInt(newsGrid.dataset.autoNewsId || '0', 10);
+        if (autoNewsId > 0) {
+            const targetBtn = document.querySelector(`.btn-read-news-article[data-news-id="${autoNewsId}"]`);
+            if (targetBtn) openNewsReader(targetBtn);
+        }
+    }
+
+    // Tìm kiếm Bảng Xếp Hạng Cá Nhân (?view=leaderboard)
+    const lbSearchInput = document.getElementById('leaderboard-search-input');
+    const lbTable = document.getElementById('leaderboard-personal-table');
+    if (lbSearchInput && lbTable) {
+        const filterLeaderboardRows = () => {
+            const q = normalizeVi(lbSearchInput.value || '');
+            lbTable.querySelectorAll('tbody tr').forEach(tr => {
+                const txt = normalizeVi((tr.dataset.searchText || '') + ' ' + (tr.textContent || ''));
+                tr.style.display = (!q || txt.includes(q)) ? '' : 'none';
+            });
+        };
+        lbSearchInput.addEventListener('input', filterLeaderboardRows);
+        if (lbSearchInput.value.trim() !== '') filterLeaderboardRows();
+    }
+
     // Gallery ảnh & video trên trang ?view=shift_detail (ProductDetail.jsx style)
     const galleryThumbs = document.querySelectorAll('.shift-gallery-thumb');
     const detailMainImg = document.getElementById('shift-detail-main-img');
@@ -644,7 +773,70 @@
         });
     }
 
-    // OAuth 2.0 Social Login Trigger (Google, Microsoft Edu, Facebook, Zalo, GitHub)
+    // OAuth 2.0 Social Login Trigger (Google, Microsoft Edu .edu.vn, Facebook, Zalo, GitHub)
+    const oauthAccountsCatalog = {
+        GOOGLE: [
+            { email: 'linh.nk.sv001@gmail.com', full_name: 'Nguyễn Khánh Linh (SV001)', role: 'VOLUNTEER', badge: 'Tình nguyện viên', badgeClass: 'badge-valid', avatar: 'assets/images/volunteer-linh.jpg' },
+            { email: 'thao.dieuphoi@example.test', full_name: 'Lê Thanh Thảo (Bí thư Đoàn)', role: 'COORDINATOR', badge: 'Điều phối viên', badgeClass: 'badge-info', avatar: 'assets/images/coord-thao.jpg' }
+        ],
+        MICROSOFT: [
+            { email: 'sv001.linh@hcmut.edu.vn', full_name: 'Nguyễn Khánh Linh · ĐH Bách Khoa (.edu.vn)', role: 'VOLUNTEER', badge: 'Sinh viên ĐHQG', badgeClass: 'badge-valid', avatar: 'assets/images/volunteer-linh.jpg' },
+            { email: 'dieuphoi.thao@hcmus.edu.vn', full_name: 'Lê Thanh Thảo · Cán bộ Đoàn (.edu.vn)', role: 'COORDINATOR', badge: 'Điều phối viên', badgeClass: 'badge-info', avatar: 'assets/images/coord-thao.jpg' }
+        ],
+        FACEBOOK: [
+            { email: 'linh.sv.fb@facebook.com', full_name: 'Khánh Linh · CLB Tuổi trẻ Xanh', role: 'VOLUNTEER', badge: 'Tình nguyện viên', badgeClass: 'badge-valid', avatar: 'assets/images/volunteer-linh.jpg' },
+            { email: 'thao.bithudoan@facebook.com', full_name: 'Thanh Thảo · Ban Chỉ huy Chiến dịch', role: 'COORDINATOR', badge: 'Điều phối viên', badgeClass: 'badge-info', avatar: 'assets/images/coord-thao.jpg' }
+        ],
+        ZALO: [
+            { email: 'linh.nk.zalo@zalo.me', full_name: 'Nguyễn Khánh Linh · Zalo OA ĐVTN', role: 'VOLUNTEER', badge: 'Tình nguyện viên', badgeClass: 'badge-valid', avatar: 'assets/images/volunteer-linh.jpg' },
+            { email: 'thao.doan@zalo.me', full_name: 'Lê Thanh Thảo · Zalo Cán bộ Đoàn', role: 'COORDINATOR', badge: 'Điều phối viên', badgeClass: 'badge-info', avatar: 'assets/images/coord-thao.jpg' }
+        ],
+        GITHUB: [
+            { email: 'linhnk-sv001@users.noreply.github.com', full_name: 'linhnk-sv001 · Đội Bình dân Học vụ Số', role: 'VOLUNTEER', badge: 'Kỹ thuật số TNV', badgeClass: 'badge-valid', avatar: 'assets/images/volunteer-linh.jpg' },
+            { email: 'thao-techlead@users.noreply.github.com', full_name: 'thao-techlead · Ban Công nghệ Thành Đoàn', role: 'COORDINATOR', badge: 'Điều phối viên', badgeClass: 'badge-info', avatar: 'assets/images/coord-thao.jpg' }
+        ]
+    };
+
+    const normalizeProviderCatalogKey = (label) => {
+        const up = String(label || 'GOOGLE').toUpperCase();
+        if (up.includes('EDU') || up.includes('MICROSOFT')) return 'MICROSOFT';
+        if (up.includes('ZALO')) return 'ZALO';
+        if (up.includes('FACE')) return 'FACEBOOK';
+        if (up.includes('GIT')) return 'GITHUB';
+        return 'GOOGLE';
+    };
+
+    const renderOAuthAccountsForProvider = (providerLabel) => {
+        const listEl = document.getElementById('oauth-picker-accounts-list');
+        if (!listEl) return;
+        const pKey = normalizeProviderCatalogKey(providerLabel);
+        const accounts = oauthAccountsCatalog[pKey] || oauthAccountsCatalog.GOOGLE;
+        const stateToken = listEl.dataset.oauthState
+            || document.querySelector('#modal-oauth-picker input[name="state"]')?.value
+            || '';
+
+        listEl.innerHTML = accounts.map(acc => `
+            <form method="post" action="?action=oauth_login">
+                <input type="hidden" name="csrf_token" value="${escapeHtml(stateToken)}">
+                <input type="hidden" name="state" value="${escapeHtml(stateToken)}">
+                <input type="hidden" name="provider" class="oauth-hidden-provider" value="${escapeHtml(providerLabel)}">
+                <input type="hidden" name="email" value="${escapeHtml(acc.email)}">
+                <input type="hidden" name="full_name" value="${escapeHtml(acc.full_name)}">
+                <input type="hidden" name="account_role" value="${escapeHtml(acc.role)}">
+                <button type="submit" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-[#0057B8] hover:bg-blue-50/50 dark:hover:bg-slate-800 transition-all text-left">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <img src="${escapeHtml(acc.avatar)}" alt="" class="w-10 h-10 rounded-full object-cover border border-[#0057B8] shrink-0">
+                        <div class="min-w-0">
+                            <div class="font-bold text-sm text-slate-900 dark:text-white truncate">${escapeHtml(acc.full_name)}</div>
+                            <div class="text-xs text-slate-500 mono truncate">${escapeHtml(acc.email)}</div>
+                        </div>
+                    </div>
+                    <span class="badge ${acc.badgeClass} shrink-0">${escapeHtml(acc.badge)}</span>
+                </button>
+            </form>
+        `).join('');
+    };
+
     document.querySelectorAll('[data-oauth-provider]').forEach(btn => {
         btn.addEventListener('click', () => {
             const providerLabel = btn.dataset.oauthProvider || 'Google';
@@ -653,6 +845,7 @@
             if (titleEl) titleEl.textContent = `Đăng nhập bằng ${providerLabel}`;
             if (labelEl) labelEl.textContent = providerLabel;
 
+            renderOAuthAccountsForProvider(providerLabel);
             document.querySelectorAll('.oauth-hidden-provider').forEach(inp => {
                 inp.value = providerLabel;
             });
@@ -1425,7 +1618,7 @@
     }
 
     // =========================================================================
-    // 8. MÁY CHIẾU QR ĐIỂM DANH 30 GIÂY XOAY VÒNG & GIẢ LẬP QUÉT ĐIỆN THOẠI
+    // 8. MÁY CHIẾU QR ĐIỂM DANH 30 GIÂY XOAY VÒNG & MÁY QUÉT QR ĐA NĂNG
     // =========================================================================
     let qrTimerInterval = null;
     let activeQrShiftId = 201;
@@ -1439,10 +1632,28 @@
                 const svgBox = document.getElementById('live-qr-svg-box');
                 const tokenBox = document.getElementById('live-qr-token-text');
                 const countBox = document.getElementById('live-qr-countdown');
-                if (svgBox) svgBox.innerHTML = res.svg;
-                if (tokenBox) tokenBox.textContent = res.token;
+                const metaBox = document.getElementById('live-qr-meta');
+                const directUrlBox = document.getElementById('live-qr-direct-url');
+
+                if (svgBox) {
+                    if (svgBox.dataset.token !== res.token) {
+                        svgBox.innerHTML = res.svg;
+                        svgBox.dataset.token = res.token || '';
+                    }
+                    svgBox.dataset.directUrl = res.direct_url || '';
+                }
+                if (tokenBox) {
+                    tokenBox.textContent = res.token || '';
+                    tokenBox.dataset.token = res.token || '';
+                    tokenBox.dataset.directUrl = res.direct_url || '';
+                }
+                if (directUrlBox) directUrlBox.textContent = res.direct_url || '';
+                if (metaBox) {
+                    metaBox.textContent = `[${res.shift_code || ''}] ${res.location_name || ''} · Quân số: ${res.assigned_count ?? 0}/${res.max_people ?? 5} TNV`;
+                }
                 if (countBox) countBox.textContent = `${res.seconds_remaining}s`;
-            });
+            })
+            .catch(() => {});
     }
 
     document.querySelectorAll('.btn-open-qr-projector').forEach(btn => {
@@ -1459,27 +1670,471 @@
         });
     });
 
-    document.querySelectorAll('.btn-sim-qr-scan').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const assignId = btn.dataset.assignmentId;
-            const scanMode = btn.dataset.scanMode || 'VALID';
+    const btnDownloadQrPng = document.getElementById('btn-download-qr-png');
+    if (btnDownloadQrPng) {
+        btnDownloadQrPng.addEventListener('click', () => {
+            const svgEl = document.querySelector('#live-qr-svg-box svg');
+            if (!svgEl) {
+                XanhHubUI.toast('warning', 'Chưa sẵn sàng', 'Mã QR đang được tải từ máy chủ, vui lòng thử lại sau 1 giây.');
+                return;
+            }
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 640;
+                canvas.height = 720;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            fetch('?action=api_qr_scan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ assignment_id: assignId, scan_mode: scanMode }).toString()
+                const shiftTitle = document.getElementById('qr-projector-shift-title')?.textContent || 'Xanh Hub Check-in';
+                const tokenStr = document.getElementById('live-qr-token-text')?.textContent || '';
+
+                ctx.fillStyle = '#0F172A';
+                ctx.font = 'bold 22px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('XANH HUB — MÃ QR ĐIỂM DANH CA TRỰC', 320, 42);
+
+                ctx.fillStyle = '#0057B8';
+                ctx.font = 'bold 17px sans-serif';
+                ctx.fillText(shiftTitle.slice(0, 48), 320, 72);
+
+                ctx.drawImage(img, 60, 96, 520, 520);
+
+                ctx.fillStyle = '#475569';
+                ctx.font = '14px monospace';
+                ctx.fillText(tokenStr, 320, 656);
+
+                ctx.fillStyle = '#64748B';
+                ctx.font = '13px sans-serif';
+                ctx.fillText('Quét bằng Camera, Zalo hoặc Máy quét Xanh Hub (Tải ảnh QR)', 320, 686);
+
+                URL.revokeObjectURL(url);
+                const pngUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = pngUrl;
+                a.download = `QR-DiemDanh-Ca-${activeQrShiftId}.png`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                XanhHubUI.toast('success', 'Đã tải ảnh QR (.png)', 'Bạn có thể dùng ảnh PNG này để quét thử ở tab "Tải ảnh QR" trong Máy quét.');
+            };
+            img.src = url;
+        });
+    }
+
+    const btnCopyQrToken = document.getElementById('btn-copy-qr-token');
+    if (btnCopyQrToken) {
+        btnCopyQrToken.addEventListener('click', () => {
+            const directUrl = document.getElementById('live-qr-direct-url')?.textContent?.trim()
+                || document.getElementById('live-qr-token-text')?.textContent?.trim()
+                || '';
+            if (!directUrl) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(directUrl).then(() => {
+                    XanhHubUI.toast('success', 'Đã sao chép liên kết QR', 'Bạn có thể dán vào trình duyệt hoặc Máy quét QR để kiểm thử.');
+                }).catch(() => {});
+            }
+        });
+    }
+
+    const btnTestScanProjector = document.getElementById('btn-test-scan-projector');
+    if (btnTestScanProjector) {
+        btnTestScanProjector.addEventListener('click', () => {
+            const directUrl = document.getElementById('live-qr-direct-url')?.textContent?.trim()
+                || document.getElementById('live-qr-token-text')?.textContent?.trim()
+                || '';
+            const shiftTitle = document.getElementById('qr-projector-shift-title')?.textContent || '';
+            XanhHubUI.closeModal('modal-qr-projector');
+            openQrScannerModal(0, shiftTitle);
+            const manualTab = document.querySelector('.qr-mode-tab[data-mode="manual"]');
+            if (manualTab) manualTab.click();
+            const manualInp = document.getElementById('qr-manual-input');
+            if (manualInp && directUrl) manualInp.value = directUrl;
+            if (directUrl) submitQrCheckin(directUrl, 0);
+        });
+    }
+
+    // =========================================================================
+    // MÁY QUÉT MÃ QR HIỆN TRƯỜNG (CAMERA SCANNER / JSQR / TẢI ẢNH / DÁN MÃ)
+    // =========================================================================
+    let qrScanStream = null;
+    let qrScanAnimFrame = null;
+    let activeScanAssignmentId = 0;
+    let isQrScanning = false;
+
+    modalCloseHooks.push((modalId) => {
+        if (modalId === 'modal-qr-projector' && qrTimerInterval) {
+            clearInterval(qrTimerInterval);
+            qrTimerInterval = null;
+        }
+        if (modalId === 'modal-qr-scanner') {
+            stopQrCamera();
+        }
+    });
+
+    function playScanSuccessChime() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.25, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.25);
+        } catch (e) {}
+    }
+
+    function showQrResultBox(ok, html) {
+        const box = document.getElementById('qr-scan-result-box');
+        if (!box) return;
+        box.className = ok
+            ? 'mt-4 p-3.5 rounded-xl border text-xs leading-relaxed bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
+            : 'mt-4 p-3.5 rounded-xl border text-xs leading-relaxed bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-200';
+        box.innerHTML = html;
+        box.classList.remove('hidden');
+    }
+
+    function submitQrCheckin(token, assignId) {
+        if (!token) return;
+        const bodyParams = new URLSearchParams();
+        if (assignId) bodyParams.append('assignment_id', assignId);
+        bodyParams.append('token', token);
+        bodyParams.append('scan_mode', 'VALID');
+
+        fetch('?action=api_qr_scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: bodyParams.toString()
+        })
+            .then(r => r.json())
+            .then(res => {
+                if (!res.ok) {
+                    XanhHubUI.toast('error', 'Từ chối điểm danh QR', res.message_vi, res.error_code ? [res.error_code] : []);
+                    const fb = document.getElementById('qr-camera-feedback');
+                    if (fb) fb.innerHTML = `<span class="text-rose-500 font-bold">${escapeHtml(res.message_vi)}</span>`;
+                    showQrResultBox(false, `
+                        <div class="font-extrabold mb-1">Không thể xác thực mã QR (${escapeHtml(res.error_code || 'INVALID')})</div>
+                        <div>${escapeHtml(res.message_vi || '')}</div>
+                    `);
+                    return;
+                }
+
+                playScanSuccessChime();
+                stopQrCamera();
+
+                if (res.scan_type === 'VERIFY_CODE') {
+                    XanhHubUI.toast('success', 'Nhận diện Mã Chứng nhận Số', res.message_vi, [res.verify_code || 'VERIFY']);
+                    showQrResultBox(true, `
+                        <div class="font-extrabold text-sm mb-1">✔ Nhận diện Mã Tra cứu Chứng nhận / Văn bản Số</div>
+                        <div class="mb-2">${escapeHtml(res.message_vi || '')}</div>
+                        <a href="${escapeHtml(res.redirect_url || '?view=verify')}" class="btn btn-sm btn-primary inline-flex items-center gap-1">
+                            <span>Mở trang Xác thực Mã ${escapeHtml(res.verify_code || '')}</span> &rarr;
+                        </a>
+                    `);
+                    return;
+                }
+
+                if (res.scan_type === 'COORDINATOR_PREVIEW') {
+                    XanhHubUI.toast('success', 'Mã QR Ca trực Hợp lệ', res.message_vi, [res.shift_code || 'QR_VALID']);
+                    showQrResultBox(true, `
+                        <div class="font-extrabold text-sm mb-1">✔ Kiểm thử Mã QR Thành công (Chế độ Ban Chỉ Huy)</div>
+                        <div><strong>Ca trực:</strong> [${escapeHtml(res.shift_code || '')}] ${escapeHtml(res.shift_title || '')}</div>
+                        <div><strong>Địa điểm:</strong> ${escapeHtml(res.location_name || '')}</div>
+                        <div class="mt-1 text-[11px] opacity-85">${escapeHtml(res.message_vi || '')}</div>
+                    `);
+                    return;
+                }
+
+                XanhHubUI.toast('success', 'Điểm danh QR thành công', res.message_vi, [res.shift_code || 'CHECKED_IN']);
+                showQrResultBox(true, `
+                    <div class="font-extrabold text-sm mb-1">✔ Điểm danh Thành công (CHECKED_IN)</div>
+                    <div><strong>Tình nguyện viên:</strong> ${escapeHtml(res.volunteer_name || '')} (${escapeHtml(res.student_code || '')})</div>
+                    <div><strong>Ca trực:</strong> [${escapeHtml(res.shift_code || '')}] ${escapeHtml(res.shift_title || '')}</div>
+                    <div><strong>Thời gian:</strong> ${escapeHtml(res.checked_in_at || '')}</div>
+                `);
+                setTimeout(() => {
+                    window.XanhHubUI.closeModal('modal-qr-scanner');
+                    window.location.reload();
+                }, 1300);
             })
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.ok) {
-                        XanhHubUI.toast('error', 'Từ chối điểm danh QR', res.message_vi, res.reason_code ? [res.reason_code] : []);
-                        return;
-                    }
-                    XanhHubUI.toast('success', 'Điểm danh QR 30s thành công', res.message_vi, [res.reason_code]);
-                    setTimeout(() => window.location.reload(), 650);
-                });
+            .catch(() => {
+                XanhHubUI.toast('error', 'Lỗi kết nối máy chủ', 'Không thể gửi dữ liệu điểm danh. Vui lòng thử lại.');
+            });
+    }
+
+    function openQrScannerModal(assignId, shiftTitle) {
+        activeScanAssignmentId = assignId || 0;
+        const shiftLbl = document.getElementById('qr-scanner-shift-label');
+        if (shiftLbl) {
+            shiftLbl.textContent = shiftTitle || (assignId ? `Ca trực #${assignId}` : 'Tự động nhận diện mã ca trực hoặc giấy chứng nhận');
+        }
+        const resBox = document.getElementById('qr-scan-result-box');
+        if (resBox) resBox.classList.add('hidden');
+        if (window.XanhHubUI && typeof window.XanhHubUI.openModal === 'function') {
+            window.XanhHubUI.openModal('modal-qr-scanner');
+        }
+    }
+
+    document.querySelectorAll('.btn-sim-qr-scan, .btn-open-qr-scanner').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const assignId = btn.dataset.assignmentId || 0;
+            const shiftTitle = btn.dataset.shiftTitle || btn.dataset.shiftCode || '';
+            openQrScannerModal(assignId, shiftTitle);
         });
     });
+
+    // Chuyển đổi các tab phương thức quét
+    document.querySelectorAll('.qr-mode-tab').forEach(tabBtn => {
+        tabBtn.addEventListener('click', () => {
+            const mode = tabBtn.dataset.mode;
+            document.querySelectorAll('.qr-mode-tab').forEach(b => {
+                b.classList.remove('bg-emerald-100', 'dark:bg-emerald-950', 'text-emerald-800', 'dark:text-emerald-300');
+                b.classList.add('text-slate-500', 'dark:text-slate-400');
+            });
+            tabBtn.classList.add('bg-emerald-100', 'dark:bg-emerald-950', 'text-emerald-800', 'dark:text-emerald-300');
+            tabBtn.classList.remove('text-slate-500', 'dark:text-slate-400');
+
+            const pCam = document.getElementById('qr-panel-camera');
+            const pFile = document.getElementById('qr-panel-file');
+            const pManual = document.getElementById('qr-panel-manual');
+            if (pCam) pCam.classList.toggle('hidden', mode !== 'camera');
+            if (pFile) pFile.classList.toggle('hidden', mode !== 'file');
+            if (pManual) pManual.classList.toggle('hidden', mode !== 'manual');
+
+            if (mode !== 'camera') {
+                stopQrCamera();
+            }
+        });
+    });
+
+    // Khởi động Camera quét thời gian thực
+    async function startQrCamera() {
+        const video = document.getElementById('qr-scanner-video');
+        const canvas = document.getElementById('qr-scanner-canvas');
+        const reticle = document.getElementById('qr-viewfinder-reticle');
+        const placeholder = document.getElementById('qr-camera-placeholder');
+        const btnStop = document.getElementById('btn-stop-camera');
+        const feedback = document.getElementById('qr-camera-feedback');
+        if (!video || !canvas) return;
+
+        try {
+            if (placeholder) placeholder.classList.add('hidden');
+            if (reticle) reticle.classList.remove('hidden');
+            if (btnStop) btnStop.classList.remove('hidden');
+            if (feedback) feedback.innerHTML = '<span>Đưa mã QR vào giữa khung hình để quét</span>';
+
+            const constraints = {
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+            qrScanStream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = qrScanStream;
+            video.setAttribute('playsinline', 'true');
+            await video.play();
+            isQrScanning = true;
+
+            const barcodeDetector = ('BarcodeDetector' in window)
+                ? new BarcodeDetector({ formats: ['qr_code'] })
+                : null;
+
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            const scanTick = async () => {
+                if (!isQrScanning) return;
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    let detectedValue = null;
+
+                    if (barcodeDetector) {
+                        try {
+                            const barcodes = await barcodeDetector.detect(video);
+                            if (barcodes.length > 0 && barcodes[0].rawValue) {
+                                detectedValue = barcodes[0].rawValue;
+                            }
+                        } catch (e) {}
+                    }
+
+                    if (!detectedValue && window.jsQR) {
+                        try {
+                            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const qrCode = window.jsQR(imgData.data, imgData.width, imgData.height, {
+                                inversionAttempts: 'dontInvert'
+                            });
+                            if (qrCode && qrCode.data) {
+                                detectedValue = qrCode.data;
+                            }
+                        } catch (e) {}
+                    }
+
+                    if (detectedValue) {
+                        isQrScanning = false;
+                        if (feedback) feedback.innerHTML = '<span class="text-emerald-500 font-bold">✔ Đã tìm thấy mã QR! Đang xác thực...</span>';
+                        stopQrCamera();
+                        submitQrCheckin(detectedValue, activeScanAssignmentId);
+                        return;
+                    }
+                }
+                qrScanAnimFrame = requestAnimationFrame(scanTick);
+            };
+            qrScanAnimFrame = requestAnimationFrame(scanTick);
+        } catch (err) {
+            if (placeholder) placeholder.classList.remove('hidden');
+            if (reticle) reticle.classList.add('hidden');
+            if (feedback) {
+                feedback.innerHTML = `<span class="text-rose-500 font-bold">Không thể mở camera: ${err.message || 'Chưa cấp quyền'}. Bạn có thể Tải ảnh hoặc Nhập mã token thủ công.</span>`;
+            }
+        }
+    }
+
+    function stopQrCamera() {
+        isQrScanning = false;
+        if (qrScanAnimFrame) {
+            cancelAnimationFrame(qrScanAnimFrame);
+            qrScanAnimFrame = null;
+        }
+        if (qrScanStream) {
+            qrScanStream.getTracks().forEach(t => t.stop());
+            qrScanStream = null;
+        }
+        const video = document.getElementById('qr-scanner-video');
+        if (video) video.srcObject = null;
+        const reticle = document.getElementById('qr-viewfinder-reticle');
+        if (reticle) reticle.classList.add('hidden');
+        const placeholder = document.getElementById('qr-camera-placeholder');
+        if (placeholder) placeholder.classList.remove('hidden');
+        const btnStop = document.getElementById('btn-stop-camera');
+        if (btnStop) btnStop.classList.add('hidden');
+    }
+
+    const btnStartCam = document.getElementById('btn-start-camera');
+    if (btnStartCam) btnStartCam.addEventListener('click', startQrCamera);
+
+    const btnStopCam = document.getElementById('btn-stop-camera');
+    if (btnStopCam) btnStopCam.addEventListener('click', stopQrCamera);
+
+    // Xử lý tải ảnh QR từ máy
+    const qrFileInput = document.getElementById('qr-file-input');
+    const qrDropzone = document.getElementById('qr-dropzone');
+    const btnChooseFile = document.getElementById('btn-choose-file');
+    if (btnChooseFile && qrFileInput) {
+        btnChooseFile.addEventListener('click', () => qrFileInput.click());
+    }
+    if (qrDropzone && qrFileInput) {
+        qrDropzone.addEventListener('click', (e) => {
+            if (e.target !== btnChooseFile) qrFileInput.click();
+        });
+        qrDropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            qrDropzone.classList.add('border-emerald-500', 'bg-emerald-50/20');
+        });
+        qrDropzone.addEventListener('dragleave', () => {
+            qrDropzone.classList.remove('border-emerald-500', 'bg-emerald-50/20');
+        });
+        qrDropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            qrDropzone.classList.remove('border-emerald-500', 'bg-emerald-50/20');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                processQrImageFile(e.dataTransfer.files[0]);
+            }
+        });
+    }
+    if (qrFileInput) {
+        qrFileInput.addEventListener('change', () => {
+            if (qrFileInput.files && qrFileInput.files[0]) {
+                processQrImageFile(qrFileInput.files[0]);
+            }
+        });
+    }
+
+    function processQrImageFile(file) {
+        const previewBox = document.getElementById('qr-file-preview-box');
+        const previewImg = document.getElementById('qr-file-preview');
+        const nameEl = document.getElementById('qr-file-name');
+        const statusEl = document.getElementById('qr-file-status');
+        if (!file) return;
+
+        if (previewBox) previewBox.classList.remove('hidden');
+        if (nameEl) nameEl.textContent = file.name;
+        if (statusEl) statusEl.textContent = 'Đang phân tích ảnh...';
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            if (previewImg) previewImg.src = dataUrl;
+
+            const img = new Image();
+            img.onload = () => {
+                const maxDim = 900;
+                const scale = Math.min(1, maxDim / Math.max(img.width || 1, img.height || 1));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(img.width * scale));
+                canvas.height = Math.max(1, Math.round(img.height * scale));
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                let decodedVal = null;
+                if (window.jsQR) {
+                    try {
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = window.jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+                        if (code && code.data) decodedVal = code.data;
+                    } catch (err) {}
+                }
+
+                if (decodedVal) {
+                    if (statusEl) statusEl.innerHTML = '<span class="text-emerald-500 font-bold">✔ Đã giải mã thành công!</span>';
+                    submitQrCheckin(decodedVal, activeScanAssignmentId);
+                } else {
+                    if (statusEl) statusEl.innerHTML = '<span class="text-rose-500 font-bold">Không tìm thấy mã QR trong ảnh. Vui lòng thử ảnh rõ nét hơn.</span>';
+                    showQrResultBox(false, 'Không giải mã được mã QR trong ảnh đã tải lên. Hãy dùng nút <strong>Tải ảnh PNG</strong> trên Máy chiếu QR hoặc chụp rõ toàn bộ 4 góc mã QR.');
+                }
+            };
+            img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Nhập mã Token / URL thủ công
+    const btnSubmitManual = document.getElementById('btn-submit-manual-qr');
+    if (btnSubmitManual) {
+        btnSubmitManual.addEventListener('click', () => {
+            const inp = document.getElementById('qr-manual-input');
+            const val = inp ? inp.value.trim() : '';
+            if (!val) {
+                XanhHubUI.toast('warning', 'Chưa nhập mã', 'Vui lòng nhập chuỗi token hoặc URL mã QR.');
+                return;
+            }
+            submitQrCheckin(val, activeScanAssignmentId);
+        });
+    }
+
+    // Nút Điểm danh Nhanh Dự phòng
+    const btnQuickCheckin = document.getElementById('btn-quick-checkin-fallback');
+    if (btnQuickCheckin) {
+        btnQuickCheckin.addEventListener('click', () => {
+            submitQrCheckin('QUICK_CHECKIN', activeScanAssignmentId);
+        });
+    }
 
     // =========================================================================
     // 9. TRỢ LÝ AI A1: BÓC TÁCH CÂU TIẾNG VIỆT THÀNH BIỂU MẪU CA TRỰC
@@ -2549,34 +3204,52 @@
             });
         }
 
-        // Master Column Filter Pills
+        // Master Column Filter Pills + Search + Date-Group Header Sync
+        let activeCoordShiftFilter = 'ALL';
+        const shiftSearchInput = document.getElementById('shift-search-input');
+
+        function syncCoordinatorShiftListFilters() {
+            const q = (shiftSearchInput?.value || '').toLowerCase().trim();
+            const visibleByDateKey = {};
+
+            document.querySelectorAll('.compact-shift-card').forEach(card => {
+                const status = card.dataset.shiftStatus;
+                const isLocked = card.dataset.isLocked === '1';
+                const s = (card.dataset.search || '').toLowerCase();
+                const dateKey = card.dataset.dateKey || '';
+
+                let matchFilter = true;
+                if (activeCoordShiftFilter === 'UNDERSTAFFED') matchFilter = (status === 'UNDERSTAFFED');
+                else if (activeCoordShiftFilter === 'FULL') matchFilter = (status === 'FULL');
+                else if (activeCoordShiftFilter === 'LOCKED') matchFilter = isLocked;
+
+                const matchSearch = !q || s.includes(q);
+                const show = matchFilter && matchSearch;
+                card.style.display = show ? '' : 'none';
+
+                if (show && dateKey) {
+                    visibleByDateKey[dateKey] = (visibleByDateKey[dateKey] || 0) + 1;
+                }
+            });
+
+            document.querySelectorAll('.coord-date-group-header').forEach(header => {
+                const dk = header.dataset.dateKey || '';
+                if (!dk) return;
+                header.style.display = visibleByDateKey[dk] ? '' : 'none';
+            });
+        }
+
         document.querySelectorAll('[data-shift-filter]').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('[data-shift-filter]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                const filter = btn.dataset.shiftFilter;
-                document.querySelectorAll('.compact-shift-card').forEach(card => {
-                    const status = card.dataset.shiftStatus;
-                    const isLocked = card.dataset.isLocked === '1';
-                    let show = true;
-                    if (filter === 'UNDERSTAFFED') show = (status === 'UNDERSTAFFED');
-                    else if (filter === 'FULL') show = (status === 'FULL');
-                    else if (filter === 'LOCKED') show = isLocked;
-                    card.style.display = show ? '' : 'none';
-                });
+                activeCoordShiftFilter = btn.dataset.shiftFilter || 'ALL';
+                syncCoordinatorShiftListFilters();
             });
         });
 
-        // Master Column Search
-        const shiftSearchInput = document.getElementById('shift-search-input');
         if (shiftSearchInput) {
-            shiftSearchInput.addEventListener('input', () => {
-                const q = shiftSearchInput.value.toLowerCase().trim();
-                document.querySelectorAll('.compact-shift-card').forEach(card => {
-                    const s = card.dataset.search || '';
-                    card.style.display = (!q || s.includes(q)) ? '' : 'none';
-                });
-            });
+            shiftSearchInput.addEventListener('input', syncCoordinatorShiftListFilters);
         }
 
         // Initial render of first active shift
@@ -3035,10 +3708,33 @@
         const initialHash = window.location.hash;
         if (initialHash && initialHash.startsWith('#admin-tab-')) {
             const initialTab = initialHash.replace('#admin-tab-', '');
-            if (['users', 'verification', 'settings', 'audit'].includes(initialTab)) {
+            if (['users', 'verification', 'settings', 'audit', 'news'].includes(initialTab)) {
                 activateAdminTab(initialTab);
             }
         }
+
+        // Đổ dữ liệu modal chỉnh sửa bản tin
+        document.querySelectorAll('.btn-edit-news').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const setVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val !== undefined && val !== null ? val : '';
+                };
+                setVal('edit-news-id', btn.dataset.id);
+                setVal('edit-news-title', btn.dataset.title);
+                setVal('edit-news-tag', btn.dataset.tag);
+                setVal('edit-news-summary', btn.dataset.summary);
+                setVal('edit-news-content', btn.dataset.content);
+                setVal('edit-news-image-url', btn.dataset.image);
+                setVal('edit-news-activity-id', btn.dataset.activityId);
+                setVal('edit-news-status', btn.dataset.status);
+                setVal('edit-news-date', btn.dataset.date);
+
+                if (window.XanhHubUI && typeof window.XanhHubUI.openModal === 'function') {
+                    window.XanhHubUI.openModal('modal-admin-edit-news');
+                }
+            });
+        });
     }
 
     // =========================================================================
@@ -3182,6 +3878,836 @@
             });
         });
     }
+
+    // Bộ lọc tìm kiếm nhanh không dấu cho các bảng dữ liệu trong Cổng Quản trị (?view=admin)
+    document.querySelectorAll('[data-admin-table-search]').forEach(inp => {
+        inp.addEventListener('input', () => {
+            const tbodyId = inp.dataset.adminTableSearch;
+            const tbody = tbodyId ? document.getElementById(tbodyId) : null;
+            if (!tbody) return;
+            const q = normalizeVi(inp.value || '');
+            tbody.querySelectorAll('tr').forEach(tr => {
+                const text = normalizeVi(tr.textContent || '');
+                tr.style.display = (!q || text.includes(q)) ? '' : 'none';
+            });
+        });
+    });
+
+    // Kích hoạt Modal Sửa Hoạt động / Chiến dịch trong Admin Tab Activities
+    document.querySelectorAll('.btn-admin-edit-act-trigger').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const actId = btn.dataset.actId || '';
+            const actTitle = btn.dataset.actTitle || '';
+            const actCode = btn.dataset.actCode || '';
+            const actStatus = btn.dataset.actStatus || 'OPEN';
+            const actDesc = btn.dataset.actDesc || '';
+            const actLoc = btn.dataset.actLocation || '';
+            const actLat = btn.dataset.actLat || '10.7769';
+            const actLng = btn.dataset.actLng || '106.7009';
+
+            const inputId = document.getElementById('edit-act-id');
+            const inputTitle = document.getElementById('edit-act-title');
+            const inputCode = document.getElementById('edit-act-code');
+            const selectStatus = document.getElementById('edit-act-status');
+            const inputDesc = document.getElementById('edit-act-desc');
+            const inputLoc = document.getElementById('edit-act-location');
+            const inputLat = document.getElementById('edit-act-lat');
+            const inputLng = document.getElementById('edit-act-lng');
+
+            if (inputId) inputId.value = actId;
+            if (inputTitle) inputTitle.value = actTitle;
+            if (inputCode) inputCode.value = actCode;
+            if (selectStatus) selectStatus.value = actStatus;
+            if (inputDesc) inputDesc.value = actDesc;
+            if (inputLoc) inputLoc.value = actLoc;
+            if (inputLat) inputLat.value = actLat;
+            if (inputLng) inputLng.value = actLng;
+
+            if (window.XanhHubUI && typeof window.XanhHubUI.openModal === 'function') {
+                window.XanhHubUI.openModal('modal-admin-edit-activity');
+            }
+        });
+    });
+
+    // =========================================================================
+    // HỆ THỐNG GỢI Ý ĐỊA CHỈ KIỂU GOOGLE MAPS & REVERSE GEOCODING GPS
+    // =========================================================================
+    function initPlacesAutocomplete() {
+        const inputs = document.querySelectorAll('input[data-places-autocomplete="true"]');
+        if (inputs.length === 0) return;
+
+        let portal = document.getElementById('xanhhub-places-portal');
+        if (!portal) {
+            portal = document.createElement('div');
+            portal.id = 'xanhhub-places-portal';
+            portal.className = 'hidden fixed z-[9999] bg-white dark:bg-[#131822] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto text-left';
+            portal.style.minWidth = '280px';
+            document.body.appendChild(portal);
+        }
+
+        let activeInput = null;
+        let fetchSeq = 0;
+        let debounceTimer = null;
+
+        const positionPortal = (inp) => {
+            if (!inp || portal.classList.contains('hidden')) return;
+            const rect = inp.getBoundingClientRect();
+            const vw = window.innerWidth || 1024;
+            const width = Math.min(Math.max(rect.width, 300), vw - 24);
+            const left = Math.max(12, Math.min(rect.left, vw - width - 12));
+            portal.style.width = `${width}px`;
+            portal.style.left = `${left}px`;
+            portal.style.top = `${rect.bottom + 6}px`;
+        };
+
+        const applySelectedPlace = (inp, place) => {
+            if (!inp || !place) return;
+            const label = place.full_address || place.main_text || '';
+            inp.value = label;
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+
+            const latSel = inp.dataset.latInput;
+            const lngSel = inp.dataset.lngInput;
+            if (latSel && typeof place.lat === 'number') {
+                const latEl = document.querySelector(latSel);
+                if (latEl) {
+                    latEl.value = place.lat.toFixed(5);
+                    latEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            if (lngSel && typeof place.lng === 'number') {
+                const lngEl = document.querySelector(lngSel);
+                if (lngEl) {
+                    lngEl.value = place.lng.toFixed(5);
+                    lngEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+
+            inp.dispatchEvent(new CustomEvent('place-autocomplete-selected', { detail: place, bubbles: true }));
+            portal.classList.add('hidden');
+        };
+
+        const renderSuggestions = (inp, places, isLoading = false) => {
+            activeInput = inp;
+            const rowsHtml = (places || []).map((pl, idx) => `
+                <button type="button" data-place-idx="${idx}" class="w-full px-3.5 py-2.5 flex items-start gap-2.5 hover:bg-blue-50 dark:hover:bg-slate-800/90 transition-colors border-t border-slate-100 dark:border-slate-800 text-left">
+                    <span class="material-symbols-outlined text-rose-500 text-[18px] mt-0.5 shrink-0">location_on</span>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-bold text-xs text-slate-900 dark:text-white truncate">${escapeHtml(pl.main_text || '')}</span>
+                            ${pl.district ? `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">${escapeHtml(pl.district)}</span>` : ''}
+                        </div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${escapeHtml(pl.full_address || pl.secondary_text || '')}</div>
+                        <div class="text-[10px] text-emerald-600 dark:text-emerald-400 mono mt-0.5">${Number(pl.lat).toFixed(4)}° N, ${Number(pl.lng).toFixed(4)}° E</div>
+                    </div>
+                </button>
+            `).join('');
+
+            portal.innerHTML = `
+                <button type="button" id="xanhhub-places-use-gps" class="w-full px-3.5 py-2.5 flex items-center gap-2.5 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-colors text-left">
+                    <span class="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">my_location</span>
+                    <span>Dùng vị trí GPS hiện tại của tôi (Tự điền địa chỉ)</span>
+                </button>
+                ${isLoading && (!places || places.length === 0)
+                    ? '<div class="px-4 py-3 text-xs text-slate-400">Đang tìm địa chỉ tại TP.HCM...</div>'
+                    : (rowsHtml || '<div class="px-4 py-3 text-xs text-slate-400">Không tìm thấy địa danh gợi ý — bạn có thể giữ nguyên địa chỉ đã gõ hoặc dùng định vị GPS.</div>')}
+            `;
+
+            portal.classList.remove('hidden');
+            positionPortal(inp);
+
+            const gpsBtn = document.getElementById('xanhhub-places-use-gps');
+            if (gpsBtn) {
+                gpsBtn.addEventListener('mousedown', (e) => e.preventDefault());
+                gpsBtn.addEventListener('click', () => {
+                    if (!navigator.geolocation) {
+                        XanhHubUI.toast('warning', 'Trình duyệt chưa bật GPS', 'Vui lòng chọn một địa chỉ gợi ý bên dưới.');
+                        return;
+                    }
+                    gpsBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>Đang lấy tọa độ GPS & giải mã địa chỉ...</span>';
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            const lat = pos.coords.latitude;
+                            const lng = pos.coords.longitude;
+                            fetch(`?action=api_reverse_geocode&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`)
+                                .then(r => r.json())
+                                .then(geo => {
+                                    const fullAddr = (geo && geo.ok && (geo.full_address || (geo.address && geo.address.full_address)))
+                                        ? (geo.full_address || geo.address.full_address)
+                                        : `Tọa độ (${lat.toFixed(4)}, ${lng.toFixed(4)}) TP. Hồ Chí Minh`;
+                                    applySelectedPlace(inp, {
+                                        main_text: (geo && (geo.place_name || (geo.address && geo.address.street_or_landmark))) || fullAddr,
+                                        full_address: fullAddr,
+                                        district: (geo && (geo.district || (geo.address && geo.address.district))) || '',
+                                        lat,
+                                        lng
+                                    });
+                                    XanhHubUI.toast('success', 'Đã xác định địa chỉ GPS', fullAddr);
+                                })
+                                .catch(() => {
+                                    applySelectedPlace(inp, {
+                                        main_text: 'Vị trí GPS thiết bị',
+                                        full_address: `TP. Hồ Chí Minh (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+                                        lat,
+                                        lng
+                                    });
+                                });
+                        },
+                        () => {
+                            XanhHubUI.toast('warning', 'Không thể đọc GPS thiết bị', 'Vui lòng cấp quyền vị trí hoặc chọn địa chỉ gợi ý từ danh sách.');
+                            portal.classList.add('hidden');
+                        },
+                        { enableHighAccuracy: true, timeout: 7000 }
+                    );
+                });
+            }
+
+            portal.querySelectorAll('[data-place-idx]').forEach(btn => {
+                btn.addEventListener('mousedown', (e) => e.preventDefault());
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.dataset.placeIdx || '-1', 10);
+                    if (places && places[idx]) {
+                        applySelectedPlace(inp, places[idx]);
+                    }
+                });
+            });
+        };
+
+        const loadPlaces = (inp) => {
+            const seq = ++fetchSeq;
+            const q = inp.value.trim();
+            fetch(`?action=api_places_autocomplete&q=${encodeURIComponent(q)}&limit=8`)
+                .then(r => r.json())
+                .then(res => {
+                    if (seq !== fetchSeq) return;
+                    if (res && res.ok) {
+                        renderSuggestions(inp, res.places || [], false);
+                    }
+                })
+                .catch(() => {});
+        };
+
+        inputs.forEach(inp => {
+            inp.addEventListener('focus', () => {
+                renderSuggestions(inp, [], true);
+                loadPlaces(inp);
+            });
+            inp.addEventListener('input', () => {
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => loadPlaces(inp), 130);
+            });
+        });
+
+        window.addEventListener('scroll', () => {
+            if (activeInput && !portal.classList.contains('hidden')) positionPortal(activeInput);
+        }, true);
+        window.addEventListener('resize', () => {
+            if (activeInput && !portal.classList.contains('hidden')) positionPortal(activeInput);
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('input[data-places-autocomplete="true"]') && !e.target.closest('#xanhhub-places-portal')) {
+                portal.classList.add('hidden');
+            }
+        });
+    }
+
+    initPlacesAutocomplete();
+
+    // Kích hoạt Hệ thống Giám sát & Đánh giá Độc lập trong Admin Tab Sentinel
+    const triggerSentinelProbe = () => {
+        const btn = document.getElementById('btn-run-sentinel-probe');
+        const badge = document.getElementById('sentinel-score-badge');
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span> <span>Đang kiểm định toàn diện...</span>';
+        }
+        if (badge) {
+            badge.textContent = 'Đang rà soát...';
+            badge.className = 'px-3 py-1 rounded-full text-xs font-black mono bg-amber-500 text-white animate-pulse';
+        }
+
+        fetch('?action=admin_run_sentinel', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok && data.summary) {
+                if (window.XanhHubUI && typeof window.XanhHubUI.toast === 'function') {
+                    window.XanhHubUI.toast('success', 'Giám định Độc lập Thành công', `Đã kiểm tra ${data.summary.total_probes} tiêu chí · Điểm đạt: ${data.summary.health_score}%`);
+                }
+                setTimeout(() => {
+                    window.location.hash = '#admin-tab-sentinel';
+                    window.location.reload();
+                }, 600);
+            } else {
+                if (window.XanhHubUI && typeof window.XanhHubUI.toast === 'function') {
+                    window.XanhHubUI.toast('error', 'Lỗi Kiểm Định', data.message || 'Không thể chạy kiểm định độc lập.');
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        })
+        .catch(err => {
+            if (window.XanhHubUI && typeof window.XanhHubUI.toast === 'function') {
+                window.XanhHubUI.toast('error', 'Lỗi Kết Nối', 'Không thể kết nối đến Sentinel Service.');
+            }
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        });
+    };
+
+    const sentinelBtn = document.getElementById('btn-run-sentinel-probe');
+    if (sentinelBtn) sentinelBtn.addEventListener('click', triggerSentinelProbe);
+    const sentinelRecheckBtn = document.getElementById('btn-recheck-sentinel');
+    if (sentinelRecheckBtn) sentinelRecheckBtn.addEventListener('click', triggerSentinelProbe);
+
+    // =========================================================================
+    // 14. ĐA NGÔN NGỮ TOÀN TRANG BẰNG BACKEND TRANSLATION API + CACHE BỀN VỮNG
+    // =========================================================================
+    const i18nEnDict = {
+        'brand.subtitle': 'Youth Volunteer Hub Vietnam',
+        'search.placeholder': 'Search campaigns, shifts, skills (First Aid, Logistics)...',
+        'search.heading': 'Suggested Campaigns & Shifts',
+        'header.scan_qr': 'Scan QR',
+        'header.utilities': 'Utilities',
+        'header.analytics': 'BI Analytics',
+        'auth.login': 'Sign In',
+        'auth.register': 'Register',
+        'nav.home': 'Home',
+        'nav.campaigns': 'Campaigns',
+        'nav.campaigns_all': 'All Shifts & Campaigns Filter',
+        'nav.skills': 'Skill Groups',
+        'nav.map': 'GIS Map',
+        'nav.news': 'News & Film',
+        'nav.about': 'About Us',
+        'nav.coordinator': 'Coordinator Desk',
+        'nav.profile_coord': 'Commander Profile',
+        'nav.admin': 'System Admin',
+        'nav.volunteer_portal': 'Volunteer Portal',
+        'nav.profile': 'My Profile',
+        'nav.volunteer': 'Volunteers',
+        'nav.verify': 'Certificates',
+        'nav.leaderboard': 'Leaderboard',
+        'util.title': 'Quick Utilities Center',
+        'util.gps_label': 'Live GPS Address',
+        'util.gps_btn': 'Locate Now',
+        'util.gps_hint': 'Click "Locate Now" to resolve your real street address.',
+        'util.font_label': 'Display Font Size',
+        'util.verify_label': 'Quick Certificate Verify',
+        'util.verify_go': 'Verify',
+        'util.cinema': '4K Cinema',
+        'util.ics': 'Export .ICS'
+    };
+
+    const phraseViToEn = {
+        'Chiến dịch Mùa Hè Xanh 2026': 'Green Summer Campaign 2026',
+        'Chiến dịch Tiếp Sức Mùa Thi': 'Exam Support Campaign',
+        'Chiến dịch Chủ Nhật Xanh': 'Green Sunday Campaign',
+        'Khám phá Các Ca trực đang Tuyển quân': 'Explore Open Volunteer Shifts',
+        'Tất cả': 'All',
+        'Thước phim Hành trình & Bản tin Áo Xanh': 'Field Documentary & Youth News',
+        'Bản đồ Số GIS & Định vị Điểm Tình nguyện': 'Interactive GIS Map & Shift Locator',
+        'Bảng Vàng Thi Đua & Vinh Danh Tình Nguyện Viên': 'Volunteer Honor Leaderboard',
+        'Tra cứu Giấy Chứng nhận & Văn bản Điện tử': 'Electronic Certificate Verification',
+        'Đăng nhập Hệ thống Điều phối': 'Coordinator Portal Sign In',
+        'Đăng ký Tình nguyện viên': 'Volunteer Registration'
+    };
+
+    const I18N_CACHE_STORAGE_KEY = 'xanhhub_i18n_cache_en_v2';
+    const loadI18nClientCache = () => {
+        const base = Object.assign({}, phraseViToEn);
+        try {
+            const raw = localStorage.getItem(I18N_CACHE_STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') {
+                    Object.assign(base, parsed);
+                }
+            }
+        } catch (err) {}
+        return base;
+    };
+    let i18nClientCache = loadI18nClientCache();
+    const persistI18nClientCache = () => {
+        try {
+            const keys = Object.keys(i18nClientCache);
+            if (keys.length > 2500) {
+                const trimmed = {};
+                keys.slice(-2000).forEach(k => { trimmed[k] = i18nClientCache[k]; });
+                i18nClientCache = trimmed;
+            }
+            localStorage.setItem(I18N_CACHE_STORAGE_KEY, JSON.stringify(i18nClientCache));
+        } catch (err) {}
+    };
+
+    const origTextNodeMeta = new WeakMap();
+    const touchedTextNodes = new Set();
+    const touchedAttrElements = new Set();
+    const SKIP_I18N_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE', 'SVG', 'KBD', 'SAMP']);
+    let currentUiLang = 'vi';
+    let langSessionToken = 0;
+    let isMutatingI18nDom = false;
+    let i18nObserverTimer = null;
+
+    const isTranslatableText = (rawText) => {
+        const trimmed = (rawText || '').trim();
+        if (trimmed.length < 2) return false;
+        if (!/\p{L}/u.test(trimmed)) return false;
+        if (/^(https?:\/\/|mailto:|tel:|sha256:|[0-9a-f]{16,}$)/i.test(trimmed)) return false;
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(trimmed)) return false;
+        if (/^[A-Z0-9_.\-/:]{2,16}$/.test(trimmed)) return false;
+        return true;
+    };
+
+    const splitWhitespace = (raw) => {
+        const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(raw || '');
+        if (!m) return { lead: '', core: raw || '', trail: '' };
+        return { lead: m[1], core: m[2], trail: m[3] };
+    };
+
+    const shouldSkipI18nElement = (el) => {
+        if (!el || el.nodeType !== 1) return true;
+        if (SKIP_I18N_TAGS.has(el.tagName)) return true;
+        if (el.closest('.material-symbols-outlined, .material-icons, .notranslate, [data-no-i18n]')) return true;
+        return false;
+    };
+
+    const applyKeyedElements = (targetLang) => {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.dataset.i18n;
+            if (el.dataset.origVi === undefined) {
+                el.dataset.origVi = el.textContent;
+            }
+            if (targetLang === 'en' && i18nEnDict[key]) {
+                el.textContent = i18nEnDict[key];
+            } else if (el.dataset.origVi !== undefined) {
+                el.textContent = el.dataset.origVi;
+            }
+        });
+
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(inp => {
+            const key = inp.dataset.i18nPlaceholder;
+            if (inp.dataset.origViPh === undefined) {
+                inp.dataset.origViPh = inp.getAttribute('placeholder') || '';
+            }
+            if (targetLang === 'en' && i18nEnDict[key]) {
+                inp.setAttribute('placeholder', i18nEnDict[key]);
+            } else if (inp.dataset.origViPh !== undefined) {
+                inp.setAttribute('placeholder', inp.dataset.origViPh);
+            }
+        });
+    };
+
+    const collectAndApplyFullPageTranslation = async (token) => {
+        if (currentUiLang !== 'en' || token !== langSessionToken) return;
+
+        const textNodeMap = new Map();
+        const attrTargetMap = new Map();
+        const missingStrings = new Set();
+
+        const queueTarget = (orig, setterFn) => {
+            if (Object.prototype.hasOwnProperty.call(i18nClientCache, orig) && i18nClientCache[orig]) {
+                setterFn(i18nClientCache[orig]);
+            } else {
+                missingStrings.add(orig);
+            }
+        };
+
+        isMutatingI18nDom = true;
+        try {
+            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+                acceptNode(node) {
+                    const parent = node.parentElement;
+                    if (!parent || shouldSkipI18nElement(parent)) return NodeFilter.FILTER_REJECT;
+                    if (parent.hasAttribute('data-i18n') && i18nEnDict[parent.dataset.i18n]) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    const meta = origTextNodeMeta.get(node);
+                    const checkText = meta ? meta.orig : node.nodeValue;
+                    return isTranslatableText(checkText) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                }
+            });
+
+            let cur;
+            while ((cur = walker.nextNode())) {
+                let meta = origTextNodeMeta.get(cur);
+                if (!meta) {
+                    const parts = splitWhitespace(cur.nodeValue);
+                    meta = { orig: parts.core, lead: parts.lead, trail: parts.trail };
+                    origTextNodeMeta.set(cur, meta);
+                    touchedTextNodes.add(cur);
+                }
+                const orig = meta.orig;
+                if (!textNodeMap.has(orig)) textNodeMap.set(orig, []);
+                textNodeMap.get(orig).push(cur);
+
+                if (Object.prototype.hasOwnProperty.call(i18nClientCache, orig) && i18nClientCache[orig]) {
+                    const nextVal = meta.lead + i18nClientCache[orig] + meta.trail;
+                    if (cur.nodeValue !== nextVal) cur.nodeValue = nextVal;
+                } else {
+                    missingStrings.add(orig);
+                }
+            }
+
+            document.querySelectorAll('input[placeholder], textarea[placeholder], [title]').forEach(el => {
+                if (shouldSkipI18nElement(el)) return;
+                if (el.hasAttribute('placeholder') && !(el.hasAttribute('data-i18n-placeholder') && i18nEnDict[el.dataset.i18nPlaceholder])) {
+                    if (el.dataset.origViFullPh === undefined) {
+                        el.dataset.origViFullPh = el.getAttribute('placeholder') || '';
+                        touchedAttrElements.add(el);
+                    }
+                    const origPh = el.dataset.origViFullPh.trim();
+                    if (isTranslatableText(origPh)) {
+                        if (!attrTargetMap.has(origPh)) attrTargetMap.set(origPh, []);
+                        attrTargetMap.get(origPh).push({ el, attr: 'placeholder' });
+                        queueTarget(origPh, (tr) => {
+                            if (el.getAttribute('placeholder') !== tr) el.setAttribute('placeholder', tr);
+                        });
+                    }
+                }
+                if (el.hasAttribute('title')) {
+                    if (el.dataset.origViTitle === undefined) {
+                        el.dataset.origViTitle = el.getAttribute('title') || '';
+                        touchedAttrElements.add(el);
+                    }
+                    const origTitle = el.dataset.origViTitle.trim();
+                    if (isTranslatableText(origTitle)) {
+                        if (!attrTargetMap.has(origTitle)) attrTargetMap.set(origTitle, []);
+                        attrTargetMap.get(origTitle).push({ el, attr: 'title' });
+                        queueTarget(origTitle, (tr) => {
+                            if (el.getAttribute('title') !== tr) el.setAttribute('title', tr);
+                        });
+                    }
+                }
+            });
+        } finally {
+            isMutatingI18nDom = false;
+        }
+
+        const missingList = Array.from(missingStrings);
+        if (missingList.length === 0) return;
+
+        const CHUNK_SIZE = 45;
+        const chunks = [];
+        for (let i = 0; i < missingList.length; i += CHUNK_SIZE) {
+            chunks.push(missingList.slice(i, i + CHUNK_SIZE));
+        }
+
+        const applyTranslatedChunk = (mapObj) => {
+            if (!mapObj || currentUiLang !== 'en' || token !== langSessionToken) return;
+            isMutatingI18nDom = true;
+            try {
+                let cacheUpdated = false;
+                Object.keys(mapObj).forEach(orig => {
+                    const tr = mapObj[orig];
+                    if (typeof tr !== 'string' || !tr.trim()) return;
+                    if (tr.trim() !== orig.trim() || !/[^\x00-\x7F]/.test(orig)) {
+                        i18nClientCache[orig] = tr;
+                        cacheUpdated = true;
+                    }
+
+                    const nodes = textNodeMap.get(orig);
+                    if (nodes) {
+                        nodes.forEach(node => {
+                            if (!node.isConnected) return;
+                            const meta = origTextNodeMeta.get(node);
+                            if (!meta) return;
+                            const nextVal = meta.lead + tr + meta.trail;
+                            if (node.nodeValue !== nextVal) node.nodeValue = nextVal;
+                        });
+                    }
+                    const attrs = attrTargetMap.get(orig);
+                    if (attrs) {
+                        attrs.forEach(item => {
+                            if (item.el.isConnected && item.el.getAttribute(item.attr) !== tr) {
+                                item.el.setAttribute(item.attr, tr);
+                            }
+                        });
+                    }
+                });
+                if (cacheUpdated) persistI18nClientCache();
+            } finally {
+                isMutatingI18nDom = false;
+            }
+        };
+
+        await Promise.all(chunks.map(async (chunk) => {
+            if (currentUiLang !== 'en' || token !== langSessionToken) return;
+            try {
+                const res = await fetch('?action=api_translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: 'en', source: 'vi', texts: chunk })
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data && data.ok && data.translations) {
+                    applyTranslatedChunk(data.translations);
+                }
+            } catch (err) {}
+        }));
+    };
+
+    const restoreAllVietnameseText = () => {
+        isMutatingI18nDom = true;
+        try {
+            touchedTextNodes.forEach(node => {
+                if (!node.isConnected) {
+                    touchedTextNodes.delete(node);
+                    return;
+                }
+                const meta = origTextNodeMeta.get(node);
+                if (meta) {
+                    const origFull = meta.lead + meta.orig + meta.trail;
+                    if (node.nodeValue !== origFull) node.nodeValue = origFull;
+                }
+            });
+            touchedAttrElements.forEach(el => {
+                if (!el.isConnected) {
+                    touchedAttrElements.delete(el);
+                    return;
+                }
+                if (el.dataset.origViFullPh !== undefined) {
+                    el.setAttribute('placeholder', el.dataset.origViFullPh);
+                }
+                if (el.dataset.origViTitle !== undefined) {
+                    el.setAttribute('title', el.dataset.origViTitle);
+                }
+            });
+        } finally {
+            isMutatingI18nDom = false;
+        }
+    };
+
+    const applyLanguage = (lang) => {
+        const targetLang = (lang === 'en') ? 'en' : 'vi';
+        currentUiLang = targetLang;
+        langSessionToken += 1;
+        const myToken = langSessionToken;
+
+        document.documentElement.lang = targetLang;
+        localStorage.setItem('xanhhub_lang', targetLang);
+
+        const langBtn = document.getElementById('btn-lang-toggle');
+        const badgeEl = document.getElementById('lang-current-badge');
+        if (langBtn) langBtn.dataset.lang = targetLang;
+        if (badgeEl) badgeEl.textContent = targetLang.toUpperCase();
+
+        isMutatingI18nDom = true;
+        try {
+            applyKeyedElements(targetLang);
+        } finally {
+            isMutatingI18nDom = false;
+        }
+
+        if (targetLang === 'en') {
+            collectAndApplyFullPageTranslation(myToken);
+        } else {
+            restoreAllVietnameseText();
+        }
+    };
+
+    if (typeof MutationObserver !== 'undefined' && document.body) {
+        const i18nMutationObserver = new MutationObserver(() => {
+            if (currentUiLang !== 'en' || isMutatingI18nDom) return;
+            clearTimeout(i18nObserverTimer);
+            const activeToken = langSessionToken;
+            i18nObserverTimer = setTimeout(() => {
+                if (currentUiLang === 'en' && activeToken === langSessionToken) {
+                    collectAndApplyFullPageTranslation(activeToken);
+                }
+            }, 180);
+        });
+        i18nMutationObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    window.XanhHubI18n = { applyLanguage };
+
+    const savedLang = localStorage.getItem('xanhhub_lang');
+    if (savedLang === 'en') {
+        applyLanguage('en');
+    }
+
+    const btnLangToggle = document.getElementById('btn-lang-toggle');
+    if (btnLangToggle) {
+        btnLangToggle.addEventListener('click', () => {
+            const nextLang = (btnLangToggle.dataset.lang === 'en') ? 'vi' : 'en';
+            applyLanguage(nextLang);
+            if (window.XanhHubUI) {
+                window.XanhHubUI.toast(
+                    'success',
+                    nextLang === 'en' ? 'Full Page Translated: English (EN)' : 'Ngôn ngữ: Tiếng Việt (VI)',
+                    nextLang === 'en'
+                        ? 'Entire interface is being translated to English via Xanh Hub API & cached.'
+                        : 'Đã khôi phục toàn bộ giao diện & nội dung về Tiếng Việt chuẩn.'
+                );
+            }
+        });
+    }
+
+    // Hộp Tiện ích Nhanh trên Header (#btn-header-utilities)
+    const btnHeaderUtil = document.getElementById('btn-header-utilities');
+    const utilDropdown = document.getElementById('header-utilities-dropdown');
+    if (btnHeaderUtil && utilDropdown) {
+        const closeUtilDropdown = () => {
+            utilDropdown.classList.add('hidden');
+            btnHeaderUtil.setAttribute('aria-expanded', 'false');
+        };
+
+        btnHeaderUtil.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = utilDropdown.classList.toggle('hidden');
+            btnHeaderUtil.setAttribute('aria-expanded', String(!isHidden));
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#header-utilities-wrapper')) {
+                closeUtilDropdown();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeUtilDropdown();
+            }
+        });
+    }
+
+    // Trợ năng: Thay đổi cỡ chữ toàn trang
+    const applyFontScale = (pxSize) => {
+        const clamped = Math.max(14, Math.min(18, pxSize));
+        document.documentElement.style.fontSize = `${clamped}px`;
+        localStorage.setItem('xanhhub_font_px', String(clamped));
+    };
+    const savedFontPx = parseFloat(localStorage.getItem('xanhhub_font_px') || '');
+    if (!isNaN(savedFontPx) && savedFontPx >= 14 && savedFontPx <= 18) {
+        document.documentElement.style.fontSize = `${savedFontPx}px`;
+    }
+    const btnFontDec = document.getElementById('util-font-dec');
+    const btnFontReset = document.getElementById('util-font-reset');
+    const btnFontInc = document.getElementById('util-font-inc');
+    if (btnFontDec) btnFontDec.addEventListener('click', () => applyFontScale(14.5));
+    if (btnFontReset) btnFontReset.addEventListener('click', () => {
+        document.documentElement.style.fontSize = '';
+        localStorage.removeItem('xanhhub_font_px');
+    });
+    if (btnFontInc) btnFontInc.addEventListener('click', () => applyFontScale(17.5));
+
+    // Tiện ích GPS tức thời trong Hộp Tiện ích Header
+    const utilBtnGps = document.getElementById('util-btn-gps-now');
+    const utilGpsRes = document.getElementById('util-gps-result');
+    if (utilBtnGps && utilGpsRes) {
+        const resolveHeaderGps = (lat, lng, fallbackNote = '') => {
+            fetch(`?action=api_reverse_geocode&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`)
+                .then(r => r.json())
+                .then(data => {
+                    const addr = (data && data.ok && (data.full_address || (data.address && data.address.full_address)))
+                        ? (data.full_address || data.address.full_address)
+                        : 'Trung tâm TP. Hồ Chí Minh';
+                    utilGpsRes.innerHTML = `
+                        <div class="font-bold text-slate-900 dark:text-white">${escapeHtml(addr)}</div>
+                        <div class="text-[10px] mono text-slate-500 mt-0.5">${Number(lat).toFixed(4)}° N, ${Number(lng).toFixed(4)}° E ${escapeHtml(fallbackNote)}</div>
+                        <a href="?view=map&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&place=${encodeURIComponent(addr)}" class="inline-flex items-center gap-1 text-[10px] font-bold text-[#0057B8] dark:text-sky-400 hover:underline mt-1">
+                            <span>Xem ca trực gần vị trí này trên Bản đồ &rarr;</span>
+                        </a>
+                    `;
+                })
+                .catch(() => {
+                    utilGpsRes.textContent = `Tọa độ: ${Number(lat).toFixed(4)}° N, ${Number(lng).toFixed(4)}° E`;
+                });
+        };
+
+        utilBtnGps.addEventListener('click', () => {
+            utilGpsRes.textContent = 'Đang lấy tọa độ GPS & giải mã địa chỉ...';
+            if (!navigator.geolocation) {
+                resolveHeaderGps(10.7769, 106.7009, '(Mặc định TP.HCM)');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => resolveHeaderGps(pos.coords.latitude, pos.coords.longitude, ''),
+                () => resolveHeaderGps(10.7769, 106.7009, '(Mặc định TP.HCM)'),
+                { enableHighAccuracy: true, timeout: 6000 }
+            );
+        });
+    }
+
+    // =========================================================================
+    // 15. QUẢN LÝ BẢN TIN: MỞ MODAL CHỈNH SỬA & ĐỒNG BỘ REDIRECT THEO NGỮ CẢNH
+    // =========================================================================
+    const computeNewsRedirect = () => {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get('view') || '';
+        if (view === 'coordinator') {
+            const actId = params.get('activity_id') || '1';
+            return `?view=coordinator&activity_id=${encodeURIComponent(actId)}&vtab=tab-news`;
+        }
+        if (view === 'admin') {
+            return '?view=admin&tab=news#admin-tab-news';
+        }
+        if (view === 'news') {
+            return '?view=news';
+        }
+        return '';
+    };
+
+    const syncNewsFormRedirects = () => {
+        const defaultRedirect = computeNewsRedirect();
+        if (!defaultRedirect) return;
+        document.querySelectorAll('.news-form-redirect').forEach(inp => {
+            if (!inp.value) inp.value = defaultRedirect;
+        });
+    };
+    syncNewsFormRedirects();
+
+    document.addEventListener('click', (e) => {
+        const createNewsBtn = e.target.closest('[data-open-modal="modal-admin-create-news"]');
+        if (createNewsBtn) {
+            const createModal = document.getElementById('modal-admin-create-news');
+            const redirInp = createModal ? createModal.querySelector('.news-form-redirect') : null;
+            if (redirInp) {
+                redirInp.value = createNewsBtn.dataset.newsRedirect || computeNewsRedirect();
+            }
+        }
+
+        const editBtn = e.target.closest('.btn-edit-news-trigger');
+        if (!editBtn) return;
+
+        const idEl = document.getElementById('edit-news-id');
+        const titleEl = document.getElementById('edit-news-title');
+        const tagEl = document.getElementById('edit-news-tag');
+        const actEl = document.getElementById('edit-news-act-id');
+        const imgEl = document.getElementById('edit-news-img');
+        const sumEl = document.getElementById('edit-news-summary');
+        const contentEl = document.getElementById('edit-news-content');
+        const statusEl = document.getElementById('edit-news-status');
+        const dateEl = document.getElementById('edit-news-pub-date');
+        const editModal = document.getElementById('modal-admin-edit-news');
+
+        if (idEl) idEl.value = editBtn.dataset.newsId || '';
+        if (titleEl) titleEl.value = editBtn.dataset.newsTitle || '';
+        if (tagEl) tagEl.value = editBtn.dataset.newsTag || 'Bản tin';
+        if (actEl) actEl.value = editBtn.dataset.newsActId || '';
+        if (imgEl) imgEl.value = editBtn.dataset.newsImg || 'assets/images/campaign-d1.jpg';
+        if (sumEl) sumEl.value = editBtn.dataset.newsSummary || '';
+        if (contentEl) contentEl.value = editBtn.dataset.newsContent || '';
+        if (statusEl) statusEl.value = editBtn.dataset.newsStatus || 'PUBLISHED';
+        if (dateEl) dateEl.value = editBtn.dataset.newsPubDate || '';
+
+        if (editModal) {
+            const redirInp = editModal.querySelector('.news-form-redirect');
+            if (redirInp) {
+                redirInp.value = editBtn.dataset.newsRedirect || computeNewsRedirect();
+            }
+        }
+
+        XanhHubUI.openModal('modal-admin-edit-news');
+    });
 })();
 
 

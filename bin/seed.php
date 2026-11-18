@@ -16,6 +16,14 @@ echo "[Xanh Hub] Bắt đầu khởi tạo dữ liệu mẫu chuẩn D1, D2, D3,
 
 $migrationFile = dirname(__DIR__) . '/database/migrations/001_init_schema.sql';
 Database::migrate($migrationFile);
+$mig002 = dirname(__DIR__) . '/database/migrations/002_gamification_and_evaluations.sql';
+if (file_exists($mig002)) {
+    Database::migrate($mig002);
+}
+$mig003 = dirname(__DIR__) . '/database/migrations/003_news_management.sql';
+if (file_exists($mig003)) {
+    Database::migrate($mig003);
+}
 
 $pdo = Database::getConnection();
 $repo = new XanhHubRepository($pdo);
@@ -39,7 +47,7 @@ try {
     $pdo->exec("SELECT setval('skills_id_seq', (SELECT MAX(id) FROM skills))");
 
     // 2. Nạp 30 tình nguyện viên (ID 1..30) + Điều phối viên Thảo (ID 31) + Quản trị Đoàn Cô Hương (ID 32)
-    $defaultPassHash = password_hash('XanhHub@2026', PASSWORD_ARGON2ID);
+    $defaultPassHash = password_hash('XanhHub@2026', defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : PASSWORD_BCRYPT);
     $volunteers = DatasetGenerator::create30Volunteers('D1');
 
     $stmtUser = $pdo->prepare('
@@ -315,6 +323,27 @@ try {
         VALUES ('XH2026-SV001-9F8A2C', 1, 3, 12.0, 32),
                ('XH2026-SV002-7B4D1E', 2, 3, 9.0, 32)
     ");
+
+    // 6. Khởi tạo cấu hình hệ thống và tham số điều phối mặc định trong settings
+    $defaultConfig = json_encode([
+        'withdraw_deadline_hours' => 24,
+        'qr_rotation_seconds' => 30,
+        'priority_mode' => 'MAX_COVERAGE',
+        'weights' => [
+            'w_priority' => 5.0,
+            'w_preference' => 2.0,
+            'w_skill_waste' => 3.0,
+            'w_load' => 1.0,
+            'w_reputation' => 1.5,
+        ],
+        'updated_at' => date('c'),
+    ], JSON_UNESCAPED_UNICODE);
+    $stmtInitSettings = $pdo->prepare("
+        INSERT INTO settings (key, value_json, updated_at)
+        VALUES ('system_config', :val, NOW())
+        ON CONFLICT (key) DO UPDATE SET value_json = EXCLUDED.value_json
+    ");
+    $stmtInitSettings->execute([':val' => $defaultConfig]);
 
     $pdo->commit();
 
