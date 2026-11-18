@@ -119,14 +119,14 @@ final class CsvSafeExporter
         $stmt->execute([':aid' => $activityId]);
         $rows = $stmt->fetchAll();
 
-        // Bản đồ quy đổi Chi đoàn -> Cơ sở Đoàn / Trường Đại học
+        // Bản đồ quy đổi Chi đoàn -> Cơ sở Đoàn / Trường Đại học (Hà Nội)
         $schoolMapping = [
-            'KTPM' => 'Khoa Kỹ thuật Phần mềm (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
-            'HTTT' => 'Khoa Hệ thống Thông tin (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
-            'KHMT' => 'Khoa Khoa học Máy tính (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
-            'MMT'  => 'Khoa Mạng máy tính & TT (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
-            'ATTT' => 'Khoa An toàn Thông tin (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
-            'KHDL' => 'Khoa Khoa học Dữ liệu (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
+            'KTPM' => 'Khoa Kỹ thuật Phần mềm (ĐH Bách Khoa Hà Nội)',
+            'HTTT' => 'Khoa Hệ thống Thông tin (ĐH Công nghệ - ĐHQG Hà Nội)',
+            'KHMT' => 'Khoa Khoa học Máy tính (ĐH Bách Khoa Hà Nội)',
+            'MMT'  => 'Khoa Mạng máy tính & TT (ĐH Công nghệ - ĐHQG Hà Nội)',
+            'ATTT' => 'Khoa An toàn Thông tin (Học viện Kỹ thuật Mật mã / BCVT)',
+            'KHDL' => 'Khoa Khoa học Dữ liệu (ĐH Kinh tế Quốc dân)',
         ];
 
         $headers = [
@@ -153,7 +153,7 @@ final class CsvSafeExporter
         $dataRows = [];
         foreach ($rows as $r) {
             $chapter = (string) ($r['chapter_name'] ?? '');
-            $schoolUnit = 'Đoàn Thanh niên Trường Đại học Quốc gia TP.HCM';
+            $schoolUnit = 'Đoàn Thanh niên Đại học Quốc gia Hà Nội & Khối ĐH Hà Nội';
             foreach ($schoolMapping as $prefix => $schoolName) {
                 if (str_contains($chapter, $prefix)) {
                     $schoolUnit = $schoolName;

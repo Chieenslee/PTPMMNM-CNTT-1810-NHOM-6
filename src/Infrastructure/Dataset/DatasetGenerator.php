@@ -208,6 +208,10 @@ final class DatasetGenerator
                 }
             }
 
+            // Tọa độ GPS thực tế phân bổ quanh các quận nội thành TP. Hà Nội
+            $lat = round(21.0050 + (($id % 6) * 0.0085), 5);
+            $lng = round(105.8150 + ((intdiv($id - 1, 6) % 5) * 0.0110), 5);
+
             $volunteers[] = new VolunteerSpec(
                 id: $id,
                 studentCode: $code,
@@ -216,7 +220,9 @@ final class DatasetGenerator
                 maxShiftsPerWeek: 4,
                 skills: $skills,
                 availabilitySlots: $avail,
-                absentRiskProbability: round((($id * 7) % 25) / 100.0, 2)
+                absentRiskProbability: round((($id * 7) % 25) / 100.0, 2),
+                lat: $lat,
+                lng: $lng
             );
         }
 
@@ -637,9 +643,9 @@ final class DatasetGenerator
             $reqId = $reqOffset + $idx;
 
             $canon = \XanhHub\Infrastructure\Service\GisService::CANONICAL_LOCATIONS[$shiftId] ?? null;
-            $lat = $canon !== null ? $canon['lat'] : 10.7769;
-            $lng = $canon !== null ? $canon['lng'] : 106.7009;
-            $locName = $canon !== null ? $canon['location'] : ('Điểm hoạt động Thanh niên #' . $idx);
+            $lat = $canon !== null ? $canon['lat'] : 21.0285;
+            $lng = $canon !== null ? $canon['lng'] : 105.8542;
+            $locName = $canon !== null ? $canon['location'] : ('Điểm hoạt động Thanh niên Hà Nội #' . $idx);
 
             $shifts[] = new ShiftSpec(
                 id: $shiftId,

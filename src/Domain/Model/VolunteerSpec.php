@@ -19,8 +19,8 @@ final class VolunteerSpec
         public readonly array $skills,
         public readonly array $availabilitySlots,
         public readonly float $absentRiskProbability = 0.0,
-        public readonly float $lat = 10.7769,
-        public readonly float $lng = 106.7009,
+        public readonly float $lat = 21.0285,
+        public readonly float $lng = 105.8542,
         public readonly float $reputationScore = 4.0
     ) {
     }

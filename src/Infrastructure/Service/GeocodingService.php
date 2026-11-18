@@ -12,121 +12,108 @@ use PDO;
  *
  * Nguồn dữ liệu:
  * 1. Bảng CSDL PostgreSQL (`shifts`, `activities`) — 100% điểm trực hoạt động thực tế.
- * 2. Danh mục Địa danh Thực tế TP.HCM & Lân cận (Gazetteer > 90 địa điểm chuẩn xác GPS).
+ * 2. Danh mục Địa danh Thực tế TP. Hà Nội & Lân cận (Gazetteer > 75 địa điểm chuẩn xác GPS).
  * 3. Hỗ trợ OpenStreetMap Nominatim Reverse Geocoding (kèm fallback ngoại tuyến tức thì).
  */
 final class GeocodingService
 {
     /**
-     * Danh mục hơn 90 địa điểm thực tế tại TP.HCM (Trường ĐH, Bệnh viện, Bến xe, Metro,
-     * Công viên, Kênh rạch, Cơ sở Đoàn & Trung tâm 22 Quận/Huyện/TP. Thủ Đức).
+     * Danh mục hơn 75 địa điểm thực tế tại TP. Hà Nội (Cơ sở Đoàn, Trường ĐH, THPT,
+     * Bệnh viện, Bến xe, Nhà ga, Công viên, Hồ/Sông và Trung tâm các Quận/Huyện Hà Nội).
      *
      * @var list<array{name: string, address: string, district: string, category: string, lat: float, lng: float}>
      */
     public const VIETNAM_PLACES_GAZETTEER = [
-        // --- CƠ SỞ ĐOÀN - HỘI & TRUNG TÂM THANH NIÊN ---
-        ['name' => 'Thành Đoàn TP. Hồ Chí Minh', 'address' => 'Số 1 Phạm Ngọc Thạch, P. Bến Nghé, Q. 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Cơ quan Đoàn', 'lat' => 10.7817, 'lng' => 106.6976],
-        ['name' => 'Nhà Văn hóa Thanh niên TP.HCM', 'address' => 'Số 4 Phạm Ngọc Thạch, P. Bến Nghé, Q. 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Nhà Văn hóa', 'lat' => 10.7801, 'lng' => 106.6975],
-        ['name' => 'Trụ sở Thành Đoàn (145 Pasteur)', 'address' => '145 Pasteur, P. Võ Thị Sáu, Q. 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Cơ quan Đoàn', 'lat' => 10.7820, 'lng' => 106.6940],
-        ['name' => 'Nhà Văn hóa Sinh viên TP.HCM (Cơ sở ĐHQG)', 'address' => 'Quảng trường Sáng Tạo, Khu Đô thị ĐHQG, P. Đông Hòa, TP. Dĩ An / TP. Thủ Đức', 'district' => 'TP. Thủ Đức', 'category' => 'Nhà Văn hóa', 'lat' => 10.8752, 'lng' => 106.8007],
-        ['name' => 'Nhà Văn hóa Sinh viên TP.HCM (CS Quận 3)', 'address' => '643 Điện Biên Phủ, P. 1, Q. 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Nhà Văn hóa', 'lat' => 10.7689, 'lng' => 106.6789],
-        ['name' => 'Cung Văn hóa Lao động TP.HCM', 'address' => '55B Nguyễn Thị Minh Khai, P. Bến Thành, Q. 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Trung tâm VH', 'lat' => 10.7747, 'lng' => 106.6915],
-        ['name' => 'Nhà Thiếu nhi TP. Hồ Chí Minh', 'address' => '36 Lê Quý Đôn, P. Võ Thị Sáu, Q. 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Trung tâm VH', 'lat' => 10.7809, 'lng' => 106.6910],
+        // --- CƠ SỞ ĐOÀN - HỘI & TRUNG TÂM THANH NIÊN HÀ NỘI ---
+        ['name' => 'Thành Đoàn Hà Nội', 'address' => 'Số 14A Phan Chu Trinh, P. Phan Chu Trinh, Q. Hoàn Kiếm, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Cơ quan Đoàn', 'lat' => 21.0228, 'lng' => 105.8556],
+        ['name' => 'Trung ương Đoàn TNCS Hồ Chí Minh', 'address' => 'Số 62 Bà Triệu, P. Hàng Bài, Q. Hoàn Kiếm, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Cơ quan Đoàn', 'lat' => 21.0218, 'lng' => 105.8495],
+        ['name' => 'Cung Văn hóa Thể thao Thanh niên Hà Nội', 'address' => 'Số 1 Tăng Bạt Hổ, P. Phạm Đình Hổ, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Nhà Văn hóa', 'lat' => 21.0168, 'lng' => 105.8588],
+        ['name' => 'Nhà Văn hóa Học sinh – Sinh viên Hà Nội', 'address' => 'Số 37 Trần Bình Trọng, P. Nguyễn Du, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Nhà Văn hóa', 'lat' => 21.0182, 'lng' => 105.8445],
+        ['name' => 'Cung Thiếu nhi Hà Nội', 'address' => 'Số 36 Lý Thái Tổ, P. Lý Thái Tổ, Q. Hoàn Kiếm, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Trung tâm VH', 'lat' => 21.0282, 'lng' => 105.8550],
+        ['name' => 'Cung Văn hóa Lao động Hữu nghị Việt Xô', 'address' => 'Số 91 Trần Hưng Đạo, P. Trần Hưng Đạo, Q. Hoàn Kiếm, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Trung tâm VH', 'lat' => 21.0235, 'lng' => 105.8438],
 
-        // --- CÁC TRƯỜNG ĐẠI HỌC & THPT (ĐIỂM THI TIẾP SỨC MÙA THI) ---
-        ['name' => 'Đại học Bách Khoa TP.HCM (Cơ sở 1)', 'address' => '268 Lý Thường Kiệt, P. 14, Q. 10, TP. Hồ Chí Minh', 'district' => 'Quận 10', 'category' => 'Trường Đại học', 'lat' => 10.7725, 'lng' => 106.6578],
-        ['name' => 'Đại học Bách Khoa TP.HCM (Cơ sở 2 - Thủ Đức)', 'address' => 'Khu Đô thị ĐHQG TP.HCM, P. Linh Trung, TP. Thủ Đức', 'district' => 'TP. Thủ Đức', 'category' => 'Trường Đại học', 'lat' => 10.8805, 'lng' => 106.8062],
-        ['name' => 'Đại học Khoa học Tự nhiên TP.HCM (CS1)', 'address' => '227 Nguyễn Văn Cừ, P. 4, Q. 5, TP. Hồ Chí Minh', 'district' => 'Quận 5', 'category' => 'Trường Đại học', 'lat' => 10.7629, 'lng' => 106.6823],
-        ['name' => 'Đại học Khoa học Tự nhiên (Cơ sở Linh Trung)', 'address' => 'Khu Đô thị ĐHQG TP.HCM, P. Linh Trung, TP. Thủ Đức', 'district' => 'TP. Thủ Đức', 'category' => 'Trường Đại học', 'lat' => 10.8757, 'lng' => 106.7991],
-        ['name' => 'Đại học Công nghệ Thông tin (UIT - ĐHQG)', 'address' => 'Khu phố 6, P. Linh Trung, TP. Thủ Đức, TP. Hồ Chí Minh', 'district' => 'TP. Thủ Đức', 'category' => 'Trường Đại học', 'lat' => 10.8700, 'lng' => 106.8030],
-        ['name' => 'Đại học Kinh tế - Luật (UEL - ĐHQG)', 'address' => '669 Quốc lộ 1, Khu phố 3, P. Linh Xuân, TP. Thủ Đức', 'district' => 'TP. Thủ Đức', 'category' => 'Trường Đại học', 'lat' => 10.8707, 'lng' => 106.7782],
-        ['name' => 'Đại học Khoa học Xã hội & Nhân văn (CS Quận 1)', 'address' => '10-12 Đinh Tiên Hoàng, P. Bến Nghé, Q. 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Trường Đại học', 'lat' => 10.7859, 'lng' => 106.7024],
-        ['name' => 'Đại học Khoa học Xã hội & Nhân văn (CS Linh Trung)', 'address' => 'Khu phố 6, P. Linh Trung, TP. Thủ Đức, TP. Hồ Chí Minh', 'district' => 'TP. Thủ Đức', 'category' => 'Trường Đại học', 'lat' => 10.8732, 'lng' => 106.8022],
-        ['name' => 'Đại học Quốc tế (IU - ĐHQG TP.HCM)', 'address' => 'Khu phố 6, P. Linh Trung, TP. Thủ Đức, TP. Hồ Chí Minh', 'district' => 'TP. Thủ Đức', 'category' => 'Trường Đại học', 'lat' => 10.8775, 'lng' => 106.8016],
-        ['name' => 'Đại học Sư phạm TP.HCM', 'address' => '280 An Dương Vương, P. 4, Q. 5, TP. Hồ Chí Minh', 'district' => 'Quận 5', 'category' => 'Trường Đại học', 'lat' => 10.7601, 'lng' => 106.6835],
-        ['name' => 'Đại học Kinh tế TP.HCM (UEH - Cơ sở A)', 'address' => '59C Nguyễn Đình Chiểu, P. Võ Thị Sáu, Q. 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Trường Đại học', 'lat' => 10.7828, 'lng' => 106.6958],
-        ['name' => 'Đại học Y Dược TP.HCM', 'address' => '217 Hồng Bàng, P. 11, Q. 5, TP. Hồ Chí Minh', 'district' => 'Quận 5', 'category' => 'Trường Đại học', 'lat' => 10.7556, 'lng' => 106.6632],
-        ['name' => 'Đại học Nông Lâm TP.HCM', 'address' => 'Khu phố 6, P. Linh Trung, TP. Thủ Đức, TP. Hồ Chí Minh', 'district' => 'TP. Thủ Đức', 'category' => 'Trường Đại học', 'lat' => 10.8700, 'lng' => 106.7917],
-        ['name' => 'Đại học Sư phạm Kỹ thuật TP.HCM', 'address' => '01 Võ Văn Ngân, P. Linh Chiểu, TP. Thủ Đức, TP. Hồ Chí Minh', 'district' => 'TP. Thủ Đức', 'category' => 'Trường Đại học', 'lat' => 10.8512, 'lng' => 106.7720],
-        ['name' => 'Đại học Tôn Đức Thắng (TDTU)', 'address' => '19 Nguyễn Hữu Thọ, P. Tân Phong, Q. 7, TP. Hồ Chí Minh', 'district' => 'Quận 7', 'category' => 'Trường Đại học', 'lat' => 10.7326, 'lng' => 106.6997],
-        ['name' => 'Đại học Công nghiệp TP.HCM (IUH)', 'address' => '12 Nguyễn Văn Bảo, P. 4, Q. Gò Vấp, TP. Hồ Chí Minh', 'district' => 'Q. Gò Vấp', 'category' => 'Trường Đại học', 'lat' => 10.8222, 'lng' => 106.6875],
-        ['name' => 'Đại học Sài Gòn (SGU)', 'address' => '273 An Dương Vương, P. 3, Q. 5, TP. Hồ Chí Minh', 'district' => 'Quận 5', 'category' => 'Trường Đại học', 'lat' => 10.7599, 'lng' => 106.6822],
-        ['name' => 'Đại học Luật TP.HCM (CS Nguyễn Tất Thành)', 'address' => '02 Nguyễn Tất Thành, P. 13, Q. 4, TP. Hồ Chí Minh', 'district' => 'Quận 4', 'category' => 'Trường Đại học', 'lat' => 10.7676, 'lng' => 106.7064],
-        ['name' => 'Đại học Ngoại thương (CS2 TP.HCM)', 'address' => '15 Đường D5, P. 25, Q. Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Trường Đại học', 'lat' => 10.8065, 'lng' => 106.7124],
-        ['name' => 'Đại học Giao thông Vận tải TP.HCM', 'address' => '02 Võ Oanh, P. 25, Q. Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Trường Đại học', 'lat' => 10.8045, 'lng' => 106.7169],
-        ['name' => 'Đại học Công nghệ TP.HCM (HUTECH)', 'address' => '475A Điện Biên Phủ, P. 25, Q. Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Trường Đại học', 'lat' => 10.8017, 'lng' => 106.7145],
-        ['name' => 'Đại học Văn Lang (CS3 Bình Thạnh)', 'address' => '69/68 Đặng Thùy Trâm, P. 13, Q. Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Trường Đại học', 'lat' => 10.8276, 'lng' => 106.6999],
-        ['name' => 'THPT Chuyên Lê Hồng Phong', 'address' => '235 Nguyễn Văn Cừ, P. 4, Q. 5, TP. Hồ Chí Minh', 'district' => 'Quận 5', 'category' => 'Điểm thi THPT', 'lat' => 10.7640, 'lng' => 106.6820],
-        ['name' => 'THPT Marie Curie', 'address' => '159 Nam Kỳ Khởi Nghĩa, P. Võ Thị Sáu, Q. 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Điểm thi THPT', 'lat' => 10.7812, 'lng' => 106.6905],
-        ['name' => 'THPT Nguyễn Thị Minh Khai', 'address' => '275 Điện Biên Phủ, P. Võ Thị Sáu, Q. 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Điểm thi THPT', 'lat' => 10.7766, 'lng' => 106.6872],
-        ['name' => 'THPT Gia Định', 'address' => '44 Võ Oanh, P. 25, Q. Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Điểm thi THPT', 'lat' => 10.8058, 'lng' => 106.7176],
+        // --- CÁC TRƯỜNG ĐẠI HỌC & THPT TẠI HÀ NỘI (ĐIỂM THI TIẾP SỨC MÙA THI) ---
+        ['name' => 'Đại học Bách Khoa Hà Nội (HUST)', 'address' => 'Số 1 Đại Cồ Việt, P. Bách Khoa, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Trường Đại học', 'lat' => 21.0050, 'lng' => 105.8435],
+        ['name' => 'Quảng trường Tạ Quang Bửu (ĐH Bách Khoa Hà Nội)', 'address' => 'Số 1 Đại Cồ Việt / Trần Đại Nghĩa, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Trường Đại học', 'lat' => 21.0058, 'lng' => 105.8442],
+        ['name' => 'Đại học Kinh tế Quốc dân (NEU)', 'address' => '207 Giải Phóng, P. Đồng Tâm, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Trường Đại học', 'lat' => 20.9998, 'lng' => 105.8425],
+        ['name' => 'Đại học Xây dựng Hà Nội (HUCE)', 'address' => '55 Giải Phóng, P. Đồng Tâm, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Trường Đại học', 'lat' => 21.0035, 'lng' => 105.8428],
+        ['name' => 'Đại học Quốc gia Hà Nội (ĐHQGHN - Xuân Thủy)', 'address' => '144 Xuân Thủy, P. Dịch Vọng Hậu, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Trường Đại học', 'lat' => 21.0378, 'lng' => 105.7815],
+        ['name' => 'Trường Đại học Công nghệ (UET - ĐHQGHN)', 'address' => 'Nhà E3, 144 Xuân Thủy, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Trường Đại học', 'lat' => 21.0382, 'lng' => 105.7827],
+        ['name' => 'Đại học Ngoại ngữ (ULIS - ĐHQGHN)', 'address' => 'Số 2 Phạm Văn Đồng, P. Dịch Vọng Hậu, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Trường Đại học', 'lat' => 21.0394, 'lng' => 105.7810],
+        ['name' => 'Đại học Khoa học Tự nhiên (HUS - ĐHQGHN)', 'address' => '334 Nguyễn Trãi, P. Thanh Xuân Trung, Q. Thanh Xuân, TP. Hà Nội', 'district' => 'Q. Thanh Xuân', 'category' => 'Trường Đại học', 'lat' => 20.9961, 'lng' => 105.8080],
+        ['name' => 'Đại học Khoa học Xã hội & Nhân văn (USSH - ĐHQGHN)', 'address' => '336 Nguyễn Trãi, P. Thanh Xuân Trung, Q. Thanh Xuân, TP. Hà Nội', 'district' => 'Q. Thanh Xuân', 'category' => 'Trường Đại học', 'lat' => 20.9958, 'lng' => 105.8088],
+        ['name' => 'Đại học Sư phạm Hà Nội (HNUE)', 'address' => '136 Xuân Thủy, P. Dịch Vọng Hậu, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Trường Đại học', 'lat' => 21.0368, 'lng' => 105.7832],
+        ['name' => 'Học viện Báo chí và Tuyên truyền (AJC)', 'address' => '36 Xuân Thủy, P. Dịch Vọng Hậu, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Trường Đại học', 'lat' => 21.0367, 'lng' => 105.7885],
+        ['name' => 'Đại học Thương mại (TMU)', 'address' => '79 Hồ Tùng Mậu, P. Mai Dịch, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Trường Đại học', 'lat' => 21.0369, 'lng' => 105.7745],
+        ['name' => 'Đại học Ngoại thương Hà Nội (FTU)', 'address' => '91 Chùa Láng, P. Láng Thượng, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Trường Đại học', 'lat' => 21.0230, 'lng' => 105.8053],
+        ['name' => 'Học viện Ngoại giao (DAV)', 'address' => '69 Chùa Láng, P. Láng Thượng, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Trường Đại học', 'lat' => 21.0238, 'lng' => 105.8045],
+        ['name' => 'Đại học Giao thông Vận tải Hà Nội (UTC)', 'address' => 'Số 3 Cầu Giấy, P. Láng Thượng, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Trường Đại học', 'lat' => 21.0282, 'lng' => 105.8035],
+        ['name' => 'Đại học Y Hà Nội (HMU)', 'address' => 'Số 1 Tôn Thất Tùng, P. Trung Tự, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Trường Đại học', 'lat' => 21.0033, 'lng' => 105.8304],
+        ['name' => 'Đại học Thủy Lợi (TLU)', 'address' => '175 Tây Sơn, P. Trung Liệt, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Trường Đại học', 'lat' => 21.0072, 'lng' => 105.8248],
+        ['name' => 'Học viện Ngân hàng (HVNH)', 'address' => '12 Chùa Bộc, P. Quang Trung, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Trường Đại học', 'lat' => 21.0085, 'lng' => 105.8280],
+        ['name' => 'Học viện Công nghệ Bưu chính Viễn thông (PTIT)', 'address' => 'Km10 Đường Nguyễn Trãi, P. Mộ Lao, Q. Hà Đông, TP. Hà Nội', 'district' => 'Q. Hà Đông', 'category' => 'Trường Đại học', 'lat' => 20.9806, 'lng' => 105.7875],
+        ['name' => 'Đại học Kiến trúc Hà Nội (HAU)', 'address' => 'Km10 Đường Nguyễn Trãi, P. Văn Quán, Q. Hà Đông, TP. Hà Nội', 'district' => 'Q. Hà Đông', 'category' => 'Trường Đại học', 'lat' => 20.9801, 'lng' => 105.7885],
+        ['name' => 'Đại học Công nghiệp Hà Nội (HaUI)', 'address' => '298 Đường Cầu Diễn, P. Minh Khai, Q. Bắc Từ Liêm, TP. Hà Nội', 'district' => 'Q. Bắc Từ Liêm', 'category' => 'Trường Đại học', 'lat' => 21.0537, 'lng' => 105.7351],
+        ['name' => 'Học viện Nông nghiệp Việt Nam (VNUA)', 'address' => 'Thị trấn Trâu Quỳ, Huyện Gia Lâm, TP. Hà Nội', 'district' => 'Huyện Gia Lâm', 'category' => 'Trường Đại học', 'lat' => 21.0042, 'lng' => 105.9318],
+        ['name' => 'Đại học Luật Hà Nội (HLU)', 'address' => '87 Nguyễn Chí Thanh, P. Láng Hạ, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Trường Đại học', 'lat' => 21.0217, 'lng' => 105.8095],
+        ['name' => 'Khu Đô thị ĐHQG Hà Nội tại Hòa Lạc', 'address' => 'Thạch Hòa, Huyện Thạch Thất, TP. Hà Nội', 'district' => 'Huyện Thạch Thất', 'category' => 'Khu Đại học', 'lat' => 21.0135, 'lng' => 105.5265],
+        ['name' => 'THPT Chu Văn An Hà Nội', 'address' => 'Số 10 Thụy Khuê, P. Thụy Khuê, Q. Tây Hồ, TP. Hà Nội', 'district' => 'Q. Tây Hồ', 'category' => 'Điểm thi THPT', 'lat' => 21.0432, 'lng' => 105.8325],
+        ['name' => 'THPT Chuyên Hà Nội – Amsterdam', 'address' => 'Số 1 Hoàng Minh Giám, P. Trung Hòa, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Điểm thi THPT', 'lat' => 21.0068, 'lng' => 105.7982],
+        ['name' => 'THPT Việt Đức', 'address' => '47 Lý Thường Kiệt, P. Trần Hưng Đạo, Q. Hoàn Kiếm, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Điểm thi THPT', 'lat' => 21.0243, 'lng' => 105.8492],
+        ['name' => 'THPT Kim Liên', 'address' => 'Số 1 Ngõ 4C Đặng Văn Ngữ, P. Trung Tự, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Điểm thi THPT', 'lat' => 21.0108, 'lng' => 105.8315],
 
-        // --- BỆNH VIỆN & TRẠM Y TẾ ---
-        ['name' => 'Bệnh viện Chợ Rẫy', 'address' => '201B Nguyễn Chí Thanh, P. 12, Q. 5, TP. Hồ Chí Minh', 'district' => 'Quận 5', 'category' => 'Bệnh viện', 'lat' => 10.7578, 'lng' => 106.6595],
-        ['name' => 'Bệnh viện Nhân dân Gia Định', 'address' => '01 Nơ Trang Long, P. 7, Q. Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Bệnh viện', 'lat' => 10.8038, 'lng' => 106.6952],
-        ['name' => 'Bệnh viện Đại học Y Dược TP.HCM', 'address' => '215 Hồng Bàng, P. 11, Q. 5, TP. Hồ Chí Minh', 'district' => 'Quận 5', 'category' => 'Bệnh viện', 'lat' => 10.7554, 'lng' => 106.6645],
-        ['name' => 'Bệnh viện Nhân dân 115', 'address' => '527 Sư Vạn Hạnh, P. 12, Q. 10, TP. Hồ Chí Minh', 'district' => 'Quận 10', 'category' => 'Bệnh viện', 'lat' => 10.7711, 'lng' => 106.6656],
-        ['name' => 'Bệnh viện Nhi Đồng 1', 'address' => '341 Sư Vạn Hạnh, P. 10, Q. 10, TP. Hồ Chí Minh', 'district' => 'Quận 10', 'category' => 'Bệnh viện', 'lat' => 10.7689, 'lng' => 106.6703],
-        ['name' => 'Bệnh viện Từ Dũ', 'address' => '284 Cống Quỳnh, P. Phạm Ngũ Lão, Q. 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Bệnh viện', 'lat' => 10.7664, 'lng' => 106.6838],
-        ['name' => 'Bệnh viện Quân y 175', 'address' => '786 Nguyễn Kiệm, P. 3, Q. Gò Vấp, TP. Hồ Chí Minh', 'district' => 'Q. Gò Vấp', 'category' => 'Bệnh viện', 'lat' => 10.8180, 'lng' => 106.6787],
-        ['name' => 'Trạm Y tế Xã Lý Nhơn (Cần Giờ)', 'address' => 'Đường Lý Nhơn, Xã Lý Nhơn, Huyện Cần Giờ, TP. Hồ Chí Minh', 'district' => 'Huyện Cần Giờ', 'category' => 'Trạm Y tế', 'lat' => 10.4550, 'lng' => 106.8520],
+        // --- BỆNH VIỆN & TRẠM Y TẾ HÀ NỘI ---
+        ['name' => 'Bệnh viện Bạch Mai', 'address' => '78 Giải Phóng, P. Phương Mai, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Bệnh viện', 'lat' => 21.0028, 'lng' => 105.8405],
+        ['name' => 'Bệnh viện Hữu nghị Việt Đức', 'address' => '40 Tràng Thi, P. Hàng Bông, Q. Hoàn Kiếm, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Bệnh viện', 'lat' => 21.0272, 'lng' => 105.8482],
+        ['name' => 'Bệnh viện Đại học Y Hà Nội', 'address' => 'Số 1 Tôn Thất Tùng, P. Trung Tự, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Bệnh viện', 'lat' => 21.0021, 'lng' => 105.8295],
+        ['name' => 'Bệnh viện Trung ương Quân đội 108', 'address' => 'Số 1 Trần Hưng Đạo, P. Bạch Đằng, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Bệnh viện', 'lat' => 21.0176, 'lng' => 105.8615],
+        ['name' => 'Bệnh viện Nhi Trung ương', 'address' => '18/879 La Thành, P. Láng Thượng, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Bệnh viện', 'lat' => 21.0256, 'lng' => 105.8080],
+        ['name' => 'Bệnh viện E Hà Nội', 'address' => '89 Trần Cung, P. Nghĩa Tân, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Bệnh viện', 'lat' => 21.0504, 'lng' => 105.7897],
+        ['name' => 'Bệnh viện Đa khoa Xanh Pôn', 'address' => '12 Chu Văn An, P. Điện Biên, Q. Ba Đình, TP. Hà Nội', 'district' => 'Q. Ba Đình', 'category' => 'Bệnh viện', 'lat' => 21.0315, 'lng' => 105.8342],
+        ['name' => 'Trạm Y tế Xã Yên Bài (Ba Vì)', 'address' => 'Xã Yên Bài, Huyện Ba Vì, TP. Hà Nội', 'district' => 'Huyện Ba Vì', 'category' => 'Trạm Y tế', 'lat' => 21.0450, 'lng' => 105.4580],
 
-        // --- GIAO THÔNG, BẾN XE, NHÀ GA & METRO ---
-        ['name' => 'Quảng trường Bến Thành / Ga Metro Bến Thành', 'address' => 'Quảng trường Quách Thị Trang, P. Bến Thành, Q. 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Giao thông / Trung tâm', 'lat' => 10.7720, 'lng' => 106.6983],
-        ['name' => 'Ga Sài Gòn', 'address' => '01 Nguyễn Thông, P. 9, Q. 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Nhà Ga', 'lat' => 10.7818, 'lng' => 106.6782],
-        ['name' => 'Bến xe Miền Tây', 'address' => '395 Kinh Dương Vương, P. An Lạc, Q. Bình Tân, TP. Hồ Chí Minh', 'district' => 'Q. Bình Tân', 'category' => 'Bến xe', 'lat' => 10.7435, 'lng' => 106.6178],
-        ['name' => 'Bến xe Miền Đông Mới', 'address' => '501 Hoàng Hữu Nam, P. Long Bình, TP. Thủ Đức, TP. Hồ Chí Minh', 'district' => 'TP. Thủ Đức', 'category' => 'Bến xe', 'lat' => 10.8785, 'lng' => 106.8180],
-        ['name' => 'Bến xe Miền Đông Cũ', 'address' => '292 Đinh Bộ Lĩnh, P. 26, Q. Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Bến xe', 'lat' => 10.8136, 'lng' => 106.7116],
-        ['name' => 'Sân bay Quốc tế Tân Sơn Nhất', 'address' => 'Đường Trường Sơn, P. 2, Q. Tân Bình, TP. Hồ Chí Minh', 'district' => 'Q. Tân Bình', 'category' => 'Sân bay', 'lat' => 10.8185, 'lng' => 106.6588],
-        ['name' => 'Vòng xoay Dân Chủ', 'address' => 'Nút giao 3 Tháng 2 – Cách Mạng Tháng 8, P. 14, Q. 10 / Q. 3', 'district' => 'Quận 3', 'category' => 'Giao thông', 'lat' => 10.7782, 'lng' => 106.6795],
-        ['name' => 'Ngã tư Hàng Xanh', 'address' => 'Điện Biên Phủ – Xô Viết Nghệ Tĩnh, P. 15, Q. Bình Thạnh', 'district' => 'Q. Bình Thạnh', 'category' => 'Giao thông', 'lat' => 10.8012, 'lng' => 106.7113],
-        ['name' => 'Ngã tư Thủ Đức', 'address' => 'Xa lộ Hà Nội – Võ Văn Ngân, P. Hiệp Phú, TP. Thủ Đức', 'district' => 'TP. Thủ Đức', 'category' => 'Giao thông', 'lat' => 10.8492, 'lng' => 106.7745],
+        // --- GIAO THÔNG, BẾN XE, NHÀ GA & SÂN BAY HÀ NỘI ---
+        ['name' => 'Ga Hà Nội', 'address' => '120 Lê Duẩn, P. Cửa Nam, Q. Hoàn Kiếm / Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Nhà Ga', 'lat' => 21.0242, 'lng' => 105.8412],
+        ['name' => 'Bến xe Mỹ Đình', 'address' => '20 Phạm Hùng, P. Mỹ Đình 2, Q. Nam Từ Liêm, TP. Hà Nội', 'district' => 'Q. Nam Từ Liêm', 'category' => 'Bến xe', 'lat' => 21.0285, 'lng' => 105.7782],
+        ['name' => 'Bến xe Giáp Bát', 'address' => 'Km6 Đường Giải Phóng, P. Giáp Bát, Q. Hoàng Mai, TP. Hà Nội', 'district' => 'Q. Hoàng Mai', 'category' => 'Bến xe', 'lat' => 20.9802, 'lng' => 105.8415],
+        ['name' => 'Bến xe Nước Ngầm', 'address' => 'Số 1 Ngọc Hồi, P. Hoàng Liệt, Q. Hoàng Mai, TP. Hà Nội', 'district' => 'Q. Hoàng Mai', 'category' => 'Bến xe', 'lat' => 20.9673, 'lng' => 105.8424],
+        ['name' => 'Bến xe Gia Lâm', 'address' => 'Số 9 Ngô Gia Khảm, P. Ngọc Lâm, Q. Long Biên, TP. Hà Nội', 'district' => 'Q. Long Biên', 'category' => 'Bến xe', 'lat' => 21.0480, 'lng' => 105.8780],
+        ['name' => 'Sân bay Quốc tế Nội Bài', 'address' => 'Xã Phú Minh, Huyện Sóc Sơn, TP. Hà Nội', 'district' => 'Huyện Sóc Sơn', 'category' => 'Sân bay', 'lat' => 21.2212, 'lng' => 105.8072],
+        ['name' => 'Nút giao Ngã Tư Sở', 'address' => 'Tây Sơn – Nguyễn Trãi – Trường Chinh – Láng, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Giao thông', 'lat' => 21.0028, 'lng' => 105.8208],
+        ['name' => 'Nút giao Cầu Giấy – Xuân Thủy', 'address' => 'Phường Dịch Vọng, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Giao thông', 'lat' => 21.0315, 'lng' => 105.7995],
+        ['name' => 'Ga Metro Cát Linh', 'address' => 'Phố Cát Linh – Hào Nam, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Nhà Ga Metro', 'lat' => 21.0282, 'lng' => 105.8277],
 
-        // --- CÔNG VIÊN, KÊNH RẠCH & ĐỊA ĐIỂM MÔI TRƯỜNG ---
-        ['name' => 'Phố đi bộ Nguyễn Huệ / UBND TP.HCM', 'address' => '86 Lê Thánh Tôn / Đường Nguyễn Huệ, P. Bến Nghé, Q. 1, TP.HCM', 'district' => 'Quận 1', 'category' => 'Công trình Thanh niên', 'lat' => 10.7769, 'lng' => 106.7009],
-        ['name' => 'Công viên Bến Bạch Đằng', 'address' => 'Đường Tôn Đức Thắng, P. Bến Nghé, Q. 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Công viên', 'lat' => 10.7740, 'lng' => 106.7069],
-        ['name' => 'Công viên Lê Văn Tám', 'address' => 'Đường Hai Bà Trưng – Võ Thị Sáu, P. Đa Kao, Q. 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Công viên', 'lat' => 10.7887, 'lng' => 106.6946],
-        ['name' => 'Công viên Tao Đàn', 'address' => '55C Nguyễn Thị Minh Khai / Trương Định, P. Bến Thành, Q. 1', 'district' => 'Quận 1', 'category' => 'Công viên', 'lat' => 10.7745, 'lng' => 106.6922],
-        ['name' => 'Công viên 23 Tháng 9', 'address' => 'Đường Phạm Ngũ Lão – Lê Lai, P. Phạm Ngũ Lão, Q. 1', 'district' => 'Quận 1', 'category' => 'Công viên', 'lat' => 10.7695, 'lng' => 106.6930],
-        ['name' => 'Công viên Gia Định', 'address' => 'Đường Hoàng Minh Giám, P. 9, Q. Phú Nhuận / Q. Gò Vấp', 'district' => 'Q. Phú Nhuận', 'category' => 'Công viên', 'lat' => 10.8164, 'lng' => 106.6744],
-        ['name' => 'Công viên Hoàng Văn Thụ', 'address' => 'Đường Phan Đình Giót – Hoàng Văn Thụ, P. 2, Q. Tân Bình', 'district' => 'Q. Tân Bình', 'category' => 'Công viên', 'lat' => 10.7997, 'lng' => 106.6622],
-        ['name' => 'Công viên Lịch sử Văn hóa Dân tộc', 'address' => 'Đường Nguyễn Xiển, P. Long Bình, TP. Thủ Đức, TP. Hồ Chí Minh', 'district' => 'TP. Thủ Đức', 'category' => 'Công viên', 'lat' => 10.8805, 'lng' => 106.8375],
-        ['name' => 'Công viên Văn hóa Đầm Sen', 'address' => '03 Hòa Bình, P. 3, Q. 11, TP. Hồ Chí Minh', 'district' => 'Quận 11', 'category' => 'Công viên', 'lat' => 10.7685, 'lng' => 106.6362],
-        ['name' => 'Kênh Nhiêu Lộc – Cầu Điện Biên Phủ', 'address' => 'Đường Hoàng Sa – Trường Sa, Cầu Điện Biên Phủ, Q. Bình Thạnh', 'district' => 'Q. Bình Thạnh', 'category' => 'Tuyến Kênh Xanh', 'lat' => 10.7932, 'lng' => 106.6978],
-        ['name' => 'Tuyến đường Hoàng Sa – Trường Sa', 'address' => 'Bờ kênh Nhiêu Lộc, Phường 14, Quận 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Tuyến Kênh Xanh', 'lat' => 10.7875, 'lng' => 106.6850],
-        ['name' => 'Bến Vân Đồn – Tuyến Kênh Tàu Hủ', 'address' => 'Đường Bến Vân Đồn, P. 1, Quận 4, TP. Hồ Chí Minh', 'district' => 'Quận 4', 'category' => 'Tuyến Kênh Xanh', 'lat' => 10.7612, 'lng' => 106.7025],
-        ['name' => 'Bờ kè Bán đảo Thanh Đa', 'address' => 'Đường Bình Quới, Phường 27, Q. Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Tuyến Kênh Xanh', 'lat' => 10.8235, 'lng' => 106.7210],
-        ['name' => 'Bờ kè Kênh Tẻ – Trần Xuân Soạn', 'address' => 'Đường Trần Xuân Soạn, P. Tân Hưng, Quận 7, TP. Hồ Chí Minh', 'district' => 'Quận 7', 'category' => 'Tuyến Kênh Xanh', 'lat' => 10.7512, 'lng' => 106.7085],
-        ['name' => 'Tuyến Kênh Tham Lương – Bến Cát', 'address' => 'Phường Đông Hưng Thuận, Quận 12, TP. Hồ Chí Minh', 'district' => 'Quận 12', 'category' => 'Tuyến Kênh Xanh', 'lat' => 10.8290, 'lng' => 106.6325],
-        ['name' => 'Tuyến Kênh Rạch Xuyên Tâm', 'address' => 'Phường 15, Quận Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Tuyến Kênh Xanh', 'lat' => 10.8055, 'lng' => 106.6980],
+        // --- CÔNG VIÊN, HỒ, TUYẾN SÔNG & ĐỊA ĐIỂM MÔI TRƯỜNG HÀ NỘI ---
+        ['name' => 'Hồ Hoàn Kiếm / Không gian Đi bộ Hồ Gươm', 'address' => 'Đinh Tiên Hoàng, P. Tràng Tiền, Q. Hoàn Kiếm, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Trung tâm Hà Nội', 'lat' => 21.0285, 'lng' => 105.8542],
+        ['name' => 'Quảng trường Ba Đình – Lăng Chủ tịch Hồ Chí Minh', 'address' => 'Số 2 Hùng Vương, P. Điện Biên, Q. Ba Đình, TP. Hà Nội', 'district' => 'Q. Ba Đình', 'category' => 'Di tích / Trung tâm', 'lat' => 21.0368, 'lng' => 105.8347],
+        ['name' => 'Vườn hoa Lê Nin (Công viên Chi Lăng)', 'address' => 'Đường Điện Biên Phủ – Trần Phú, Q. Ba Đình, TP. Hà Nội', 'district' => 'Q. Ba Đình', 'category' => 'Công viên', 'lat' => 21.0318, 'lng' => 105.8405],
+        ['name' => 'Công viên Thống Nhất', 'address' => 'Đường Trần Nhân Tông – Lê Duẩn, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Công viên', 'lat' => 21.0170, 'lng' => 105.8430],
+        ['name' => 'Công viên Thủ Lệ (Vườn Bách thú Hà Nội)', 'address' => 'Đường Bưởi – Kim Mã, P. Ngọc Khánh, Q. Ba Đình, TP. Hà Nội', 'district' => 'Q. Ba Đình', 'category' => 'Công viên', 'lat' => 21.0308, 'lng' => 105.8065],
+        ['name' => 'Công viên Cầu Giấy', 'address' => 'Đường Thành Thái, P. Dịch Vọng, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Công viên', 'lat' => 21.0288, 'lng' => 105.7908],
+        ['name' => 'Công viên Nghĩa Đô', 'address' => 'Đường Nguyễn Văn Huyên, P. Dịch Vọng, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Công viên', 'lat' => 21.0410, 'lng' => 105.7965],
+        ['name' => 'Công viên Hòa Bình', 'address' => 'Đường Phạm Văn Đồng, P. Xuân Đỉnh, Q. Bắc Từ Liêm, TP. Hà Nội', 'district' => 'Q. Bắc Từ Liêm', 'category' => 'Công viên', 'lat' => 21.0645, 'lng' => 105.7868],
+        ['name' => 'Công viên Yên Sở', 'address' => 'Nút giao Pháp Vân – Cầu Giẽ, P. Yên Sở, Q. Hoàng Mai, TP. Hà Nội', 'district' => 'Q. Hoàng Mai', 'category' => 'Công viên', 'lat' => 20.9635, 'lng' => 105.8545],
+        ['name' => 'Đường Thanh Niên – Hồ Tây & Hồ Trúc Bạch', 'address' => 'Đường Thanh Niên, P. Yên Phụ, Q. Tây Hồ, TP. Hà Nội', 'district' => 'Q. Tây Hồ', 'category' => 'Tuyến Hồ Xanh', 'lat' => 21.0465, 'lng' => 105.8368],
+        ['name' => 'Cầu Cót – Tuyến Sông Tô Lịch', 'address' => 'Đường Láng, P. Láng Thượng, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Tuyến Sông Xanh', 'lat' => 21.0112, 'lng' => 105.8095],
+        ['name' => 'Tuyến Bờ sông Kim Ngưu', 'address' => 'Đường Kim Ngưu – Minh Khai, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Tuyến Sông Xanh', 'lat' => 20.9950, 'lng' => 105.8622],
+        ['name' => 'Hồ Văn Quán (KĐT Văn Quán)', 'address' => 'Phường Văn Quán, Q. Hà Đông, TP. Hà Nội', 'district' => 'Q. Hà Đông', 'category' => 'Tuyến Hồ Xanh', 'lat' => 20.9815, 'lng' => 105.7875],
 
-        // --- ĐIỂM MÙA HÈ XANH NGOẠI THÀNH & CÁC QUẬN HUYỆN ---
-        ['name' => 'Khu Di tích Chiến khu Rừng Sác Cần Giờ', 'address' => 'Xã Long Hòa, Huyện Cần Giờ, TP. Hồ Chí Minh', 'district' => 'Huyện Cần Giờ', 'category' => 'Chiến khu / Di tích', 'lat' => 10.5120, 'lng' => 106.8850],
-        ['name' => 'Điểm trường Xã Tam Thôn Hiệp (Cần Giờ)', 'address' => 'Đường Tam Thôn Hiệp, Xã Tam Thôn Hiệp, Huyện Cần Giờ, TP.HCM', 'district' => 'Huyện Cần Giờ', 'category' => 'Địa bàn Huyện', 'lat' => 10.5510, 'lng' => 106.8812],
-        ['name' => 'Thị trấn Cần Thạnh (Huyện Cần Giờ)', 'address' => 'Đường Duyên Hải, Thị trấn Cần Thạnh, Huyện Cần Giờ, TP. Hồ Chí Minh', 'district' => 'Huyện Cần Giờ', 'category' => 'Địa bàn Huyện', 'lat' => 10.4114, 'lng' => 106.9547],
-        ['name' => 'Xã Bà Điểm (Huyện Hóc Môn)', 'address' => 'Đường Phan Văn Hớn, Xã Bà Điểm, Huyện Hóc Môn, TP. Hồ Chí Minh', 'district' => 'Huyện Hóc Môn', 'category' => 'Địa bàn Huyện', 'lat' => 10.8385, 'lng' => 106.6025],
-        ['name' => 'Khu Di tích Địa đạo Củ Chi', 'address' => 'Ấp Phú Hiệp, Xã Phú Mỹ Hưng, Huyện Củ Chi, TP. Hồ Chí Minh', 'district' => 'Huyện Củ Chi', 'category' => 'Địa bàn Huyện', 'lat' => 11.1422, 'lng' => 106.4622],
-        ['name' => 'Thị trấn Tân Túc (Huyện Bình Chánh)', 'address' => 'Quốc lộ 1A, Thị trấn Tân Túc, Huyện Bình Chánh, TP. Hồ Chí Minh', 'district' => 'Huyện Bình Chánh', 'category' => 'Địa bàn Huyện', 'lat' => 10.6922, 'lng' => 106.5914],
-        ['name' => 'Trung tâm Huyện Nhà Bè', 'address' => 'Đường Huỳnh Tấn Phát, Thị trấn Nhà Bè, Huyện Nhà Bè, TP.HCM', 'district' => 'Huyện Nhà Bè', 'category' => 'Địa bàn Huyện', 'lat' => 10.6889, 'lng' => 106.7433],
-
-        // --- TRUNG TÂM CÁC QUẬN / THÀNH PHỐ THỦ ĐỨC ---
-        ['name' => 'Quận 1 – Trung tâm TP. Hồ Chí Minh', 'address' => 'Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh', 'district' => 'Quận 1', 'category' => 'Quận/Huyện', 'lat' => 10.7756, 'lng' => 106.7019],
-        ['name' => 'Quận 3 – Trung tâm Thành Đoàn', 'address' => 'Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh', 'district' => 'Quận 3', 'category' => 'Quận/Huyện', 'lat' => 10.7843, 'lng' => 106.6844],
-        ['name' => 'Quận 4 – Khánh Hội', 'address' => 'Phường 13, Quận 4, TP. Hồ Chí Minh', 'district' => 'Quận 4', 'category' => 'Quận/Huyện', 'lat' => 10.7578, 'lng' => 106.7013],
-        ['name' => 'Quận 5 – Khu vực Đại học Sư phạm & KHTN', 'address' => 'Đường An Dương Vương – Nguyễn Văn Cừ, Quận 5, TP. Hồ Chí Minh', 'district' => 'Quận 5', 'category' => 'Quận/Huyện', 'lat' => 10.7540, 'lng' => 106.6634],
-        ['name' => 'Quận 6 – Bình Tây', 'address' => 'Phường 2, Quận 6, TP. Hồ Chí Minh', 'district' => 'Quận 6', 'category' => 'Quận/Huyện', 'lat' => 10.7480, 'lng' => 106.6352],
-        ['name' => 'Quận 7 – Phú Mỹ Hưng & Kênh Tẻ', 'address' => 'Phường Tân Phú, Quận 7, TP. Hồ Chí Minh', 'district' => 'Quận 7', 'category' => 'Quận/Huyện', 'lat' => 10.7340, 'lng' => 106.7218],
-        ['name' => 'Quận 8 – Chánh Hưng', 'address' => 'Phường 5, Quận 8, TP. Hồ Chí Minh', 'district' => 'Quận 8', 'category' => 'Quận/Huyện', 'lat' => 10.7240, 'lng' => 106.6286],
-        ['name' => 'Quận 10 – Lý Thường Kiệt & Sư Vạn Hạnh', 'address' => 'Phường 14, Quận 10, TP. Hồ Chí Minh', 'district' => 'Quận 10', 'category' => 'Quận/Huyện', 'lat' => 10.7746, 'lng' => 106.6679],
-        ['name' => 'Quận 11 – Lãnh Binh Thăng', 'address' => 'Phường 10, Quận 11, TP. Hồ Chí Minh', 'district' => 'Quận 11', 'category' => 'Quận/Huyện', 'lat' => 10.7629, 'lng' => 106.6500],
-        ['name' => 'Quận 12 – Công viên Phần mềm Quang Trung', 'address' => 'Phường Tân Chánh Hiệp, Quận 12, TP. Hồ Chí Minh', 'district' => 'Quận 12', 'category' => 'Quận/Huyện', 'lat' => 10.8541, 'lng' => 106.6263],
-        ['name' => 'Quận Bình Thạnh – Thanh Đa & Hàng Xanh', 'address' => 'Phường 14, Quận Bình Thạnh, TP. Hồ Chí Minh', 'district' => 'Q. Bình Thạnh', 'category' => 'Quận/Huyện', 'lat' => 10.8106, 'lng' => 106.7091],
-        ['name' => 'Quận Gò Vấp – Quang Trung', 'address' => 'Phường 10, Quận Gò Vấp, TP. Hồ Chí Minh', 'district' => 'Q. Gò Vấp', 'category' => 'Quận/Huyện', 'lat' => 10.8387, 'lng' => 106.6653],
-        ['name' => 'Quận Phú Nhuận – Phan Đăng Lưu', 'address' => 'Phường 5, Quận Phú Nhuận, TP. Hồ Chí Minh', 'district' => 'Q. Phú Nhuận', 'category' => 'Quận/Huyện', 'lat' => 10.7992, 'lng' => 106.6802],
-        ['name' => 'Quận Tân Bình – Cộng Hòa & Hoàng Văn Thụ', 'address' => 'Phường 14, Quận Tân Bình, TP. Hồ Chí Minh', 'district' => 'Q. Tân Bình', 'category' => 'Quận/Huyện', 'lat' => 10.8015, 'lng' => 106.6526],
-        ['name' => 'Quận Tân Phú – Khu vực Đầm Sen / Aeon', 'address' => 'Phường Hòa Thạnh, Quận Tân Phú, TP. Hồ Chí Minh', 'district' => 'Q. Tân Phú', 'category' => 'Quận/Huyện', 'lat' => 10.7900, 'lng' => 106.6282],
-        ['name' => 'Quận Bình Tân – An Lạc & Tên Lửa', 'address' => 'Phường Bình Trị Đông B, Quận Bình Tân, TP. Hồ Chí Minh', 'district' => 'Q. Bình Tân', 'category' => 'Quận/Huyện', 'lat' => 10.7652, 'lng' => 106.6038],
-        ['name' => 'Thành phố Thủ Đức – Khu Công nghệ Cao & ĐHQG', 'address' => 'Phường Bình Thọ / Linh Trung, TP. Thủ Đức, TP. Hồ Chí Minh', 'district' => 'TP. Thủ Đức', 'category' => 'Quận/Huyện', 'lat' => 10.8494, 'lng' => 106.7717],
+        // --- ĐIỂM MÙA HÈ XANH NGOẠI THÀNH & CÁC QUẬN / HUYỆN HÀ NỘI ---
+        ['name' => 'Điểm trường Xã Ba Vì (Vườn Quốc gia Ba Vì)', 'address' => 'Xã Ba Vì, Huyện Ba Vì, TP. Hà Nội', 'district' => 'Huyện Ba Vì', 'category' => 'Địa bàn Huyện', 'lat' => 21.0725, 'lng' => 105.4250],
+        ['name' => 'Xã Minh Phú (Huyện Sóc Sơn)', 'address' => 'Xã Minh Phú, Huyện Sóc Sơn, TP. Hà Nội', 'district' => 'Huyện Sóc Sơn', 'category' => 'Địa bàn Huyện', 'lat' => 21.2580, 'lng' => 105.8490],
+        ['name' => 'Khu Di tích Cổ Loa (Huyện Đông Anh)', 'address' => 'Xã Cổ Loa, Huyện Đông Anh, TP. Hà Nội', 'district' => 'Huyện Đông Anh', 'category' => 'Di tích / Huyện', 'lat' => 21.1125, 'lng' => 105.8735],
+        ['name' => 'Quận Hoàn Kiếm – Trung tâm Thủ đô Hà Nội', 'address' => 'Phường Hàng Trống, Q. Hoàn Kiếm, TP. Hà Nội', 'district' => 'Q. Hoàn Kiếm', 'category' => 'Quận/Huyện', 'lat' => 21.0285, 'lng' => 105.8542],
+        ['name' => 'Quận Ba Đình – Trung tâm Hành chính Quốc gia', 'address' => 'Phường Điện Biên, Q. Ba Đình, TP. Hà Nội', 'district' => 'Q. Ba Đình', 'category' => 'Quận/Huyện', 'lat' => 21.0340, 'lng' => 105.8340],
+        ['name' => 'Quận Đống Đa – Thái Hà & Chùa Láng', 'address' => 'Phường Quang Trung, Q. Đống Đa, TP. Hà Nội', 'district' => 'Q. Đống Đa', 'category' => 'Quận/Huyện', 'lat' => 21.0150, 'lng' => 105.8260],
+        ['name' => 'Quận Hai Bà Trưng – Bách Khoa & Đại Cồ Việt', 'address' => 'Phường Bách Khoa, Q. Hai Bà Trưng, TP. Hà Nội', 'district' => 'Q. Hai Bà Trưng', 'category' => 'Quận/Huyện', 'lat' => 21.0080, 'lng' => 105.8510],
+        ['name' => 'Quận Cầu Giấy – Xuân Thủy & Dịch Vọng', 'address' => 'Phường Dịch Vọng, Q. Cầu Giấy, TP. Hà Nội', 'district' => 'Q. Cầu Giấy', 'category' => 'Quận/Huyện', 'lat' => 21.0330, 'lng' => 105.7930],
+        ['name' => 'Quận Thanh Xuân – Nguyễn Trãi & Royal City', 'address' => 'Phường Thanh Xuân Trung, Q. Thanh Xuân, TP. Hà Nội', 'district' => 'Q. Thanh Xuân', 'category' => 'Quận/Huyện', 'lat' => 20.9965, 'lng' => 105.8065],
+        ['name' => 'Quận Tây Hồ – Lạc Long Quân & Hồ Tây', 'address' => 'Phường Xuân La, Q. Tây Hồ, TP. Hà Nội', 'district' => 'Q. Tây Hồ', 'category' => 'Quận/Huyện', 'lat' => 21.0690, 'lng' => 105.8180],
+        ['name' => 'Quận Hoàng Mai – Linh Đàm & Giải Phóng', 'address' => 'Phường Hoàng Liệt, Q. Hoàng Mai, TP. Hà Nội', 'district' => 'Q. Hoàng Mai', 'category' => 'Quận/Huyện', 'lat' => 20.9715, 'lng' => 105.8435],
+        ['name' => 'Quận Hà Đông – Quang Trung & Văn Quán', 'address' => 'Phường Quang Trung, Q. Hà Đông, TP. Hà Nội', 'district' => 'Q. Hà Đông', 'category' => 'Quận/Huyện', 'lat' => 20.9710, 'lng' => 105.7780],
+        ['name' => 'Quận Nam Từ Liêm – Mỹ Đình & Mễ Trì', 'address' => 'Phường Mỹ Đình 1, Q. Nam Từ Liêm, TP. Hà Nội', 'district' => 'Q. Nam Từ Liêm', 'category' => 'Quận/Huyện', 'lat' => 21.0185, 'lng' => 105.7640],
+        ['name' => 'Quận Bắc Từ Liêm – Cổ Nhuế & Cầu Diễn', 'address' => 'Phường Phúc Diễn, Q. Bắc Từ Liêm, TP. Hà Nội', 'district' => 'Q. Bắc Từ Liêm', 'category' => 'Quận/Huyện', 'lat' => 21.0510, 'lng' => 105.7600],
+        ['name' => 'Quận Long Biên – Ngọc Lâm & Việt Hưng', 'address' => 'Phường Việt Hưng, Q. Long Biên, TP. Hà Nội', 'district' => 'Q. Long Biên', 'category' => 'Quận/Huyện', 'lat' => 21.0450, 'lng' => 105.8950],
     ];
 
     public function __construct(private readonly ?PDO $pdo = null)
@@ -159,7 +146,7 @@ final class GeocodingService
     }
 
     /**
-     * Nạp danh sách địa điểm hợp nhất từ PostgreSQL (`activities`, `shifts`) + Gazetteer TP.HCM.
+     * Nạp danh sách địa điểm hợp nhất từ PostgreSQL (`activities`, `shifts`) + Gazetteer TP. Hà Nội.
      *
      * @return list<array{id: string, main_text: string, secondary_text: string, full_address: string, district: string, category: string, lat: float, lng: float, source: string}>
      */
@@ -199,7 +186,7 @@ final class GeocodingService
                             'main_text' => $parts[0] !== '' ? $parts[0] : $loc,
                             'secondary_text' => ($parts[1] ?? '') !== '' ? $parts[1] : ($row['act_code'] . ' · ' . $row['code'] . ' - ' . $row['title']),
                             'full_address' => $loc,
-                            'district' => 'TP. Hồ Chí Minh',
+                            'district' => 'TP. Hà Nội',
                             'category' => 'Điểm trực CSDL (' . $row['code'] . ')',
                             'lat' => $lat,
                             'lng' => $lng,
@@ -211,7 +198,7 @@ final class GeocodingService
             }
         }
 
-        // 2. Bổ sung Gazetteer chuẩn > 80 địa danh TP.HCM
+        // 2. Bổ sung Gazetteer chuẩn > 75 địa danh TP. Hà Nội
         foreach (self::VIETNAM_PLACES_GAZETTEER as $idx => $g) {
             $key = self::normalizeVietnamese($g['name'] . ' ' . $g['address']);
             if (isset($seenKeys[$key])) {
@@ -354,8 +341,8 @@ final class GeocodingService
         if ($nearest !== null) {
             $approxKm = round($minKm, 2);
             $label = $minKm <= 1.0
-                ? "Gần {$nearest['main_text']} ({$distanceMeters}m) — {$nearest['district']}, TP. Hồ Chí Minh"
-                : "Khu vực {$nearest['district']} (cách {$nearest['main_text']} {$approxKm} km), TP. Hồ Chí Minh";
+                ? "Gần {$nearest['main_text']} ({$distanceMeters}m) — {$nearest['district']}, TP. Hà Nội"
+                : "Khu vực {$nearest['district']} (cách {$nearest['main_text']} {$approxKm} km), TP. Hà Nội";
             return [
                 'ok' => true,
                 'full_address' => $label,
@@ -370,9 +357,9 @@ final class GeocodingService
 
         return [
             'ok' => true,
-            'full_address' => sprintf('%.4f° N, %.4f° E · TP. Hồ Chí Minh', $lat, $lng),
-            'place_name' => 'TP. Hồ Chí Minh',
-            'district' => 'TP. Hồ Chí Minh',
+            'full_address' => sprintf('%.4f° N, %.4f° E · TP. Hà Nội', $lat, $lng),
+            'place_name' => 'TP. Hà Nội',
+            'district' => 'TP. Hà Nội',
             'lat' => round($lat, 6),
             'lng' => round($lng, 6),
             'distance_m' => 0,
@@ -446,7 +433,7 @@ final class GeocodingService
 
         $fullAddr = !empty($parts) ? implode(', ', $parts) : (string) $data['display_name'];
         $placeName = (string) ($parts[0] ?? 'Vị trí GPS');
-        $district = (string) ($addr['city_district'] ?? $addr['county'] ?? $addr['town'] ?? 'TP. Hồ Chí Minh');
+        $district = (string) ($addr['city_district'] ?? $addr['county'] ?? $addr['town'] ?? 'TP. Hà Nội');
 
         return [
             'full_address' => $fullAddr,

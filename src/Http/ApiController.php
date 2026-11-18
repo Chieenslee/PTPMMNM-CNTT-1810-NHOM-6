@@ -366,7 +366,7 @@ final class ApiController
             'shift_id' => $shiftId,
             'shift_code' => $shiftInfo['code'] ?? ('CA-' . $shiftId),
             'shift_title' => $shiftInfo['title'] ?? 'Ca trực chiến dịch',
-            'location_name' => $shiftInfo['location_name'] ?? 'TP. Hồ Chí Minh',
+            'location_name' => $shiftInfo['location_name'] ?? 'TP. Hà Nội',
             'activity_title' => $shiftInfo['activity_title'] ?? 'Chiến dịch Xanh Hub',
             'assigned_count' => (int) ($shiftInfo['assigned_count'] ?? 0),
             'max_people' => (int) ($shiftInfo['max_people'] ?? 5),

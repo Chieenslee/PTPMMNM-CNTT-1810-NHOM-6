@@ -3902,8 +3902,8 @@
             const actStatus = btn.dataset.actStatus || 'OPEN';
             const actDesc = btn.dataset.actDesc || '';
             const actLoc = btn.dataset.actLocation || '';
-            const actLat = btn.dataset.actLat || '10.7769';
-            const actLng = btn.dataset.actLng || '106.7009';
+            const actLat = btn.dataset.actLat || '21.0285';
+            const actLng = btn.dataset.actLng || '105.8542';
 
             const inputId = document.getElementById('edit-act-id');
             const inputTitle = document.getElementById('edit-act-title');
@@ -4009,7 +4009,7 @@
                     <span>Dùng vị trí GPS hiện tại của tôi (Tự điền địa chỉ)</span>
                 </button>
                 ${isLoading && (!places || places.length === 0)
-                    ? '<div class="px-4 py-3 text-xs text-slate-400">Đang tìm địa chỉ tại TP.HCM...</div>'
+                    ? '<div class="px-4 py-3 text-xs text-slate-400">Đang tìm địa chỉ tại TP. Hà Nội...</div>'
                     : (rowsHtml || '<div class="px-4 py-3 text-xs text-slate-400">Không tìm thấy địa danh gợi ý — bạn có thể giữ nguyên địa chỉ đã gõ hoặc dùng định vị GPS.</div>')}
             `;
 
@@ -4034,7 +4034,7 @@
                                 .then(geo => {
                                     const fullAddr = (geo && geo.ok && (geo.full_address || (geo.address && geo.address.full_address)))
                                         ? (geo.full_address || geo.address.full_address)
-                                        : `Tọa độ (${lat.toFixed(4)}, ${lng.toFixed(4)}) TP. Hồ Chí Minh`;
+                                        : `Tọa độ (${lat.toFixed(4)}, ${lng.toFixed(4)}) TP. Hà Nội`;
                                     applySelectedPlace(inp, {
                                         main_text: (geo && (geo.place_name || (geo.address && geo.address.street_or_landmark))) || fullAddr,
                                         full_address: fullAddr,
@@ -4047,7 +4047,7 @@
                                 .catch(() => {
                                     applySelectedPlace(inp, {
                                         main_text: 'Vị trí GPS thiết bị',
-                                        full_address: `TP. Hồ Chí Minh (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+                                        full_address: `TP. Hà Nội (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
                                         lat,
                                         lng
                                     });
@@ -4112,6 +4112,32 @@
     }
 
     initPlacesAutocomplete();
+
+    // Tự động lấy vị trí GPS khi mở trang Đăng ký tình nguyện viên (?view=register)
+    const regAddrInput = document.getElementById('register-address-input');
+    if (regAddrInput && regAddrInput.value.trim() === '' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                if (document.activeElement === regAddrInput || regAddrInput.value.trim() !== '') return;
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const regLatEl = document.getElementById('register-lat-input');
+                const regLngEl = document.getElementById('register-lng-input');
+                if (regLatEl) regLatEl.value = lat.toFixed(5);
+                if (regLngEl) regLngEl.value = lng.toFixed(5);
+                fetch(`?action=api_reverse_geocode&lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`)
+                    .then(r => r.json())
+                    .then(geo => {
+                        if (regAddrInput.value.trim() === '' && geo && geo.ok) {
+                            regAddrInput.value = geo.full_address || `TP. Hà Nội (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                        }
+                    })
+                    .catch(() => {});
+            },
+            () => {},
+            { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
+        );
+    }
 
     // Kích hoạt Hệ thống Giám sát & Đánh giá Độc lập trong Admin Tab Sentinel
     const triggerSentinelProbe = () => {
@@ -4609,7 +4635,7 @@
                 .then(data => {
                     const addr = (data && data.ok && (data.full_address || (data.address && data.address.full_address)))
                         ? (data.full_address || data.address.full_address)
-                        : 'Trung tâm TP. Hồ Chí Minh';
+                        : 'Trung tâm TP. Hà Nội (Hồ Hoàn Kiếm)';
                     utilGpsRes.innerHTML = `
                         <div class="font-bold text-slate-900 dark:text-white">${escapeHtml(addr)}</div>
                         <div class="text-[10px] mono text-slate-500 mt-0.5">${Number(lat).toFixed(4)}° N, ${Number(lng).toFixed(4)}° E ${escapeHtml(fallbackNote)}</div>
@@ -4623,18 +4649,28 @@
                 });
         };
 
-        utilBtnGps.addEventListener('click', () => {
-            utilGpsRes.textContent = 'Đang lấy tọa độ GPS & giải mã địa chỉ...';
+        const runHeaderGpsLookup = () => {
+            utilGpsRes.textContent = 'Đang lấy tọa độ GPS & giải mã địa chỉ Hà Nội...';
             if (!navigator.geolocation) {
-                resolveHeaderGps(10.7769, 106.7009, '(Mặc định TP.HCM)');
+                resolveHeaderGps(21.0285, 105.8542, '(Mặc định TP. Hà Nội)');
                 return;
             }
             navigator.geolocation.getCurrentPosition(
                 (pos) => resolveHeaderGps(pos.coords.latitude, pos.coords.longitude, ''),
-                () => resolveHeaderGps(10.7769, 106.7009, '(Mặc định TP.HCM)'),
+                () => resolveHeaderGps(21.0285, 105.8542, '(Mặc định TP. Hà Nội)'),
                 { enableHighAccuracy: true, timeout: 6000 }
             );
-        });
+        };
+
+        utilBtnGps.addEventListener('click', runHeaderGpsLookup);
+        if (btnHeaderUtil && utilDropdown) {
+            btnHeaderUtil.addEventListener('click', () => {
+                if (!utilDropdown.classList.contains('hidden') && !utilBtnGps.dataset.autoChecked) {
+                    utilBtnGps.dataset.autoChecked = '1';
+                    runHeaderGpsLookup();
+                }
+            });
+        }
     }
 
     // =========================================================================

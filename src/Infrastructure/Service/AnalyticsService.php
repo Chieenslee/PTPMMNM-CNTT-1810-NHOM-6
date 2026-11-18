@@ -27,45 +27,45 @@ final class AnalyticsService
      */
     private const FACULTY_MAPPING = [
         'KTPM' => [
-            'name' => 'Khoa Kỹ thuật Phần mềm (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
+            'name' => 'Khoa Kỹ thuật Phần mềm (ĐH Bách Khoa Hà Nội)',
             'short' => 'Đoàn Khoa KT Phần mềm',
-            'school' => 'ĐH Công nghệ Thông tin (ĐHQG-HCM)',
+            'school' => 'ĐH Bách Khoa Hà Nội',
             'color' => '#0284C7',
         ],
         'HTTT' => [
-            'name' => 'Khoa Hệ thống Thông tin (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
+            'name' => 'Khoa Hệ thống Thông tin (ĐH Công nghệ - ĐHQG Hà Nội)',
             'short' => 'Đoàn Khoa Hệ thống TT',
-            'school' => 'ĐH Công nghệ Thông tin (ĐHQG-HCM)',
+            'school' => 'ĐH Công nghệ (ĐHQG Hà Nội)',
             'color' => '#059669',
         ],
         'KHMT' => [
-            'name' => 'Khoa Khoa học Máy tính (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
+            'name' => 'Khoa Khoa học Máy tính (ĐH Bách Khoa Hà Nội)',
             'short' => 'Đoàn Khoa Khoa học MT',
-            'school' => 'ĐH Công nghệ Thông tin (ĐHQG-HCM)',
+            'school' => 'ĐH Bách Khoa Hà Nội',
             'color' => '#7C3AED',
         ],
         'MMT' => [
-            'name' => 'Khoa Mạng máy tính & TT (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
+            'name' => 'Khoa Mạng máy tính & TT (ĐH Công nghệ - ĐHQG Hà Nội)',
             'short' => 'Đoàn Khoa Mạng MT & TT',
-            'school' => 'ĐH Công nghệ Thông tin (ĐHQG-HCM)',
+            'school' => 'ĐH Công nghệ (ĐHQG Hà Nội)',
             'color' => '#D97706',
         ],
         'ATTT' => [
-            'name' => 'Khoa An toàn Thông tin (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
+            'name' => 'Khoa An toàn Thông tin (Học viện Kỹ thuật Mật mã / BCVT)',
             'short' => 'Đoàn Khoa An toàn TT',
-            'school' => 'ĐH Công nghệ Thông tin (ĐHQG-HCM)',
+            'school' => 'HV Kỹ thuật Mật mã',
             'color' => '#DC2626',
         ],
         'KHDL' => [
-            'name' => 'Khoa Khoa học Dữ liệu (Trường ĐH Công nghệ Thông tin - ĐHQG-HCM)',
+            'name' => 'Khoa Khoa học Dữ liệu (ĐH Kinh tế Quốc dân)',
             'short' => 'Đoàn Khoa KH Dữ liệu',
-            'school' => 'ĐH Công nghệ Thông tin (ĐHQG-HCM)',
+            'school' => 'ĐH Kinh tế Quốc dân',
             'color' => '#2563EB',
         ],
         'KHAC' => [
-            'name' => 'Đoàn cơ sở Khối ĐHQG-HCM & Đơn vị liên kết',
-            'short' => 'Đoàn cơ sở khác',
-            'school' => 'ĐHQG-HCM & Đơn vị phối hợp',
+            'name' => 'Đoàn cơ sở Khối Trường ĐH Hà Nội & Đơn vị liên kết',
+            'short' => 'Đoàn cơ sở Hà Nội',
+            'school' => 'ĐHQG Hà Nội & Đơn vị phối hợp',
             'color' => '#64748B',
         ],
     ];
@@ -393,7 +393,7 @@ final class AnalyticsService
 
         foreach ($top as $t) {
             $chapter = $t['chapter_name'];
-            $schoolName = 'ĐHQG-HCM';
+            $schoolName = 'ĐHQG Hà Nội';
             foreach (self::FACULTY_MAPPING as $code => $info) {
                 if (str_contains($chapter, $code)) {
                     $schoolName = $info['short'];
@@ -434,9 +434,9 @@ final class AnalyticsService
     public function getCampaignFormalReport(int $activityId): array
     {
         $campaignsMeta = [
-            1 => ['code' => 'D1', 'title' => 'Chiến dịch Chủ Nhật Xanh — Làm sạch Kênh Nhiêu Lộc & Trồng cây đô thị'],
-            2 => ['code' => 'D2', 'title' => 'Chiến dịch Tiếp Sức Mùa Thi — Trực Sơ cứu Y tế & Hỗ trợ Thí sinh'],
-            3 => ['code' => 'D3', 'title' => 'Chiến dịch Mùa Hè Xanh Trọng điểm — Chung tay Xây dựng Cộng đồng'],
+            1 => ['code' => 'D1', 'title' => 'Chiến dịch Chủ Nhật Xanh — Làm sạch Sông Tô Lịch & Trồng cây đô thị Hà Nội'],
+            2 => ['code' => 'D2', 'title' => 'Chiến dịch Mùa Hè Xanh Vùng Cao — Trực Y tế & Hỗ trợ Cộng đồng Ba Vì'],
+            3 => ['code' => 'D3', 'title' => 'Chiến dịch Tiếp Sức Mùa Thi 2026 — Hỗ trợ Thí sinh Hà Nội'],
         ];
 
         $meta = $campaignsMeta[$activityId] ?? $campaignsMeta[3];
@@ -476,12 +476,12 @@ final class AnalyticsService
 
         return [
             'header' => [
-                'superior_org' => 'ĐOÀN TNCS HỒ CHÍ MINH TP. HỒ CHÍ MINH',
+                'superior_org' => 'THÀNH ĐOÀN TP. HÀ NỘI',
                 'committee_org' => 'BAN CHỈ HUY CHIẾN DỊCH TÌNH NGUYỆN HÈ 2026',
                 'national_motto_1' => 'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM',
                 'national_motto_2' => 'Độc lập - Tự do - Hạnh phúc',
                 'doc_number' => sprintf('%02d-BC/ĐTN-XANHHUB-2026', $activityId),
-                'city_date' => 'TP. Hồ Chí Minh, ngày 22 tháng 10 năm 2026',
+                'city_date' => 'Hà Nội, ngày 22 tháng 10 năm 2026',
             ],
             'title' => 'BÁO CÁO TỔNG KẾT CHIẾN DỊCH TÌNH NGUYỆN ' . strtoupper($meta['code']),
             'subtitle' => 'V/v Đánh giá công tác tổ chức, phân công nhân sự, lấp đầy ca trực và biểu dương lực lượng tình nguyện viên',

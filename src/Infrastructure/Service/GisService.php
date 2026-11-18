@@ -12,64 +12,64 @@ use PDO;
  * 1. Thuật toán cự ly hình cầu Haversine chuẩn xác (Earth radius R = 6371.0 km).
  * 2. Bộ lọc bán kính GPS (<3km, <5km, <10km, <15km).
  * 3. Phân loại màu Marker chuẩn (Y tế đỏ, Môi trường xanh, Tiếp sức vàng cam, Mùa hè xanh xanh dương).
- * 4. Truy xuất payload GIS đầy đủ 36 ca trực tại TP.HCM kèm trạng thái tuyển quân.
+ * 4. Truy xuất payload GIS đầy đủ 36 ca trực tại TP. Hà Nội kèm trạng thái tuyển quân.
  */
 final class GisService
 {
     public const EARTH_RADIUS_KM = 6371.0;
 
-    // Tọa độ trung tâm mặc định TP.HCM (Quảng trường Bến Thành / Trụ sở Thành Đoàn)
-    public const DEFAULT_CENTER_LAT = 10.7769;
-    public const DEFAULT_CENTER_LNG = 106.7009;
+    // Tọa độ trung tâm mặc định TP. Hà Nội (Hồ Hoàn Kiếm / Thành Đoàn Hà Nội)
+    public const DEFAULT_CENTER_LAT = 21.0285;
+    public const DEFAULT_CENTER_LNG = 105.8542;
 
     /**
-     * Bảng ánh xạ tọa độ GPS thực tế của 36 ca trực tại TP.HCM (12 ca/chiến dịch × 3 chiến dịch).
+     * Bảng ánh xạ tọa độ GPS thực tế của 36 ca trực tại TP. Hà Nội (12 ca/chiến dịch × 3 chiến dịch).
      * Đảm bảo tính nhất quán tuyệt đối giữa dữ liệu bộ nhớ và cơ sở dữ liệu.
      *
      * @var array<int, array{lat: float, lng: float, location: string}>
      */
     public const CANONICAL_LOCATIONS = [
         // --- CHIẾN DỊCH 1: CHỦ NHẬT XANH (ID 1..12) ---
-        1 => ['lat' => 10.7932, 'lng' => 106.6978, 'location' => 'Cầu Điện Biên Phủ, Tuyến Kênh Nhiêu Lộc, Q. Bình Thạnh'],
-        2 => ['lat' => 10.7887, 'lng' => 106.6946, 'location' => 'Công viên Lê Văn Tám, Hai Bà Trưng, Q. 1'],
-        3 => ['lat' => 10.7875, 'lng' => 106.6850, 'location' => 'Tuyến đường Hoàng Sa – Trường Sa, Q. 3'],
-        4 => ['lat' => 10.7612, 'lng' => 106.7025, 'location' => 'Bến Vân Đồn, Tuyến Kênh Tàu Hủ, Q. 4'],
-        5 => ['lat' => 10.7745, 'lng' => 106.6922, 'location' => 'Công viên Tao Đàn, Trương Định, Q. 1'],
-        6 => ['lat' => 10.8164, 'lng' => 106.6744, 'location' => 'Công viên Gia Định, Hoàng Minh Giám, Q. Phú Nhuận'],
-        7 => ['lat' => 10.8055, 'lng' => 106.6980, 'location' => 'Tuyến Kênh Rạch Xuyên Tâm, P. 15, Q. Bình Thạnh'],
-        8 => ['lat' => 10.7997, 'lng' => 106.6622, 'location' => 'Công viên Hoàng Văn Thụ, Q. Tân Bình'],
-        9 => ['lat' => 10.7695, 'lng' => 106.6930, 'location' => 'Công viên 23 Tháng 9, Phạm Ngũ Lão, Q. 1'],
-        10 => ['lat' => 10.8235, 'lng' => 106.7210, 'location' => 'Tuyến Bờ kè Bán đảo Thanh Đa, Q. Bình Thạnh'],
-        11 => ['lat' => 10.7512, 'lng' => 106.7085, 'location' => 'Bờ kè Kênh Tẻ, Trần Xuân Soạn, Q. 7'],
-        12 => ['lat' => 10.8290, 'lng' => 106.6325, 'location' => 'Tuyến Kênh Tham Lương – Bến Cát, Q. 12'],
+        1  => ['lat' => 21.0112, 'lng' => 105.8095, 'location' => 'Cầu Cót – Tuyến Sông Tô Lịch, Đường Láng, Q. Đống Đa'],
+        2  => ['lat' => 21.0170, 'lng' => 105.8430, 'location' => 'Công viên Thống Nhất, Đường Lê Duẩn, Q. Hai Bà Trưng'],
+        3  => ['lat' => 21.0285, 'lng' => 105.8542, 'location' => 'Không gian Đi bộ Hồ Hoàn Kiếm, Đinh Tiên Hoàng, Q. Hoàn Kiếm'],
+        4  => ['lat' => 20.9950, 'lng' => 105.8622, 'location' => 'Tuyến Bờ sông Kim Ngưu, Minh Khai, Q. Hai Bà Trưng'],
+        5  => ['lat' => 21.0465, 'lng' => 105.8368, 'location' => 'Đường Thanh Niên – Ven Hồ Tây & Hồ Trúc Bạch, Q. Tây Hồ'],
+        6  => ['lat' => 21.0288, 'lng' => 105.7908, 'location' => 'Công viên Cầu Giấy, Đường Thành Thái, Q. Cầu Giấy'],
+        7  => ['lat' => 21.0308, 'lng' => 105.8065, 'location' => 'Công viên Thủ Lệ – Ven Hồ Thủ Lệ, Đường Bưởi, Q. Ba Đình'],
+        8  => ['lat' => 21.0410, 'lng' => 105.7965, 'location' => 'Công viên Nghĩa Đô, Đường Nguyễn Văn Huyên, Q. Cầu Giấy'],
+        9  => ['lat' => 21.0318, 'lng' => 105.8405, 'location' => 'Vườn hoa Lê Nin – Điện Biên Phủ, Q. Ba Đình'],
+        10 => ['lat' => 21.0645, 'lng' => 105.7868, 'location' => 'Công viên Hòa Bình, Đường Phạm Văn Đồng, Q. Bắc Từ Liêm'],
+        11 => ['lat' => 20.9635, 'lng' => 105.8545, 'location' => 'Công viên Yên Sở, Nút giao Pháp Vân, Q. Hoàng Mai'],
+        12 => ['lat' => 20.9815, 'lng' => 105.7875, 'location' => 'Hồ Văn Quán, Khu đô thị Văn Quán, Q. Hà Đông'],
 
         // --- CHIẾN DỊCH 2: TIẾP SỨC MÙA THI (ID 101..112) ---
-        101 => ['lat' => 10.7725, 'lng' => 106.6578, 'location' => 'ĐH Bách Khoa TP.HCM, 268 Lý Thường Kiệt, Q. 10'],
-        102 => ['lat' => 10.7629, 'lng' => 106.6823, 'location' => 'ĐH Khoa học Tự nhiên, 227 Nguyễn Văn Cừ, Q. 5'],
-        103 => ['lat' => 10.7818, 'lng' => 106.6782, 'location' => 'Ga Sài Gòn, 1 Nguyễn Thông, Q. 3'],
-        104 => ['lat' => 10.7578, 'lng' => 106.6595, 'location' => 'Bệnh viện Chợ Rẫy, 201B Nguyễn Chí Thanh, Q. 5'],
-        105 => ['lat' => 10.7640, 'lng' => 106.6820, 'location' => 'THPT Chuyên Lê Hồng Phong, 235 Nguyễn Văn Cừ, Q. 5'],
-        106 => ['lat' => 10.7601, 'lng' => 106.6835, 'location' => 'ĐH Sư Phạm TP.HCM, 280 An Dương Vương, Q. 5'],
-        107 => ['lat' => 10.7812, 'lng' => 106.6905, 'location' => 'THPT Marie Curie, 159 Nam Kỳ Khởi Nghĩa, Q. 3'],
-        108 => ['lat' => 10.8785, 'lng' => 106.8180, 'location' => 'Bến xe Miền Đông mới, TP. Thủ Đức'],
-        109 => ['lat' => 10.7766, 'lng' => 106.6872, 'location' => 'THPT Nguyễn Thị Minh Khai, 275 Điện Biên Phủ, Q. 3'],
-        110 => ['lat' => 10.7782, 'lng' => 106.6795, 'location' => 'Nút giao Vòng xoay Dân Chủ, Q. 3'],
-        111 => ['lat' => 10.7828, 'lng' => 106.6958, 'location' => 'ĐH Kinh Tế TP.HCM, 59C Nguyễn Đình Chiểu, Q. 3'],
-        112 => ['lat' => 10.8038, 'lng' => 106.6952, 'location' => 'Bệnh viện Nhân dân Gia Định, 1 Nơ Trang Long, Q. Bình Thạnh'],
+        101 => ['lat' => 21.0050, 'lng' => 105.8435, 'location' => 'ĐH Bách Khoa Hà Nội, Số 1 Đại Cồ Việt, Q. Hai Bà Trưng'],
+        102 => ['lat' => 21.0378, 'lng' => 105.7815, 'location' => 'ĐH Quốc gia Hà Nội, 144 Xuân Thủy, Q. Cầu Giấy'],
+        103 => ['lat' => 21.0242, 'lng' => 105.8412, 'location' => 'Ga Hà Nội, 120 Lê Duẩn, Q. Đống Đa'],
+        104 => ['lat' => 21.0028, 'lng' => 105.8405, 'location' => 'Bệnh viện Bạch Mai, 78 Giải Phóng, Q. Đống Đa'],
+        105 => ['lat' => 21.0432, 'lng' => 105.8325, 'location' => 'THPT Chu Văn An, Số 10 Thụy Khuê, Q. Tây Hồ'],
+        106 => ['lat' => 21.0368, 'lng' => 105.7832, 'location' => 'ĐH Sư phạm Hà Nội, 136 Xuân Thủy, Q. Cầu Giấy'],
+        107 => ['lat' => 21.0068, 'lng' => 105.7982, 'location' => 'THPT Chuyên Hà Nội – Amsterdam, Hoàng Minh Giám, Q. Cầu Giấy'],
+        108 => ['lat' => 21.0285, 'lng' => 105.7782, 'location' => 'Bến xe Mỹ Đình, 20 Phạm Hùng, Q. Nam Từ Liêm'],
+        109 => ['lat' => 20.9998, 'lng' => 105.8425, 'location' => 'ĐH Kinh tế Quốc dân, 207 Giải Phóng, Q. Hai Bà Trưng'],
+        110 => ['lat' => 21.0028, 'lng' => 105.8208, 'location' => 'Nút giao Ngã Tư Sở – Tây Sơn, Q. Đống Đa'],
+        111 => ['lat' => 21.0072, 'lng' => 105.8248, 'location' => 'ĐH Thủy Lợi, 175 Tây Sơn, Q. Đống Đa'],
+        112 => ['lat' => 21.0272, 'lng' => 105.8482, 'location' => 'Bệnh viện Hữu nghị Việt Đức, 40 Tràng Thi, Q. Hoàn Kiếm'],
 
         // --- CHIẾN DỊCH 3: MÙA HÈ XANH (ID 201..212) ---
-        201 => ['lat' => 10.8805, 'lng' => 106.8062, 'location' => 'ĐH Bách Khoa TP.HCM (CS2), ĐHQG TP.HCM, TP. Thủ Đức'],
-        202 => ['lat' => 10.8752, 'lng' => 106.8007, 'location' => 'Nhà Văn hóa Sinh viên ĐHQG, TP. Thủ Đức'],
-        203 => ['lat' => 10.7435, 'lng' => 106.6178, 'location' => 'Bến xe Miền Tây, Kinh Dương Vương, Q. Bình Tân'],
-        204 => ['lat' => 10.7801, 'lng' => 106.6975, 'location' => 'Nhà Văn hóa Thanh niên TP.HCM, 4 Phạm Ngọc Thạch, Q. 1'],
-        205 => ['lat' => 10.5510, 'lng' => 106.8812, 'location' => 'Điểm trường Xã Tam Thôn Hiệp, Huyện Cần Giờ'],
-        206 => ['lat' => 10.8700, 'lng' => 106.7917, 'location' => 'ĐH Nông Lâm TP.HCM, QL1A, TP. Thủ Đức'],
-        207 => ['lat' => 10.7820, 'lng' => 106.6940, 'location' => 'Thành Đoàn TP.HCM, 145 Pasteur, Q. 3'],
-        208 => ['lat' => 10.8385, 'lng' => 106.6025, 'location' => 'Điểm xây cầu giao thông Xã Bà Điểm, Hóc Môn'],
-        209 => ['lat' => 10.4550, 'lng' => 106.8520, 'location' => 'Trạm Y tế Xã Lý Nhơn, Huyện Cần Giờ'],
-        210 => ['lat' => 10.5120, 'lng' => 106.8850, 'location' => 'Khu Di tích Rừng Sác – Chiến khu Rừng Sác, Cần Giờ'],
-        211 => ['lat' => 10.8512, 'lng' => 106.7720, 'location' => 'ĐH Sư phạm Kỹ thuật TP.HCM, Võ Văn Ngân, TP. Thủ Đức'],
-        212 => ['lat' => 10.8805, 'lng' => 106.8375, 'location' => 'Công viên Lịch sử Văn hóa Dân tộc, TP. Thủ Đức'],
+        201 => ['lat' => 21.0058, 'lng' => 105.8442, 'location' => 'Quảng trường Tạ Quang Bửu, ĐH Bách Khoa Hà Nội, Q. Hai Bà Trưng'],
+        202 => ['lat' => 21.0168, 'lng' => 105.8588, 'location' => 'Cung Văn hóa Thể thao Thanh niên Hà Nội, Số 1 Tăng Bạt Hổ, Q. Hai Bà Trưng'],
+        203 => ['lat' => 20.9802, 'lng' => 105.8415, 'location' => 'Bến xe Giáp Bát, Đường Giải Phóng, Q. Hoàng Mai'],
+        204 => ['lat' => 21.0228, 'lng' => 105.8556, 'location' => 'Thành Đoàn Hà Nội, 14A Phan Chu Trinh, Q. Hoàn Kiếm'],
+        205 => ['lat' => 21.0725, 'lng' => 105.4250, 'location' => 'Điểm trường Xã Ba Vì, Huyện Ba Vì, TP. Hà Nội'],
+        206 => ['lat' => 21.0042, 'lng' => 105.9318, 'location' => 'Học viện Nông nghiệp Việt Nam, Thị trấn Trâu Quỳ, Huyện Gia Lâm'],
+        207 => ['lat' => 21.0182, 'lng' => 105.8445, 'location' => 'Nhà Văn hóa Học sinh – Sinh viên Hà Nội, 37 Trần Bình Trọng, Q. Hai Bà Trưng'],
+        208 => ['lat' => 21.2580, 'lng' => 105.8490, 'location' => 'Điểm xây đường giao thông nông thôn Xã Minh Phú, Huyện Sóc Sơn'],
+        209 => ['lat' => 21.0450, 'lng' => 105.4580, 'location' => 'Trạm Y tế Xã Yên Bài, Huyện Ba Vì, TP. Hà Nội'],
+        210 => ['lat' => 21.1125, 'lng' => 105.8735, 'location' => 'Khu Di tích Cổ Loa, Xã Cổ Loa, Huyện Đông Anh, TP. Hà Nội'],
+        211 => ['lat' => 21.0035, 'lng' => 105.8428, 'location' => 'ĐH Xây dựng Hà Nội, 55 Giải Phóng, Q. Hai Bà Trưng'],
+        212 => ['lat' => 21.0135, 'lng' => 105.5265, 'location' => 'Khu Đô thị ĐHQG Hà Nội tại Hòa Lạc, Huyện Thạch Thất, TP. Hà Nội'],
     ];
 
     public function __construct(private readonly PDO $pdo)

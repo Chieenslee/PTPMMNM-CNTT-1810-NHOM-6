@@ -259,11 +259,11 @@ function renderDrawerCampaignList(array $campaignMeta, int $activeId, string $ur
 $campaignMeta = [
     1 => [
         'code' => 'D1',
-        'title' => 'Chiến dịch Chủ Nhật Xanh — Làm sạch Kênh Nhiêu Lộc & Trồng cây đô thị',
+        'title' => 'Chiến dịch Chủ Nhật Xanh — Làm sạch Sông Tô Lịch & Trồng cây đô thị Hà Nội',
         'short_title' => 'Chủ Nhật Xanh',
-        'desc' => 'Ra quân cải tạo cảnh quan tuyến kênh Nhiêu Lộc – Thị Nghè, trồng mới 500 cây xanh đô thị và tuyên truyền phân loại rác tại nguồn.',
+        'desc' => 'Ra quân cải tạo cảnh quan tuyến sông Tô Lịch – Hồ Hoàn Kiếm, trồng mới 500 cây xanh đô thị tại Hà Nội và tuyên truyền phân loại rác tại nguồn.',
         'cover' => 'assets/images/campaign-d1.jpg',
-        'location' => 'Quận 1, Quận 3 & Phú Nhuận, TP.HCM',
+        'location' => 'Quận Hoàn Kiếm, Đống Đa & Cầu Giấy, TP. Hà Nội',
         'date_range' => '06/11/2026 – 08/11/2026',
         'tag' => 'Môi trường & Đô thị xanh',
         'volunteers_needed' => 30,
@@ -273,9 +273,9 @@ $campaignMeta = [
         'code' => 'D2',
         'title' => 'Chiến dịch Mùa Hè Xanh Vùng Cao — Trực Y tế & Xây dựng Cộng đồng',
         'short_title' => 'Mùa Hè Xanh Vùng Cao',
-        'desc' => 'Đội hình tình nguyện chuyên môn hỗ trợ trạm y tế xã, chăm sóc sức khỏe cộng đồng, chuyển đổi số và cải tạo điểm trường vùng sâu.',
+        'desc' => 'Đội hình tình nguyện chuyên môn hỗ trợ trạm y tế xã, chăm sóc sức khỏe cộng đồng, chuyển đổi số và cải tạo điểm trường tại Ba Vì & Sóc Sơn.',
         'cover' => 'assets/images/campaign-d2.jpg',
-        'location' => 'Huyện Cần Giờ & Củ Chi, TP.HCM',
+        'location' => 'Huyện Ba Vì & Sóc Sơn, TP. Hà Nội',
         'date_range' => '13/11/2026 – 15/11/2026',
         'tag' => 'Y tế & Phát triển Cộng đồng',
         'volunteers_needed' => 30,
@@ -285,9 +285,9 @@ $campaignMeta = [
         'code' => 'D3',
         'title' => 'Chiến dịch Tiếp Sức Mùa Thi 2026 — Hỗ trợ Thí sinh & Điều tiết Giao thông',
         'short_title' => 'Tiếp Sức Mùa Thi 2026',
-        'desc' => 'Chiến dịch cao điểm hỗ trợ thí sinh tại các cụm điểm thi đại học: Trực sơ cứu y tế, hậu cần nước uống, phân luồng giao thông và truyền thông.',
+        'desc' => 'Chiến dịch cao điểm hỗ trợ thí sinh tại các cụm điểm thi đại học ở Hà Nội: Trực sơ cứu y tế, hậu cần nước uống, phân luồng giao thông và truyền thông.',
         'cover' => 'assets/images/campaign-d3.jpg',
-        'location' => 'TP. Thủ Đức & Cụm ĐH Quốc gia TP.HCM',
+        'location' => 'Quận Hai Bà Trưng, Cầu Giấy & Cụm ĐH Bách Khoa – ĐHQG Hà Nội',
         'date_range' => '20/11/2026 – 22/11/2026',
         'tag' => 'Tiếp sức Mùa thi Trọng điểm',
         'volunteers_needed' => 30,
@@ -332,7 +332,7 @@ try {
                 'short_title' => $cleanTitle,
                 'desc' => (string) ($actRow['description'] !== '' ? $actRow['description'] : 'Chiến dịch tình nguyện thanh niên Xanh Hub.'),
                 'cover' => "assets/images/campaign-d{$coverIdx}.jpg",
-                'location' => (string) ($actRow['location_name'] !== '' ? $actRow['location_name'] : 'TP. Hồ Chí Minh'),
+                'location' => (string) ($actRow['location_name'] !== '' ? $actRow['location_name'] : 'TP. Hà Nội'),
                 'date_range' => $dateRangeStr,
                 'tag' => 'Chiến dịch Hoạt động',
                 'volunteers_needed' => max(5, (int) $actRow['total_max_people']),
@@ -491,10 +491,10 @@ if ($action === 'do_register' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         ? array_map('intval', $_POST['skill_ids'])
         : [2];
 
-    $regLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 10.7769;
-    $regLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 106.7009;
+    $regLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 21.0285;
+    $regLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 105.8542;
     $regAddr = trim((string) ($_POST['address'] ?? ''));
-    if ($regAddr !== '' && abs($regLat - 10.7769) < 0.0001 && abs($regLng - 106.7009) < 0.0001) {
+    if ($regAddr !== '' && abs($regLat - 21.0285) < 0.0001 && abs($regLng - 105.8542) < 0.0001) {
         $resolvedCoords = $geocodingService->resolveAddressCoordinates($regAddr);
         if ($resolvedCoords !== null) {
             $regLat = $resolvedCoords['lat'];
@@ -851,9 +851,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
             $startIso = "{$dateYmd}T{$startHm}:00+07:00";
             $endIso = "{$dateYmd}T{$endHm}:00+07:00";
 
-            $shiftLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 10.7769;
-            $shiftLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 106.7009;
-            if (abs($shiftLat - 10.7769) < 0.0001 && abs($shiftLng - 106.7009) < 0.0001 && $zone !== '') {
+            $shiftLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 21.0285;
+            $shiftLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 105.8542;
+            if (abs($shiftLat - 21.0285) < 0.0001 && abs($shiftLng - 105.8542) < 0.0001 && $zone !== '') {
                 $geoHit = $geocodingService->resolveAddressCoordinates($zone);
                 if ($geoHit !== null) {
                     $shiftLat = $geoHit['lat'];
@@ -1294,11 +1294,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
             $actCode = strtoupper(trim((string) ($_POST['activity_code'] ?? ($_POST['campaign_code'] ?? ($_POST['code'] ?? '')))));
             $actTitle = trim((string) ($_POST['title'] ?? ($_POST['campaign_title'] ?? '')));
             $actTag = trim((string) ($_POST['tag'] ?? ($_POST['campaign_tag'] ?? 'Môi trường & Đô thị')));
-            $actLocation = trim((string) ($_POST['target_area'] ?? ($_POST['location_name'] ?? 'TP. Hồ Chí Minh')));
+            $actLocation = trim((string) ($_POST['target_area'] ?? ($_POST['location_name'] ?? 'TP. Hà Nội')));
             $actDesc = trim((string) ($_POST['description'] ?? ($_POST['campaign_description'] ?? '')));
-            $actLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : (isset($_POST['campaign_lat']) && is_numeric($_POST['campaign_lat']) ? (float) $_POST['campaign_lat'] : 10.7769);
-            $actLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : (isset($_POST['campaign_lng']) && is_numeric($_POST['campaign_lng']) ? (float) $_POST['campaign_lng'] : 106.7009);
-            if (abs($actLat - 10.7769) < 0.0001 && abs($actLng - 106.7009) < 0.0001 && $actLocation !== '') {
+            $actLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : (isset($_POST['campaign_lat']) && is_numeric($_POST['campaign_lat']) ? (float) $_POST['campaign_lat'] : 21.0285);
+            $actLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : (isset($_POST['campaign_lng']) && is_numeric($_POST['campaign_lng']) ? (float) $_POST['campaign_lng'] : 105.8542);
+            if (abs($actLat - 21.0285) < 0.0001 && abs($actLng - 105.8542) < 0.0001 && $actLocation !== '') {
                 $geoAct = $geocodingService->resolveAddressCoordinates($actLocation);
                 if ($geoAct !== null) {
                     $actLat = $geoAct['lat'];
@@ -1467,10 +1467,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
                 $phone = trim((string) ($_POST['phone'] ?? ''));
                 $chapter = trim((string) ($_POST['chapter_name'] ?? ''));
                 $maxShifts = max(1, min(14, (int) ($_POST['max_shifts_per_week'] ?? 4)));
-                $lat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 10.7769;
-                $lng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 106.7009;
+                $lat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 21.0285;
+                $lng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 105.8542;
                 $profileAddr = trim((string) ($_POST['address'] ?? ''));
-                if ($profileAddr !== '' && abs($lat - 10.7769) < 0.0001 && abs($lng - 106.7009) < 0.0001) {
+                if ($profileAddr !== '' && abs($lat - 21.0285) < 0.0001 && abs($lng - 105.8542) < 0.0001) {
                     $geoProf = $geocodingService->resolveAddressCoordinates($profileAddr);
                     if ($geoProf !== null) {
                         $lat = $geoProf['lat'];
@@ -2030,9 +2030,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
         $location = trim((string) ($_POST['location_name'] ?? ''));
         $desc = trim((string) ($_POST['description'] ?? ''));
         $status = in_array($_POST['status'] ?? '', ['OPEN', 'PAUSED', 'CLOSED'], true) ? (string) $_POST['status'] : 'OPEN';
-        $actLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 10.7769;
-        $actLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 106.7009;
-        if ($location !== '' && abs($actLat - 10.7769) < 0.0001 && abs($actLng - 106.7009) < 0.0001) {
+        $actLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 21.0285;
+        $actLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 105.8542;
+        if ($location !== '' && abs($actLat - 21.0285) < 0.0001 && abs($actLng - 105.8542) < 0.0001) {
             $geoAdm = $geocodingService->resolveAddressCoordinates($location);
             if ($geoAdm !== null) {
                 $actLat = $geoAdm['lat'];
@@ -2088,9 +2088,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
         $location = trim((string) ($_POST['location_name'] ?? ''));
         $desc = trim((string) ($_POST['description'] ?? ''));
         $status = in_array($_POST['status'] ?? '', ['OPEN', 'PAUSED', 'CLOSED'], true) ? (string) $_POST['status'] : 'OPEN';
-        $actLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 10.7769;
-        $actLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 106.7009;
-        if ($location !== '' && abs($actLat - 10.7769) < 0.0001 && abs($actLng - 106.7009) < 0.0001) {
+        $actLat = isset($_POST['lat']) && is_numeric($_POST['lat']) ? (float) $_POST['lat'] : 21.0285;
+        $actLng = isset($_POST['lng']) && is_numeric($_POST['lng']) ? (float) $_POST['lng'] : 105.8542;
+        if ($location !== '' && abs($actLat - 21.0285) < 0.0001 && abs($actLng - 105.8542) < 0.0001) {
             $geoAdm = $geocodingService->resolveAddressCoordinates($location);
             if ($geoAdm !== null) {
                 $actLat = $geoAdm['lat'];
@@ -2426,9 +2426,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
         $minP = max(1, (int) ($_POST['min_people'] ?? 2));
         $maxP = max($minP, (int) ($_POST['max_people'] ?? 6));
         $pri = max(1, min(5, (int) ($_POST['priority'] ?? 3)));
-        $locName = trim((string) ($_POST['location_name'] ?? 'TP. Hồ Chí Minh'));
-        $sLat = (float) ($_POST['lat'] ?? 10.7769);
-        $sLng = (float) ($_POST['lng'] ?? 106.7009);
+        $locName = trim((string) ($_POST['location_name'] ?? 'TP. Hà Nội'));
+        $sLat = (float) ($_POST['lat'] ?? 21.0285);
+        $sLng = (float) ($_POST['lng'] ?? 105.8542);
 
         $tsStart = strtotime($sStart);
         $tsEnd = strtotime($sEnd);
@@ -2454,7 +2454,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !in_array($action, ['do_login', 'do
                 ':minp' => $minP,
                 ':maxp' => $maxP,
                 ':pri' => $pri,
-                ':loc' => $locName !== '' ? $locName : 'TP. Hồ Chí Minh',
+                ':loc' => $locName !== '' ? $locName : 'TP. Hà Nội',
                 ':lat' => $sLat,
                 ':lng' => $sLng,
             ]);
@@ -2777,7 +2777,7 @@ $pageTitles = [
 
 $pageDescriptions = [
     'home'         => 'Nền tảng tổ chức hoạt động và phân công tình nguyện viên thông minh, minh bạch giờ cống hiến cho Đoàn Thanh niên Việt Nam.',
-    'campaigns'    => 'Khám phá và đăng ký tham gia các ca trực tình nguyện theo chuyên môn tại TP.HCM: Mùa Hè Xanh, Tiếp Sức Mùa Thi, Chủ Nhật Xanh.',
+    'campaigns'    => 'Khám phá và đăng ký tham gia các ca trực tình nguyện theo chuyên môn tại TP. Hà Nội: Mùa Hè Xanh, Tiếp Sức Mùa Thi, Chủ Nhật Xanh.',
     'shift_detail' => 'Chi tiết ca trực tình nguyện, yêu cầu chuyên môn, phân công nhân sự và đăng ký trực tiếp trên Xanh Hub.',
     'news'         => 'Phim tài liệu thực địa và bản tin hoạt động thanh niên tình nguyện Việt Nam, ghi dấu những hành trình cống hiến.',
     'about'        => 'Giới thiệu về hệ sinh thái Xanh Hub, sứ mệnh tuổi trẻ Việt Nam và thông tin liên hệ Ban Chỉ huy các chiến dịch.',
@@ -2787,7 +2787,7 @@ $pageDescriptions = [
     'analytics'    => 'Trung tâm phân tích số liệu cống hiến theo trường Đại học, tỷ lệ lấp đầy ca trực và cơ cấu kỹ năng chuyên môn chuẩn Đoàn Thanh niên.',
     'report'       => 'Báo cáo Tổng kết Chiến dịch Tình nguyện chuẩn Đoàn TNCS Hồ Chí Minh - Hội Liên hiệp Thanh niên Việt Nam kèm mã QR kiểm thực.',
     'verify'       => 'Tra cứu và xác thực tính hợp lệ của Giấy chứng nhận tình nguyện viên điện tử.',
-    'map'          => 'Bản đồ số tương tác định vị 36 ca trực tình nguyện tại TP.HCM, lọc theo bán kính khoảng cách và ứng tuyển trực quan.',
+    'map'          => 'Bản đồ số tương tác định vị 36 ca trực tình nguyện tại TP. Hà Nội, lọc theo bán kính khoảng cách và ứng tuyển trực quan.',
     'leaderboard'  => 'Bảng Vàng Thi Đua Đoàn Thanh niên vinh danh Top 10 cá nhân tiêu biểu và các cơ sở Đoàn xuất sắc trong các chiến dịch tình nguyện Xanh Hub.',
     'login'        => 'Đăng nhập hệ thống Xanh Hub bằng tài khoản sinh viên hoặc liên kết Google, Zalo, Microsoft Edu, Facebook, GitHub.',
     'register'     => 'Đăng ký trở thành tình nguyện viên Xanh Hub, kết nối chuyên môn và thời gian cống hiến vì cộng đồng.',
@@ -3701,7 +3701,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         $videoChapters = [
                             ['sec' => 0,  'time' => '00:00', 'title' => 'Lễ Ra quân Mùa Hè Xanh',      'desc' => 'Đội hình sinh viên áo xanh chuẩn bị vật tư & trồng cây cộng đồng'],
                             ['sec' => 4,  'time' => '00:04', 'title' => 'Trực chốt Tiếp Sức Mùa Thi',  'desc' => 'Phát nước uống và sơ cấp cứu y tế tại cổng điểm thi ĐH Bách Khoa'],
-                            ['sec' => 8,  'time' => '00:08', 'title' => 'Chủ Nhật Xanh Kênh Nhiêu Lộc', 'desc' => 'Cải tạo cảnh quan đô thị & trồng mới 500 cây xanh ven kênh'],
+                            ['sec' => 8,  'time' => '00:08', 'title' => 'Chủ Nhật Xanh Sông Tô Lịch', 'desc' => 'Cải tạo cảnh quan đô thị & trồng mới 500 cây xanh Hà Nội'],
                             ['sec' => 12, 'time' => '00:12', 'title' => 'Lan tỏa Nụ cười Tình nguyện', 'desc' => 'Kết nối sức trẻ các Liên chi Đoàn và cấp chứng nhận số'],
                         ];
                         foreach ($videoChapters as $cIdx => $chap):
@@ -4227,11 +4227,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="grid grid-cols-2 gap-2 mt-1.5">
                                 <div class="flex items-center gap-1.5 text-[11px] text-slate-500">
                                     <span class="font-bold shrink-0">Vĩ độ:</span>
-                                    <input type="number" step="0.00001" id="register-lat-input" name="lat" value="10.7769" readonly class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-[11px] mono" />
+                                    <input type="number" step="0.00001" id="register-lat-input" name="lat" value="21.0285" readonly class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-[11px] mono" />
                                 </div>
                                 <div class="flex items-center gap-1.5 text-[11px] text-slate-500">
                                     <span class="font-bold shrink-0">Kinh độ:</span>
-                                    <input type="number" step="0.00001" id="register-lng-input" name="lng" value="106.7009" readonly class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-[11px] mono" />
+                                    <input type="number" step="0.00001" id="register-lng-input" name="lng" value="105.8542" readonly class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-[11px] mono" />
                                 </div>
                             </div>
                         </div>
@@ -4580,7 +4580,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span>Bản đồ Số GIS &amp; Định vị Điểm Tình nguyện</span>
                     </h1>
                     <p class="text-xs md:text-sm text-slate-200 leading-relaxed max-w-2xl">
-                        Bản đồ trực quan định vị 36 điểm trực thực tế tại TP.HCM (Trường Đại học, Bệnh viện, Tuyến đường, Kênh mương). Hỗ trợ lọc theo khoảng cách gần nơi ở của bạn và đăng ký nhanh 1 chạm.
+                        Bản đồ trực quan định vị 36 điểm trực thực tế tại TP. Hà Nội (Trường Đại học, Bệnh viện, Tuyến phố, Hồ &amp; Dòng sông). Hỗ trợ tự động định vị GPS, lọc theo khoảng cách gần nơi ở và đăng ký nhanh 1 chạm.
                     </p>
                     <div class="flex flex-wrap items-center gap-2 mt-4 text-xs">
                         <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold flex items-center gap-1">
@@ -4663,7 +4663,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         data-places-autocomplete="true"
                         autocomplete="off"
                         value="<?= h((string) ($_GET['place'] ?? '')) ?>"
-                        placeholder="Tìm địa chỉ, trường ĐH, công viên, kênh rạch trên bản đồ TP.HCM..."
+                        placeholder="Tìm địa chỉ, trường ĐH, công viên, quận/huyện trên bản đồ TP. Hà Nội..."
                         class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-xs focus:border-[#0057B8] focus:outline-none"
                     />
                 </div>
@@ -4696,7 +4696,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <!-- Vị trí tâm tính cự ly -->
                 <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <span class="material-symbols-outlined text-[16px] text-emerald-600">location_on</span>
-                    <span>Tâm định vị: <strong id="gis-center-label" class="text-slate-800 dark:text-slate-200">10.7769° N, 106.7009° E (Trung tâm TP.HCM)</strong></span>
+                    <span>Tâm định vị: <strong id="gis-center-label" class="text-slate-800 dark:text-slate-200">21.0285° N, 105.8542° E (Trung tâm Hà Nội)</strong></span>
                 </div>
             </div>
         </div>
@@ -4727,7 +4727,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span class="material-symbols-outlined text-[16px] text-[#0057B8]">info</span>
                         <span>Bấm vào biểu tượng điểm trực trên bản đồ để xem quân số và đăng ký nhanh. Bấm vào vị trí bất kỳ trên bản đồ để đổi tâm tìm kiếm.</span>
                     </div>
-                    <span>Bản đồ Thành Đoàn TP.HCM</span>
+                    <span>Bản đồ Thành Đoàn TP. Hà Nội</span>
                 </div>
             </div>
 
@@ -4855,7 +4855,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function buildPopupContent(shift, distKm) {
             var cfg = colorConfig[shift.color_category] || colorConfig.blue;
-            var distText = distKm !== null ? ('Cách bạn <strong>' + distKm.toFixed(2) + ' km</strong>') : 'Tọa độ GPS TP.HCM';
+            var distText = distKm !== null ? ('Cách bạn <strong>' + distKm.toFixed(2) + ' km</strong>') : 'Tọa độ GPS Hà Nội';
 
             var statusBadge = '';
             if (shift.is_full) {
@@ -5003,7 +5003,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(function (data) {
                     var addrText = (data && data.ok && (data.full_address || (data.address && data.address.full_address)))
                         ? (data.full_address || data.address.full_address)
-                        : ('Khu vực TP. Hồ Chí Minh');
+                        : ('Khu vực TP. Hà Nội');
                     updateGisCenterLabel(centerLat, centerLng, addrText, '');
                     var placeSearchEl = document.getElementById('gis-place-search-input');
                     if (placeSearchEl && document.activeElement !== placeSearchEl && addrText) {
@@ -5012,7 +5012,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (openPopup && userLocationMarker) userLocationMarker.openPopup();
                 })
                 .catch(function () {
-                    updateGisCenterLabel(centerLat, centerLng, 'Khu vực TP. Hồ Chí Minh', '');
+                    updateGisCenterLabel(centerLat, centerLng, 'Khu vực TP. Hà Nội', '');
                 });
         }
 
@@ -5045,7 +5045,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (hasCustomInitCoords) {
                     resolveAndSetGisCenter(centerLat, centerLng, qsPlace || null, null, true);
                 } else {
-                    userLocationMarker.bindPopup('<strong>Vị trí mặc định: Trung tâm TP.HCM (Bến Thành)</strong><br>Bấm lên bản đồ hoặc dùng tìm kiếm địa chỉ kiểu Google Maps.');
+                    userLocationMarker.bindPopup('<strong>Vị trí mặc định: Trung tâm TP. Hà Nội (Hồ Hoàn Kiếm)</strong><br>Bấm lên bản đồ hoặc dùng tìm kiếm địa chỉ kiểu Google Maps.');
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            function (pos) {
+                                resolveAndSetGisCenter(pos.coords.latitude, pos.coords.longitude, null, 14, false);
+                            },
+                            function () {},
+                            { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
+                        );
+                    }
                 }
 
                 allShifts.forEach(function (shift) {
@@ -5106,7 +5115,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         function () {
                             btnMyLocation.classList.remove('animate-pulse');
                             if (window.XanhHubUI) {
-                                window.XanhHubUI.toast('warning', 'Không thể lấy GPS thiết bị', 'Đang dùng vị trí mặc định tại Trung tâm TP.HCM (Quảng trường Bến Thành).');
+                                window.XanhHubUI.toast('warning', 'Không thể lấy GPS thiết bị', 'Đang dùng vị trí mặc định tại Trung tâm TP. Hà Nội (Hồ Hoàn Kiếm).');
                             }
                         },
                         { enableHighAccuracy: true, timeout: 8000 }
@@ -5416,7 +5425,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         Từ Giảng đường Đến Những Điểm Trực Mùa Hè Xanh &amp; Tiếp Sức Mùa Thi
                     </h2>
                     <p class="text-sm text-slate-300 leading-relaxed mb-6">
-                        Ghi lại khoảnh khắc hàng trăm sinh viên tình nguyện khoác lên mình màu áo xanh thanh niên, trực chốt sơ cứu y tế dưới nắng hè, phân luồng giao thông tại các điểm thi đại học và cải tạo cảnh quan kênh Nhiêu Lộc.
+                        Ghi lại khoảnh khắc hàng trăm sinh viên tình nguyện khoác lên mình màu áo xanh thanh niên, trực chốt sơ cứu y tế dưới nắng hè, phân luồng giao thông tại các điểm thi đại học và cải tạo cảnh quan tuyến sông Tô Lịch, Hà Nội.
                     </p>
                 </div>
                 <div class="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
@@ -5469,9 +5478,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     'date' => '25/06/2026',
                     'pub_ymd' => '2026-06-25',
                     'status' => 'PUBLISHED',
-                    'title' => 'Đội hình Sơ cứu Y tế & Tiếp sức Sĩ tử tại Cụm thi ĐH Bách Khoa TP.HCM',
+                    'title' => 'Đội hình Sơ cứu Y tế & Tiếp sức Sĩ tử tại Cụm thi ĐH Bách Khoa Hà Nội',
                     'summary' => '30 tình nguyện viên có chứng chỉ sơ cấp cứu và hậu cần được phân bổ đều vào 12 ca trực không trùng lịch thi cá nhân, hỗ trợ kịp thời hơn 2.000 thí sinh.',
-                    'content' => '30 tình nguyện viên có chứng chỉ sơ cấp cứu và hậu cần được phân bổ đều vào 12 ca trực không trùng lịch thi cá nhân, hỗ trợ kịp thời hơn 2.000 thí sinh.',
+                    'content' => '30 tình nguyện viên có chứng chỉ sơ cấp cứu và hậu cần được phân bổ đều vào 12 ca trực không trùng lịch thi cá nhân, hỗ trợ kịp thời hơn 2.000 thí sinh tại Hà Nội.',
                     'img' => 'assets/images/campaign-d2.jpg',
                     'act_id' => 2,
                     'author' => 'Đội Truyền thông Xanh Hub',
@@ -5482,7 +5491,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     'date' => '14/06/2026',
                     'pub_ymd' => '2026-06-14',
                     'status' => 'PUBLISHED',
-                    'title' => 'Ra quân Cải tạo Cảnh quan Kênh Nhiêu Lộc & Trồng mới 500 Cây xanh Đô thị',
+                    'title' => 'Ra quân Cải tạo Cảnh quan Sông Tô Lịch & Trồng mới 500 Cây xanh Hà Nội',
                     'summary' => 'Chiến dịch cuối tuần thu hút đông đảo đoàn viên các Liên chi Đoàn tham gia làm sạch tuyến kênh và hướng dẫn người dân phân loại rác tại nguồn.',
                     'content' => 'Chiến dịch cuối tuần thu hút đông đảo đoàn viên các Liên chi Đoàn tham gia làm sạch tuyến kênh và hướng dẫn người dân phân loại rác tại nguồn.',
                     'img' => 'assets/images/campaign-d1.jpg',
@@ -5720,7 +5729,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="space-y-4 text-sm">
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined text-[#0057B8]">location_on</span>
-                            <span>Văn phòng Đoàn Thanh Niên – Hội Sinh Viên, Khu Đô thị ĐHQG TP.HCM</span>
+                            <span>Văn phòng Đoàn Thanh Niên – Hội Sinh Viên, Số 14A Phan Chu Trinh, Q. Hoàn Kiếm, TP. Hà Nội</span>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined text-emerald-600">mail</span>
@@ -5728,7 +5737,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined text-amber-500">call</span>
-                            <span class="mono">(028) 3724 2026 &middot; Hotline Trực chiến 24/7</span>
+                            <span class="mono">(024) 3936 2026 &middot; Hotline Trực chiến 24/7</span>
                         </div>
                     </div>
                 </div>
@@ -7598,7 +7607,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <option value="Kinh tế - Luật">ĐH Kinh tế - Luật</option>
                                 <option value="Công nghệ Thông tin">ĐH Công nghệ Thông tin</option>
                                 <option value="Quốc tế">ĐH Quốc tế</option>
-                                <option value="Y Dược">ĐH Y Dược TP.HCM</option>
+                                <option value="Y Hà Nội">ĐH Y Hà Nội</option>
                                 <option value="Sư phạm Kỹ thuật">ĐH Sư phạm Kỹ thuật</option>
                             </select>
                         </div>
@@ -8647,7 +8656,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <td class="py-2 px-3 border border-slate-300 dark:border-slate-700 font-semibold">5. Số cơ sở Đoàn / Trường Đại học tham gia</td>
                                 <td class="py-2 px-3 border border-slate-300 dark:border-slate-700 text-center mono font-bold text-sm"><?= h($fOv['total_universities']) ?></td>
                                 <td class="py-2 px-3 border border-slate-300 dark:border-slate-700">Cơ sở Đoàn</td>
-                                <td class="py-2 px-3 border border-slate-300 dark:border-slate-700">Liên kết chặt chẽ các trường ĐHQG-HCM</td>
+                                <td class="py-2 px-3 border border-slate-300 dark:border-slate-700">Liên kết chặt chẽ các trường ĐHQG Hà Nội &amp; Bách Khoa</td>
                             </tr>
                         </tbody>
                     </table>
@@ -8730,8 +8739,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <em>Nơi nhận:</em>
                     </div>
                     <ul class="text-[11px] text-slate-500 space-y-0.5 list-disc list-inside mb-4">
-                        <li>Ban Thường vụ Thành Đoàn TP.HCM (để báo cáo);</li>
-                        <li>Đoàn Thanh niên ĐHQG-HCM &amp; các Trường Đại học;</li>
+                        <li>Ban Thường vụ Thành Đoàn TP. Hà Nội (để báo cáo);</li>
+                        <li>Đoàn Thanh niên ĐHQG Hà Nội &amp; các Trường Đại học tại Hà Nội;</li>
                         <li>Ban Chỉ huy Chiến dịch Tình nguyện Hè;</li>
                         <li>Lưu: Văn phòng Đoàn, Sổ cái Xanh Hub.</li>
                     </ul>
@@ -9063,11 +9072,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     'role' => 'VOLUNTEER',
                     'created_at' => date('Y-m-d H:i:s'),
                     'student_code' => 'SV' . sprintf('%03d', $actorUserId),
-                    'chapter_name' => 'Chi đoàn Thanh niên TP.HCM',
+                    'chapter_name' => 'Chi đoàn Thanh niên Hà Nội',
                     'phone' => '0901234567',
                     'max_shifts_per_week' => 4,
-                    'lat' => 10.7769,
-                    'lng' => 106.7009,
+                    'lat' => 21.0285,
+                    'lng' => 105.8542,
                 ];
             }
 
@@ -9223,10 +9232,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
 
                 <?php
-                $volLat = (float) ($volData['lat'] ?? 10.7769);
-                $volLng = (float) ($volData['lng'] ?? 106.7009);
+                $volLat = (float) ($volData['lat'] ?? 21.0285);
+                $volLng = (float) ($volData['lng'] ?? 105.8542);
                 $volAddressInfo = $geocodingService->reverseGeocode($volLat, $volLng, false);
-                $volAddress = (string) ($volAddressInfo['full_address'] ?? $volAddressInfo['address']['full_address'] ?? 'Trung tâm TP. Hồ Chí Minh');
+                $volAddress = (string) ($volAddressInfo['full_address'] ?? $volAddressInfo['address']['full_address'] ?? 'Trung tâm TP. Hà Nội');
                 ?>
                 <form id="form-volunteer-profile" method="post" action="?action=update_profile">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -9259,7 +9268,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     data-lat-input="#profile-lat-input"
                                     data-lng-input="#profile-lng-input"
                                     autocomplete="off"
-                                    placeholder="Nhập tên đường, trường ĐH, quận/huyện tại TP.HCM..."
+                                    placeholder="Nhập tên đường, trường ĐH, quận/huyện tại TP. Hà Nội..."
                                     class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:border-[#0057B8] focus:outline-none"
                                 />
                             </div>
@@ -9417,7 +9426,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <span class="material-symbols-outlined text-[22px]">admin_panel_settings</span>
                             </div>
                             <div>
-                                <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-300">THÀNH ĐOÀN TP. HỒ CHÍ MINH</div>
+                                <div class="text-[10px] font-bold uppercase tracking-widest text-emerald-300">THÀNH ĐOÀN TP. HÀ NỘI</div>
                                 <div class="text-sm font-extrabold tracking-wide">THẺ ĐỊNH DANH BAN CHỈ HUY</div>
                             </div>
                         </div>
@@ -9432,7 +9441,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="min-w-0">
                             <h2 class="text-xl sm:text-2xl font-black truncate tracking-tight text-white"><?= h($coordData['full_name']) ?></h2>
                             <div class="font-mono text-xs text-emerald-300 mt-1 font-bold">CÁN BỘ ĐIỀU PHỐI</div>
-                            <div class="text-xs text-slate-300 truncate mt-0.5">Ban Thường vụ Thành Đoàn TP.HCM</div>
+                            <div class="text-xs text-slate-300 truncate mt-0.5">Ban Thường vụ Thành Đoàn TP. Hà Nội</div>
                         </div>
                     </div>
 
@@ -9788,7 +9797,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div>
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-200 text-xs font-bold uppercase tracking-wider mb-3">
                         <span class="material-symbols-outlined text-[16px]">shield_person</span>
-                        <span>QUYỀN HẠN TỐI CAO — THÀNH ĐOÀN TP. HỒ CHÍ MINH</span>
+                        <span>QUYỀN HẠN TỐI CAO — THÀNH ĐOÀN TP. HÀ NỘI</span>
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">
                         Cổng Quản trị Hệ thống Xanh Hub
@@ -10858,8 +10867,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                             data-act-status="<?= h($act['status']) ?>"
                                             data-act-desc="<?= h($act['description'] ?? '') ?>"
                                             data-act-location="<?= h($act['location_name'] ?? '') ?>"
-                                            data-act-lat="<?= (float)($act['lat'] ?? 10.7769) ?>"
-                                            data-act-lng="<?= (float)($act['lng'] ?? 106.7009) ?>"
+                                            data-act-lat="<?= (float)($act['lat'] ?? 21.0285) ?>"
+                                            data-act-lng="<?= (float)($act['lng'] ?? 105.8542) ?>"
                                         >
                                             Sửa
                                         </button>
@@ -10925,7 +10934,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Địa điểm triển khai</label>
-                            <input type="text" name="location_name" placeholder="Quận 3, TP.HCM" data-places-autocomplete="true" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2">
+                            <input type="text" name="location_name" placeholder="Q. Hai Bà Trưng, TP. Hà Nội" data-places-autocomplete="true" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2">
                         </div>
                         <div class="flex gap-2 items-end">
                             <div class="w-16">
@@ -11609,13 +11618,13 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
         <form method="post" action="?view=coordinator&activity_id=<?= $selectedActivityId ?>&action=create_shift_from_draft">
             <input type="hidden" name="activity_id" value="<?= $selectedActivityId ?>">
-            <input type="hidden" id="shift-form-lat" name="lat" value="10.7769">
-            <input type="hidden" id="shift-form-lng" name="lng" value="106.7009">
+            <input type="hidden" id="shift-form-lat" name="lat" value="21.0285">
+            <input type="hidden" id="shift-form-lng" name="lng" value="105.8542">
             <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
                 <div><label class="font-bold block mb-1">Tên ca trực</label><input type="text" id="shift-form-title" name="title" value="Trực sơ cứu điểm thi Bách Khoa" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5"></div>
                 <div>
                     <label class="font-bold block mb-1">Địa điểm (Gợi ý kiểu Google Maps)</label>
-                    <input type="text" id="shift-form-zone" name="zone" value="Điểm thi ĐH Bách Khoa TP.HCM (Quận 10)" data-places-autocomplete="true" data-lat-input="#shift-form-lat" data-lng-input="#shift-form-lng" autocomplete="off" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5">
+                    <input type="text" id="shift-form-zone" name="zone" value="Điểm thi ĐH Bách Khoa Hà Nội (Q. Hai Bà Trưng)" data-places-autocomplete="true" data-lat-input="#shift-form-lat" data-lng-input="#shift-form-lng" autocomplete="off" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5">
                 </div>
                 <div><label class="font-bold block mb-1">Ngày</label><input type="date" id="shift-form-date" name="date_ymd" value="2026-06-13" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5"></div>
                 <div>
@@ -12049,17 +12058,17 @@ if (empty($newsModalActivities) && isset($pdo) && $pdo instanceof \PDO) {
 
             <div>
                 <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Địa điểm / Địa bàn triển khai (Gợi ý kiểu Google Maps)</label>
-                <input type="text" name="location_name" id="edit-act-location" data-places-autocomplete="true" data-lat-input="#edit-act-lat" data-lng-input="#edit-act-lng" autocomplete="off" placeholder="VD: Công viên 23/9, Đại học Bách Khoa TP.HCM..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs">
+                <input type="text" name="location_name" id="edit-act-location" data-places-autocomplete="true" data-lat-input="#edit-act-lat" data-lng-input="#edit-act-lng" autocomplete="off" placeholder="VD: Hồ Hoàn Kiếm, ĐH Bách Khoa Hà Nội..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Vĩ độ (Lat)</label>
-                    <input type="number" step="0.00001" name="lat" id="edit-act-lat" value="10.7769" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs mono">
+                    <input type="number" step="0.00001" name="lat" id="edit-act-lat" value="21.0285" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs mono">
                 </div>
                 <div>
                     <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Kinh độ (Lng)</label>
-                    <input type="number" step="0.00001" name="lng" id="edit-act-lng" value="106.7009" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs mono">
+                    <input type="number" step="0.00001" name="lng" id="edit-act-lng" value="105.8542" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs mono">
                 </div>
             </div>
 
@@ -12135,18 +12144,18 @@ if (empty($newsModalActivities) && isset($pdo) && $pdo instanceof \PDO) {
                     </div>
                     <div>
                         <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Địa bàn Trọng điểm / Địa điểm *:</label>
-                        <input type="text" name="target_area" id="input-act-location" data-places-autocomplete="true" data-lat-input="#input-act-lat" data-lng-input="#input-act-lng" autocomplete="off" required placeholder="VD: Huyện Cần Giờ, ĐH Bách Khoa TP.HCM..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs focus:border-[#0057B8] focus:outline-none" />
+                        <input type="text" name="target_area" id="input-act-location" data-places-autocomplete="true" data-lat-input="#input-act-lat" data-lng-input="#input-act-lng" autocomplete="off" required placeholder="VD: Huyện Ba Vì, ĐH Bách Khoa Hà Nội..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs focus:border-[#0057B8] focus:outline-none" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Tọa độ Vĩ độ (Lat):</label>
-                        <input type="number" step="0.00001" id="input-act-lat" name="lat" value="10.7769" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs mono" />
+                        <input type="number" step="0.00001" id="input-act-lat" name="lat" value="21.0285" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs mono" />
                     </div>
                     <div>
                         <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Tọa độ Kinh độ (Lng):</label>
-                        <input type="number" step="0.00001" id="input-act-lng" name="lng" value="106.7009" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs mono" />
+                        <input type="number" step="0.00001" id="input-act-lng" name="lng" value="105.8542" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs mono" />
                     </div>
                 </div>
 
@@ -12195,9 +12204,9 @@ if (empty($newsModalActivities) && isset($pdo) && $pdo instanceof \PDO) {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Địa điểm cụ thể ca trực (Gợi ý Google Maps):</label>
-                        <input type="text" name="shift_location" id="input-shift-location" data-places-autocomplete="true" data-lat-input="#input-shift-lat" data-lng-input="#input-shift-lng" autocomplete="off" placeholder="VD: ĐH Bách Khoa TP.HCM, Công viên Lê Văn Tám..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs focus:border-[#0057B8] focus:outline-none" />
-                        <input type="hidden" id="input-shift-lat" name="shift_lat" value="10.7769" />
-                        <input type="hidden" id="input-shift-lng" name="shift_lng" value="106.7009" />
+                        <input type="text" name="shift_location" id="input-shift-location" data-places-autocomplete="true" data-lat-input="#input-shift-lat" data-lng-input="#input-shift-lng" autocomplete="off" placeholder="VD: ĐH Bách Khoa Hà Nội, Công viên Thống Nhất..." class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs focus:border-[#0057B8] focus:outline-none" />
+                        <input type="hidden" id="input-shift-lat" name="shift_lat" value="21.0285" />
+                        <input type="hidden" id="input-shift-lng" name="shift_lng" value="105.8542" />
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>

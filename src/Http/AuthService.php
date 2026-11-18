@@ -98,8 +98,8 @@ final class AuthService
         string $password,
         array $skillIds,
         int $skillLevel = 3,
-        float $lat = 10.7769,
-        float $lng = 106.7009
+        float $lat = 21.0285,
+        float $lng = 105.8542
     ): array {
         $fullName = trim($fullName);
         $studentCode = strtoupper(trim($studentCode));

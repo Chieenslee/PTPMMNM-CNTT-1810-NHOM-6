@@ -22,8 +22,8 @@ final class ShiftSpec
         public readonly int $priority,
         public readonly array $requirements,
         public readonly bool $isLocked = false,
-        public readonly float $lat = 10.7769,
-        public readonly float $lng = 106.7009,
+        public readonly float $lat = 21.0285,
+        public readonly float $lng = 105.8542,
         public readonly string $locationName = ''
     ) {
     }
